@@ -1,0 +1,24 @@
+name = "uber-v3"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+
+[[durable_objects.bindings]]
+name = "SOCKET_HUB"
+class_name = "SocketHub"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SocketHub"]
+
+[[kv_namespaces]]
+binding = "DRIVERS"
+id = "a0b3ddaecec4476f983eb28cc3d8a1e5"
+
+[[kv_namespaces]]
+binding = "ORDERS"
+id = "e58de8ff6bd14e98a4e845300ae740a5"
+
+[vars]
+JWT_SECRET = "change_me_super_secret"
+TG_BOT_TOKEN = ""
+TG_CHAT_ID = ""
