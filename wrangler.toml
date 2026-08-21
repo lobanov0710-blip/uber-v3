@@ -17,8 +17,3 @@ id = "a0b3ddaecec4476f983eb28cc3d8a1e5"
 [[kv_namespaces]]
 binding = "ORDERS"
 id = "e58de8ff6bd14e98a4e845300ae740a5"
-
-[vars]
-JWT_SECRET = "change_me_super_secret"
-TG_BOT_TOKEN = ""
-TG_CHAT_ID = ""
