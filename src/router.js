@@ -3,6 +3,10 @@ import { signJWT } from "./core/auth.js";
 import { geoCalculate } from "./core/geo.js";
 import { calc } from "./core/calc.js";
 import { tgSend } from "./core/telegram.js";
+import {
+  createOrder,
+  orderReceipt
+} from "./core/orders.js";
 
 export default async function router(req, env) {
 
@@ -142,6 +146,63 @@ export default async function router(req, env) {
     } catch (e) {
       console.error("ROUTE ERROR:", e);
       return safeError("route crash", 500);
+    }
+  }
+
+    // ================= ORDERS =================
+  if (path === "/orders") {
+
+    // Пока разрешаем только создание.
+    // GET подключим после JWT authorization.
+    if (req.method !== "POST") {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+    const body =
+      await safeJson(req);
+
+    try {
+
+      const result =
+        await createOrder(
+          body,
+          env
+        );
+
+      if (!result.ok) {
+
+        return safeError(
+          result.error ||
+            "invalid order",
+          result.status || 400
+        );
+      }
+
+      return json(
+        {
+          ok: true,
+          order: orderReceipt(
+            result.order
+          )
+        },
+        201,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "ORDER CREATE ERROR:",
+        error
+      );
+
+      return safeError(
+        "order create failed",
+        500
+      );
     }
   }
 
