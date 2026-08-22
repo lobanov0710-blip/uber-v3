@@ -145,41 +145,152 @@ function parseRoute(route) {
 }
 
 // =========================
+// TELEGRAM FORMATTERS
+// =========================
+
+function tariffLabel(value) {
+
+  const tariff =
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  const labels = {
+    comfort: "Комфорт",
+    business: "Бизнес",
+    minivan: "Минивэн"
+  };
+
+  return (
+    labels[tariff] ||
+    tariff ||
+    "Не указан"
+  );
+}
+
+function formatPrice(value) {
+
+  const number =
+    Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "";
+  }
+
+  return new Intl.NumberFormat(
+    "ru-RU",
+    {
+      maximumFractionDigits: 0
+    }
+  ).format(number);
+}
+
+function formatDistance(value) {
+
+  const number =
+    Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "";
+  }
+
+  return new Intl.NumberFormat(
+    "ru-RU",
+    {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    }
+  ).format(number);
+}
+
+function formatDuration(value) {
+
+  const totalMinutes =
+    Math.max(
+      0,
+      Math.round(
+        Number(value) || 0
+      )
+    );
+
+  const hours =
+    Math.floor(
+      totalMinutes / 60
+    );
+
+  const minutes =
+    totalMinutes % 60;
+
+  if (
+    hours > 0 &&
+    minutes > 0
+  ) {
+    return `${hours} ч ${minutes} мин`;
+  }
+
+  if (hours > 0) {
+    return `${hours} ч`;
+  }
+
+  return `${minutes} мин`;
+}
+
+function formatDate(value) {
+
+  const source =
+    String(value || "").trim();
+
+  const match =
+    source.match(
+      /^(\d{4})-(\d{2})-(\d{2})$/
+    );
+
+  if (!match) {
+    return source;
+  }
+
+  const [, year, month, day] =
+    match;
+
+  return `${day}.${month}.${year}`;
+}
+
+// =========================
 // TELEGRAM MESSAGE
 // =========================
+
 function buildTelegramMessage(order) {
 
   const lines = [
     "🚖 Новая заявка",
     "",
-    `ID: ${order.id}`,
-    `Имя: ${order.name}`,
-    `Телефон: ${order.phone}`,
-    `Маршрут: ${order.route}`,
-    `Дата: ${order.date}`
+    `🆔 ID: ${order.id}`,
+    `👤 Клиент: ${order.name}`,
+    `📞 Телефон: ${order.phone}`,
+    "",
+    `📍 Маршрут: ${order.route}`,
+    `📅 Дата поездки: ${formatDate(order.date)}`,
+    `🚘 Тариф: ${tariffLabel(order.tariff)}`
   ];
 
-  if (order.tariff) {
-    lines.push(
-      `Тариф: ${order.tariff}`
-    );
-  }
-
   if (order.distance !== null) {
+
     lines.push(
-      `Расстояние: ${order.distance} км`
+      `🛣 Расстояние: ${formatDistance(order.distance)} км`
     );
   }
 
   if (order.duration !== null) {
+
     lines.push(
-      `Время: ${order.duration} мин`
+      `⏱ Время в пути: ${formatDuration(order.duration)}`
     );
   }
 
   if (order.price !== null) {
+
     lines.push(
-      `Стоимость: ${order.price} ₽`
+      `💰 Стоимость: ${formatPrice(order.price)} ₽`
     );
   }
 
@@ -187,7 +298,7 @@ function buildTelegramMessage(order) {
 
     lines.push(
       "",
-      `Комментарий: ${order.comment}`
+      `💬 Комментарий: ${order.comment}`
     );
   }
 

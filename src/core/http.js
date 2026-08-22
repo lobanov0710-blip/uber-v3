@@ -1,25 +1,91 @@
-export async function fetchJSON(url, options = {}, retries = 2) {
+export async function fetchJSON(
+  url,
+  options = {},
+  retries = 2
+) {
+  const controller =
+    new AbortController();
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout =
+    setTimeout(
+      () => controller.abort(),
+      10000
+    );
 
   try {
-    const res = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    });
+    const response =
+      await fetch(
+        url,
+        {
+          ...options,
+          signal: controller.signal
+        }
+      );
 
-    if (!res.ok) throw new Error("bad response");
+    if (!response.ok) {
+      const body =
+        await response
+          .text()
+          .catch(() => "");
 
-    return await res.json();
+      console.error(
+        "HTTP ERROR:",
+        {
+          url,
+          status: response.status,
+          statusText:
+            response.statusText,
+          body:
+            body.slice(0, 500)
+        }
+      );
 
-  } catch (e) {
+      const error =
+        new Error(
+          `HTTP ${response.status} ${response.statusText}`
+        );
 
-    if (retries > 0) {
-      return fetchJSON(url, options, retries - 1);
+      error.status =
+        response.status;
+
+      throw error;
     }
 
-    throw e;
+    return await response.json();
+
+  } catch (error) {
+    console.error(
+      "FETCH ERROR:",
+      url,
+      error
+    );
+
+    const status =
+      Number(error?.status || 0);
+
+    // =========================
+    // DO NOT RETRY CLIENT ERRORS
+    // =========================
+    if (
+      status >= 400 &&
+      status < 500 &&
+      status !== 429
+    ) {
+      throw error;
+    }
+
+    // =========================
+    // RETRY NETWORK / 429 / 5xx
+    // =========================
+    if (retries > 0) {
+      return fetchJSON(
+        url,
+        options,
+        retries - 1
+      );
+    }
+
+    throw error;
 
   } finally {
     clearTimeout(timeout);

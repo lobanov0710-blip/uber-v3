@@ -1,189 +1,418 @@
 import { fetchJSON } from "./http.js";
 
-const USER_AGENT = "UberV3-TransferService/2.0 (contact: admin@site.ru)";
+const USER_AGENT =
+  "TransferService52/1.0 (https://transfer-servis52.ru)";
 
-// =========================
-// MEMORY CACHE (PRO)
-// =========================
 const geoCache = new Map();
 
 // =========================
-// CLEAN TEXT (PRO)
+// NORMALIZE QUERY
 // =========================
-function cleanText(s) {
-  return String(s || "")
-    .replace(/[^\p{L}\p{N}\s,.-]/gu, "")
+function cleanText(value) {
+  return String(value || "")
+    .replace(/[^\p{L}\p{N}\s,.\-]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 // =========================
-// VALIDATION (ANTI SPAM)
+// VALIDATE QUERY
 // =========================
-function isValidQuery(q) {
-  if (!q) return false;
-  if (q.length < 3) return false;
+function isValidQuery(value) {
+  if (!value) return false;
+  if (value.length < 3) return false;
+  if (value.length > 200) return false;
 
-  // если только цифры/мусор
-  if (/^[0-9\s]+$/.test(q)) return false;
+  if (/^[0-9\s]+$/.test(value)) {
+    return false;
+  }
 
   return true;
 }
 
 // =========================
-// GEOCODE (PRO RETRY + CACHE)
+// GEOCODING
 // =========================
-async function geo(q) {
+async function geocode(query) {
+  const normalized = cleanText(query);
 
-  const key = q.toLowerCase();
+  if (!isValidQuery(normalized)) {
+    return null;
+  }
 
-  if (geoCache.has(key)) {
-    return geoCache.get(key);
+  const cacheKey =
+    normalized.toLowerCase();
+
+  if (geoCache.has(cacheKey)) {
+    return geoCache.get(cacheKey);
   }
 
   const url =
-    `https://nominatim.openstreetmap.org/search?` +
-    `format=json&limit=1&q=${encodeURIComponent(q)}`;
+    "https://nominatim.openstreetmap.org/search" +
+    "?format=jsonv2" +
+    "&limit=1" +
+    "&accept-language=ru" +
+    `&q=${encodeURIComponent(normalized)}`;
 
-  for (let i = 0; i < 3; i++) {
-    try {
+  const controller =
+    new AbortController();
 
-      const res = await fetch(url, {
-        headers: {
-          "User-Agent": USER_AGENT,
-          "Accept": "application/json"
+  const timeout =
+    setTimeout(
+      () => controller.abort(),
+      8000
+    );
+
+  try {
+    const response =
+      await fetch(
+        url,
+        {
+          method: "GET",
+
+          headers: {
+            "Accept": "application/json",
+            "User-Agent": USER_AGENT
+          },
+
+          signal: controller.signal
         }
-      });
+      );
 
-      const data = await res.json().catch(() => []);
+    if (!response.ok) {
+      console.error(
+        "NOMINATIM HTTP ERROR:",
+        response.status
+      );
 
-      if (Array.isArray(data) && data.length > 0) {
-
-        const lat = Number(data[0].lat);
-        const lon = Number(data[0].lon);
-
-        if (Number.isFinite(lat) && Number.isFinite(lon)) {
-
-          const result = { lat, lon };
-          geoCache.set(key, result);
-
-          return result;
-        }
-      }
-
-    } catch (e) {
-      console.warn("GEOCODE RETRY", i + 1, q);
+      return null;
     }
-  }
 
-  return null;
+    const data =
+      await response
+        .json()
+        .catch(() => null);
+
+    if (
+      !Array.isArray(data) ||
+      data.length === 0
+    ) {
+      return null;
+    }
+
+    const item = data[0];
+
+    const lat =
+      Number(item.lat);
+
+    const lon =
+      Number(item.lon);
+
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lon)
+    ) {
+      return null;
+    }
+
+    const result = {
+      lat,
+      lon,
+
+      displayName:
+        String(
+          item.display_name ||
+          normalized
+        )
+    };
+
+    geoCache.set(
+      cacheKey,
+      result
+    );
+
+    return result;
+
+  } catch (error) {
+    console.error(
+      "GEOCODE ERROR:",
+      normalized,
+      error
+    );
+
+    return null;
+
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // =========================
-// MAIN FUNCTION
+// VALHALLA ROAD ROUTE
 // =========================
-export async function geoCalculate(body) {
+async function buildRoute(
+  fromPoint,
+  toPoint
+) {
+  const url =
+    "https://valhalla1.openstreetmap.de/route";
 
-  let from = cleanText(body?.from);
-  let to = cleanText(body?.to);
+  const requestBody = {
+    locations: [
+      {
+        lat: fromPoint.lat,
+        lon: fromPoint.lon,
+        type: "break"
+      },
+      {
+        lat: toPoint.lat,
+        lon: toPoint.lon,
+        type: "break"
+      }
+    ],
 
-  if (!isValidQuery(from) || !isValidQuery(to)) {
-    return { ok: false, error: "invalid input" };
-  }
+    costing: "auto",
+
+    format: "osrm",
+
+    shape_format: "geojson",
+
+    directions_type: "none",
+
+    units: "kilometers"
+  };
+
+  let data;
 
   try {
+    data =
+      await fetchJSON(
+        url,
+        {
+          method: "POST",
 
-    const a = await geo(from);
-    const b = await geo(to);
+          headers: {
+            "Content-Type":
+              "application/json",
 
-    console.log("GEOCODE:", { from, to, a, b });
+            "Accept":
+              "application/json",
 
-    // =========================
-    // FALLBACK GEO
-    // =========================
-    if (!a || !b) {
-      return {
-        ok: true,
-        distance: 10,
-        duration: 20,
-        price: 500,
-        route: {
-          coordinates: [
-            [37.6173, 55.7558],
-            [37.6273, 55.7658]
-          ]
-        }
-      };
+            "X-Client-Id":
+              "transfer-servis52.ru"
+          },
+
+          body:
+            JSON.stringify(
+              requestBody
+            )
+        },
+        1
+      );
+
+  } catch (error) {
+    console.error(
+      "VALHALLA REQUEST ERROR:",
+      error
+    );
+
+    return null;
+  }
+
+  console.log(
+    "VALHALLA RESPONSE:",
+    {
+      code: data?.code,
+      routes:
+        Array.isArray(data?.routes)
+          ? data.routes.length
+          : 0
     }
+  );
 
-    // =========================
-    // OSRM ROUTE
-    // =========================
-    const url =
-      `https://router.project-osrm.org/route/v1/driving/` +
-      `${a.lon},${a.lat};${b.lon},${b.lat}` +
-      `?overview=full&geometries=geojson`;
+  if (
+    !data ||
+    !Array.isArray(data.routes) ||
+    data.routes.length === 0
+  ) {
+    console.error(
+      "VALHALLA INVALID RESPONSE:",
+      data
+    );
 
-    let data = null;
+    return null;
+  }
 
-    try {
-      data = await fetchJSON(url);
-    } catch (e) {
-      console.warn("OSRM FAIL");
-    }
+  const route =
+    data.routes[0];
 
-    const route = data?.routes?.[0];
+  const distance =
+    Number(route.distance);
 
-    // =========================
-    // ROUTE FALLBACK
-    // =========================
-    if (!route?.geometry?.coordinates?.length) {
+  const duration =
+    Number(route.duration);
 
-      return {
-        ok: true,
-        distance: 50,
-        duration: 60,
-        price: 2500,
-        route: {
-          coordinates: [
-            [a.lon, a.lat],
-            [b.lon, b.lat]
-          ]
-        }
-      };
-    }
+  const geometry =
+    route.geometry;
 
-    // =========================
-    // NORMAL RESULT
-    // =========================
-    const distanceKm = route.distance / 1000;
-    const durationMin = Math.round(route.duration / 60);
+  if (
+    !Number.isFinite(distance) ||
+    distance <= 0 ||
+    !Number.isFinite(duration) ||
+    duration <= 0 ||
+    !geometry ||
+    geometry.type !== "LineString" ||
+    !Array.isArray(
+      geometry.coordinates
+    ) ||
+    geometry.coordinates.length < 2
+  ) {
+    console.error(
+      "VALHALLA INVALID ROUTE:",
+      route
+    );
 
+    return null;
+  }
+
+  return {
+    distance,
+    duration,
+    geometry
+  };
+}
+
+// =========================
+// MAIN GEO CALCULATION
+// =========================
+export async function geoCalculate(body) {
+  const from =
+    cleanText(body?.from);
+
+  const to =
+    cleanText(body?.to);
+
+  if (
+    !isValidQuery(from) ||
+    !isValidQuery(to)
+  ) {
     return {
-      ok: true,
-      distance: Number(distanceKm.toFixed(1)),
-      duration: durationMin,
-      price: Math.max(3000, Math.round(distanceKm * 55)),
-      route: {
-        coordinates: route.geometry.coordinates
-      }
-    };
-
-  } catch (e) {
-
-    console.error("geoCalculate ERROR:", e);
-
-    return {
-      ok: true,
-      distance: 0,
-      duration: 0,
-      price: 0,
-      route: {
-        coordinates: [
-          [37.6173, 55.7558],
-          [37.6273, 55.7658]
-        ]
-      }
+      ok: false,
+      error: "invalid address"
     };
   }
+
+  // =========================
+  // GEOCODE START
+  // =========================
+  const fromPoint =
+    await geocode(from);
+
+  if (!fromPoint) {
+    return {
+      ok: false,
+      error:
+        "Не удалось определить адрес отправления"
+    };
+  }
+
+  // =========================
+  // GEOCODE DESTINATION
+  // =========================
+  const toPoint =
+    await geocode(to);
+
+  if (!toPoint) {
+    return {
+      ok: false,
+      error:
+        "Не удалось определить адрес назначения"
+    };
+  }
+
+  console.log(
+    "GEOCODE RESULT:",
+    {
+      from,
+      to,
+      fromPoint,
+      toPoint
+    }
+  );
+
+  // =========================
+  // REAL ROAD ROUTE
+  // =========================
+  const route =
+    await buildRoute(
+      fromPoint,
+      toPoint
+    );
+
+  if (!route) {
+    return {
+      ok: false,
+      error:
+        "Не удалось построить автомобильный маршрут"
+    };
+  }
+
+  const distanceKm =
+    route.distance / 1000;
+
+  const durationMinutes =
+    Math.round(
+      route.duration / 60
+    );
+
+  if (
+    !Number.isFinite(distanceKm) ||
+    distanceKm <= 0 ||
+    !Number.isFinite(durationMinutes) ||
+    durationMinutes <= 0
+  ) {
+    return {
+      ok: false,
+      error:
+        "Некорректные данные маршрута"
+    };
+  }
+
+  // =========================
+  // GEO RESULT ONLY
+  // =========================
+  return {
+    ok: true,
+
+    from: {
+      query: from,
+      lat: fromPoint.lat,
+      lon: fromPoint.lon,
+      displayName:
+        fromPoint.displayName
+    },
+
+    to: {
+      query: to,
+      lat: toPoint.lat,
+      lon: toPoint.lon,
+      displayName:
+        toPoint.displayName
+    },
+
+    distance:
+      Number(
+        distanceKm.toFixed(1)
+      ),
+
+    duration:
+      durationMinutes,
+
+    route: {
+      type: "LineString",
+
+      coordinates:
+        route.geometry.coordinates
+    }
+  };
 }

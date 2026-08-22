@@ -1,6 +1,7 @@
 import { json, cors, safeJson } from "./core/utils.js";
 import { signJWT } from "./core/auth.js";
 import { geoCalculate } from "./core/geo.js";
+import { calculatePrice, normalizeTariff } from "./core/pricing.js";
 import { calc } from "./core/calc.js";
 import { tgSend } from "./core/telegram.js";
 import {
@@ -43,34 +44,225 @@ export default async function router(req, env) {
     return env.SOCKET_HUB.get(id).fetch(req);
   }
 
-  // ================= CALC =================
-  if (path === "/calc") {
+  // ================= CALCULATE =================
+if (path === "/calculate") {
 
-    if (req.method !== "POST") {
-      return safeError("method not allowed", 405);
-    }
-
-    const body = await safeJson(req);
-    const expr = body?.expression;
-
-    if (!expr || typeof expr !== "string") {
-      return safeError("invalid expression", 400);
-    }
-
-    try {
-      const result = calc(expr);
-
-      if (result === null || Number.isNaN(result)) {
-        return safeError("bad expression", 400);
-      }
-
-      return json({ ok: true, result }, 200, cors);
-
-    } catch (e) {
-      console.error("CALC ERROR:", e);
-      return safeError("calc error", 500);
-    }
+  if (req.method !== "POST") {
+    return safeError(
+      "method not allowed",
+      405
+    );
   }
+
+  const body =
+    await safeJson(req);
+
+  if (
+    !body?.from ||
+    !body?.to
+  ) {
+    return safeError(
+      "missing from/to",
+      400
+    );
+  }
+
+  // =========================
+  // CLEAN ADDRESSES
+  // =========================
+
+  const from =
+    cleanText(body.from);
+
+  const to =
+    cleanText(body.to);
+
+  if (
+    from.length < 3 ||
+    to.length < 3
+  ) {
+    return safeError(
+      "address too short",
+      400
+    );
+  }
+
+  // =========================
+  // VALIDATE TARIFF
+  // =========================
+
+  const tariff =
+    normalizeTariff(
+      body.tariff
+    );
+
+  if (!tariff) {
+    return safeError(
+      "invalid tariff",
+      400
+    );
+  }
+
+  console.log(
+    "CALCULATE:",
+    {
+      from,
+      to,
+      tariff
+    }
+  );
+
+  try {
+
+    // =========================
+    // GEO
+    // =========================
+
+    const geoResult =
+      await geoCalculate({
+        from,
+        to
+      });
+
+    if (!geoResult) {
+      return safeError(
+        "geo failed",
+        500
+      );
+    }
+
+    if (!geoResult.ok) {
+      return json(
+        geoResult,
+        400,
+        cors
+      );
+    }
+
+    if (
+      !geoResult.route ||
+      !Array.isArray(
+        geoResult.route.coordinates
+      ) ||
+      geoResult.route.coordinates.length < 2
+    ) {
+      return safeError(
+        "empty route",
+        404
+      );
+    }
+
+    const distance =
+      Number(
+        geoResult.distance
+      );
+
+    const duration =
+      Number(
+        geoResult.duration
+      );
+
+    if (
+      !Number.isFinite(distance) ||
+      distance <= 0
+    ) {
+      return safeError(
+        "invalid route distance",
+        404
+      );
+    }
+
+    if (
+      !Number.isFinite(duration) ||
+      duration <= 0
+    ) {
+      return safeError(
+        "invalid route duration",
+        404
+      );
+    }
+
+    // =========================
+    // PRICE
+    // =========================
+
+    const pricing =
+      calculatePrice(
+        distance,
+        tariff
+      );
+
+    if (!pricing.ok) {
+      return safeError(
+        pricing.error ||
+        "price calculation failed",
+        400
+      );
+    }
+
+    console.log(
+      "PRICE RESULT:",
+      pricing
+    );
+
+    // =========================
+    // RESPONSE
+    // =========================
+
+    return json(
+      {
+        ok: true,
+
+        from:
+          geoResult.from,
+
+        to:
+          geoResult.to,
+
+        tariff:
+          pricing.tariff,
+
+        tariffName:
+          pricing.tariffName,
+
+        distance,
+
+        duration,
+
+        price:
+          pricing.price,
+
+        pricing: {
+          pricePerKm:
+            pricing.pricePerKm,
+
+          coefficient:
+            pricing.coefficient,
+
+          minimumPrice:
+            pricing.minimumPrice
+        },
+
+        route:
+          geoResult.route
+      },
+      200,
+      cors
+    );
+
+  } catch (error) {
+
+    console.error(
+      "ROUTE CALCULATE ERROR:",
+      error
+    );
+
+    return safeError(
+      "route calculation failed",
+      500
+    );
+  }
+}
 
   // ================= GEO (PRO STABLE FIX) =================
   if (path === "/calculate") {
