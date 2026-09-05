@@ -1,14 +1,15 @@
 name = "uber-v3"
 main = "src/index.js"
 compatibility_date = "2026-06-01"
-
-[[durable_objects.bindings]]
-name = "SOCKET_HUB"
-class_name = "SocketHub"
+workers_dev = true
 
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["SocketHub"]
+
+[[migrations]]
+tag = "v2"
+deleted_classes = ["SocketHub"]
 
 [[kv_namespaces]]
 binding = "DRIVERS"

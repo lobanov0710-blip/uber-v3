@@ -1,27 +1,49 @@
 import router from "./router.js";
 
-export { SocketHub } from "./ws/SocketHub.js";
 
 export default {
-  async fetch(req, env, ctx) {
+
+  async fetch(
+    req,
+    env
+  ) {
+
     try {
-      return await router(req, env, ctx);
-    } catch (e) {
-      console.error("FATAL WORKER ERROR:", e);
+
+      return await router(
+        req,
+        env
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "FATAL WORKER ERROR:",
+        error
+      );
 
       return new Response(
-        JSON.stringify({
-          ok: false,
-          error: "worker crash",
-        }),
+        JSON.stringify(
+          {
+            ok: false,
+            error:
+              "worker crash"
+          }
+        ),
         {
           status: 500,
+
           headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+            "Content-Type":
+              "application/json; charset=utf-8",
+
+            "Access-Control-Allow-Origin":
+              "*"
+          }
         }
       );
     }
-  },
+  }
 };

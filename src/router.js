@@ -5,7 +5,6 @@ import {
 } from "./core/utils.js";
 
 import {
-  signJWT,
   authenticateRequest,
   hasRole
 } from "./core/auth.js";
@@ -18,10 +17,6 @@ import {
   calculatePrice,
   normalizeTariff
 } from "./core/pricing.js";
-
-import {
-  tgSend
-} from "./core/telegram.js";
 
 import {
   createOrder,
@@ -37,6 +32,10 @@ import {
   listOrders
 } from "./core/db.js";
 
+import {
+  verifyProxyRequest
+} from "./core/proxyAuth.js";
+
 
 // =========================
 // ROUTER
@@ -48,7 +47,9 @@ export default async function router(
 ) {
 
   const url =
-    new URL(req.url);
+    new URL(
+      req.url
+    );
 
   const path =
     "/" +
@@ -59,7 +60,7 @@ export default async function router(
 
 
   // =========================
-  // CORS
+  // CORS PREFLIGHT
   // =========================
 
   if (
@@ -100,7 +101,9 @@ export default async function router(
   // CLEAN INPUT
   // =========================
 
-  function cleanText(value) {
+  function cleanText(
+    value
+  ) {
 
     return String(
       value || ""
@@ -127,40 +130,6 @@ export default async function router(
 
 
   // =========================
-  // SAFE DRIVER RESPONSE
-  // =========================
-
-  function publicDriver(
-    driver
-  ) {
-
-    if (!driver) {
-      return null;
-    }
-
-    return {
-      id:
-        driver.id,
-
-      name:
-        driver.name,
-
-      phone:
-        driver.phone,
-
-      car:
-        driver.car || "",
-
-      status:
-        driver.status || "",
-
-      createdAt:
-        driver.createdAt || null
-    };
-  }
-
-
-  // =========================
   // HEALTH
   // =========================
 
@@ -181,22 +150,37 @@ export default async function router(
 
 
   // =========================
-  // WEBSOCKET
+  // DISABLED LEGACY ENDPOINTS
+  // =========================
+  //
+  // Эти endpoints намеренно
+  // отключены до завершения
+  // отдельной защищённой
+  // реализации driver/admin API.
+  //
+  // Возвращаем 404, чтобы
+  // публично не подтверждать
+  // наличие этих API.
   // =========================
 
+  const disabledLegacyPaths =
+    new Set([
+      "/ws",
+      "/drivers/register",
+      "/drivers/login",
+      "/stats"
+    ]);
+
   if (
-    path === "/ws"
+    disabledLegacyPaths.has(
+      path
+    )
   ) {
 
-    const id =
-      env.SOCKET_HUB
-        .idFromName(
-          "global"
-        );
-
-    return env.SOCKET_HUB
-      .get(id)
-      .fetch(req);
+    return safeError(
+      "not found",
+      404
+    );
   }
 
 
@@ -208,6 +192,10 @@ export default async function router(
     path === "/calculate"
   ) {
 
+    // =========================
+    // METHOD
+    // =========================
+
     if (
       req.method !== "POST"
     ) {
@@ -217,9 +205,37 @@ export default async function router(
         405
       );
     }
+      const proxyAuth =
+    await verifyProxyRequest(
+      req,
+      env,
+      "/calculate"
+    );
+
+  if (
+    proxyAuth.ok !== true
+  ) {
+
+    return safeError(
+      proxyAuth.error,
+      proxyAuth.status
+    );
+  }
+
+
+    // =========================
+    // BODY
+    // =========================
 
     const body =
-      await safeJson(req);
+      await safeJson(
+        req
+      );
+
+
+    // =========================
+    // REQUIRED
+    // =========================
 
     if (
       !body?.from ||
@@ -231,6 +247,7 @@ export default async function router(
         400
       );
     }
+
 
     // =========================
     // ADDRESSES
@@ -257,6 +274,7 @@ export default async function router(
       );
     }
 
+
     // =========================
     // TARIFF
     // =========================
@@ -266,13 +284,26 @@ export default async function router(
         body.tariff
       );
 
-    if (!tariff) {
+    if (
+      !tariff
+    ) {
 
       return safeError(
         "invalid tariff",
         400
       );
     }
+
+
+    // =========================
+    // LOG
+    // =========================
+    //
+    // На следующем security
+    // этапе production logging
+    // будет дополнительно
+    // сокращён.
+    // =========================
 
     console.log(
       "CALCULATE:",
@@ -283,6 +314,7 @@ export default async function router(
       }
     );
 
+
     try {
 
       // =========================
@@ -290,21 +322,25 @@ export default async function router(
       // =========================
 
       const geoResult =
-  await geoCalculate(
-    {
-      from,
-      to
-    },
-    env
-  );
+        await geoCalculate(
+          {
+            from,
+            to
+          },
+          env
+        );
 
-      if (!geoResult) {
+
+      if (
+        !geoResult
+      ) {
 
         return safeError(
           "geo failed",
           500
         );
       }
+
 
       if (
         geoResult.ok !== true
@@ -316,6 +352,7 @@ export default async function router(
           cors
         );
       }
+
 
       // =========================
       // ROUTE
@@ -338,14 +375,14 @@ export default async function router(
         );
       }
 
+
+      // =========================
+      // DISTANCE
+      // =========================
+
       const distance =
         Number(
           geoResult.distance
-        );
-
-      const duration =
-        Number(
-          geoResult.duration
         );
 
       if (
@@ -361,6 +398,16 @@ export default async function router(
         );
       }
 
+
+      // =========================
+      // DURATION
+      // =========================
+
+      const duration =
+        Number(
+          geoResult.duration
+        );
+
       if (
         !Number.isFinite(
           duration
@@ -374,8 +421,9 @@ export default async function router(
         );
       }
 
+
       // =========================
-      // PRICE
+      // SERVER PRICING
       // =========================
 
       const pricing =
@@ -384,7 +432,9 @@ export default async function router(
           tariff
         );
 
-      if (!pricing.ok) {
+      if (
+        !pricing.ok
+      ) {
 
         return safeError(
           pricing.error ||
@@ -393,8 +443,9 @@ export default async function router(
         );
       }
 
+
       // =========================
-      // QUOTE
+      // SERVER QUOTE
       // =========================
 
       const quote =
@@ -431,10 +482,12 @@ export default async function router(
           }
         );
 
+
       const receipt =
         quoteReceipt(
           quote
         );
+
 
       // =========================
       // RESPONSE
@@ -488,7 +541,9 @@ export default async function router(
         cors
       );
 
-    } catch (error) {
+    } catch (
+      error
+    ) {
 
       console.error(
         "ROUTE CALCULATE ERROR:",
@@ -515,13 +570,42 @@ export default async function router(
     // POST /orders
     // PUBLIC
     // =========================
+    //
+    // Создание заявки.
+    //
+    // Если передан quoteId,
+    // доверенные price /
+    // distance / duration /
+    // tariff загружаются
+    // внутри createOrder()
+    // только из QUOTES KV.
+    // =========================
 
     if (
       req.method === "POST"
     ) {
 
+          const proxyAuth =
+      await verifyProxyRequest(
+        req,
+        env,
+        "/orders"
+      );
+
+    if (
+      proxyAuth.ok !== true
+    ) {
+
+      return safeError(
+        proxyAuth.error,
+        proxyAuth.status
+      );
+    }
+
       const body =
-        await safeJson(req);
+        await safeJson(
+          req
+        );
 
       try {
 
@@ -531,7 +615,10 @@ export default async function router(
             env
           );
 
-        if (!result.ok) {
+
+        if (
+          !result.ok
+        ) {
 
           return safeError(
             result.error ||
@@ -541,6 +628,7 @@ export default async function router(
               400
           );
         }
+
 
         return json(
           {
@@ -555,7 +643,9 @@ export default async function router(
           cors
         );
 
-      } catch (error) {
+      } catch (
+        error
+      ) {
 
         console.error(
           "ORDER CREATE ERROR:",
@@ -580,7 +670,7 @@ export default async function router(
     ) {
 
       // =========================
-      // AUTH
+      // JWT AUTH
       // =========================
 
       const auth =
@@ -589,7 +679,10 @@ export default async function router(
           env
         );
 
-      if (!auth.ok) {
+
+      if (
+        !auth.ok
+      ) {
 
         return safeError(
           auth.error,
@@ -597,8 +690,14 @@ export default async function router(
         );
       }
 
+
       const user =
         auth.user;
+
+
+      // =========================
+      // ROLE
+      // =========================
 
       const isAdmin =
         hasRole(
@@ -611,6 +710,7 @@ export default async function router(
           user,
           "driver"
         );
+
 
       if (
         !isAdmin &&
@@ -627,10 +727,22 @@ export default async function router(
       // =========================
       // DRIVER ACCOUNT CHECK
       // =========================
+      //
+      // Старые login/register
+      // endpoints отключены,
+      // однако эта проверка
+      // остаётся для существующих
+      // валидных JWT и будущей
+      // безопасной driver auth.
+      // =========================
 
-      if (isDriver) {
+      if (
+        isDriver
+      ) {
 
-        if (!user.id) {
+        if (
+          !user.id
+        ) {
 
           return safeError(
             "invalid driver account",
@@ -638,7 +750,10 @@ export default async function router(
           );
         }
 
-        let driver = null;
+
+        let driver =
+          null;
+
 
         try {
 
@@ -649,13 +764,20 @@ export default async function router(
               )
             );
 
-          if (raw) {
+
+          if (
+            raw
+          ) {
 
             driver =
-              JSON.parse(raw);
+              JSON.parse(
+                raw
+              );
           }
 
-        } catch (error) {
+        } catch (
+          error
+        ) {
 
           console.error(
             "DRIVER AUTH READ ERROR:",
@@ -668,7 +790,10 @@ export default async function router(
           );
         }
 
-        if (!driver) {
+
+        if (
+          !driver
+        ) {
 
           return safeError(
             "driver not found",
@@ -676,12 +801,15 @@ export default async function router(
           );
         }
 
+
         const driverStatus =
           String(
-            driver.status || ""
+            driver.status ||
+              ""
           )
             .trim()
             .toLowerCase();
+
 
         if (
           driverStatus !==
@@ -699,7 +827,7 @@ export default async function router(
 
 
       // =========================
-      // FILTER: STATUS
+      // STATUS FILTER
       // =========================
 
       const allowedStatuses =
@@ -711,6 +839,7 @@ export default async function router(
           "canceled"
         ]);
 
+
       const requestedStatus =
         String(
           url.searchParams.get(
@@ -719,6 +848,7 @@ export default async function router(
         )
           .trim()
           .toLowerCase();
+
 
       if (
         requestedStatus &&
@@ -745,14 +875,17 @@ export default async function router(
           ) || 100
         );
 
+
       if (
         !Number.isInteger(
           limit
         )
       ) {
 
-        limit = 100;
+        limit =
+          100;
       }
+
 
       limit =
         Math.max(
@@ -765,10 +898,11 @@ export default async function router(
 
 
       // =========================
-      // LOAD
+      // LOAD ORDERS
       // =========================
 
       let orders;
+
 
       try {
 
@@ -778,7 +912,9 @@ export default async function router(
             1000
           );
 
-      } catch (error) {
+      } catch (
+        error
+      ) {
 
         console.error(
           "ORDER LIST ERROR:",
@@ -810,16 +946,18 @@ export default async function router(
       //
       // Driver видит:
       //
-      // new
+      // 1. новые заказы;
       //
-      // И заказы,
-      // назначенные ему.
+      // 2. заказы,
+      //    назначенные ему.
       //
       // Заказы другого
       // водителя скрыты.
       // =========================
 
-      if (isDriver) {
+      if (
+        isDriver
+      ) {
 
         visibleOrders =
           visibleOrders.filter(
@@ -829,8 +967,10 @@ export default async function router(
                 order.status ===
                 "new"
               ) {
+
                 return true;
               }
+
 
               return (
                 String(
@@ -847,7 +987,7 @@ export default async function router(
 
 
       // =========================
-      // STATUS FILTER
+      // APPLY STATUS FILTER
       // =========================
 
       if (
@@ -869,25 +1009,31 @@ export default async function router(
       // =========================
 
       visibleOrders.sort(
-        (a, b) => {
+        (
+          a,
+          b
+        ) => {
 
           return (
             Number(
-              b.createdAt || 0
+              b.createdAt ||
+                0
             ) -
             Number(
-              a.createdAt || 0
+              a.createdAt ||
+                0
             )
           );
         }
       );
+
 
       const total =
         visibleOrders.length;
 
 
       // =========================
-      // LIMIT
+      // APPLY LIMIT
       // =========================
 
       visibleOrders =
@@ -952,10 +1098,17 @@ export default async function router(
             // CUSTOMER PII
             // =========================
             //
-            // Admin видит всегда.
+            // Admin:
+            //   видит всегда.
             //
-            // Driver только после
-            // назначения заказа ему.
+            // Driver:
+            //   только если заказ
+            //   назначен именно ему.
+            //
+            // Новый неназначенный заказ
+            // показывается водителю
+            // без имени, телефона
+            // и комментария.
             // =========================
 
             const canSeeCustomer =
@@ -971,6 +1124,7 @@ export default async function router(
                 )
               );
 
+
             if (
               canSeeCustomer
             ) {
@@ -984,6 +1138,7 @@ export default async function router(
               item.comment =
                 order.comment;
             }
+
 
             return item;
           }
@@ -1018,410 +1173,13 @@ export default async function router(
     }
 
 
+    // =========================
+    // UNSUPPORTED /orders METHOD
+    // =========================
+
     return safeError(
       "method not allowed",
       405
-    );
-  }
-
-
-  // =========================
-  // DRIVER REGISTER
-  // =========================
-
-  if (
-    path ===
-    "/drivers/register"
-  ) {
-
-    if (
-      req.method !== "POST"
-    ) {
-
-      return safeError(
-        "method not allowed",
-        405
-      );
-    }
-
-    const body =
-      await safeJson(req);
-
-    const name =
-      String(
-        body?.name || ""
-      ).trim();
-
-    const phone =
-      String(
-        body?.phone || ""
-      ).trim();
-
-    const password =
-      String(
-        body?.password || ""
-      );
-
-    if (
-      !name ||
-      !phone
-    ) {
-
-      return safeError(
-        "invalid data",
-        400
-      );
-    }
-
-    const driver = {
-
-      id:
-        crypto.randomUUID(),
-
-      name,
-
-      phone,
-
-      // Временно сохраняется
-      // существующий механизм.
-      // Хэширование пароля
-      // сделаем отдельным этапом.
-      password,
-
-      car:
-        String(
-          body?.car || ""
-        ).trim(),
-
-      status:
-        "pending",
-
-      createdAt:
-        Date.now(),
-
-      updatedAt:
-        Date.now()
-    };
-
-    await env.DRIVERS.put(
-      driver.id,
-      JSON.stringify(
-        driver
-      )
-    );
-
-    try {
-
-      await tgSend(
-        env,
-        `🚗 Новый водитель: ${driver.name}`
-      );
-
-    } catch (error) {
-
-      console.error(
-        "DRIVER TELEGRAM ERROR:",
-        error
-      );
-    }
-
-    // Никогда не возвращаем
-    // password клиенту.
-    return json(
-      {
-        ok: true,
-
-        driver:
-          publicDriver(driver)
-      },
-      201,
-      cors
-    );
-  }
-
-
-  // =========================
-  // DRIVER LOGIN
-  // =========================
-
-  if (
-    path ===
-    "/drivers/login"
-  ) {
-
-    if (
-      req.method !== "POST"
-    ) {
-
-      return safeError(
-        "method not allowed",
-        405
-      );
-    }
-
-    const body =
-      await safeJson(req);
-
-    const phone =
-      String(
-        body?.phone || ""
-      ).trim();
-
-    const password =
-      String(
-        body?.password || ""
-      );
-
-    if (
-      !phone ||
-      !password
-    ) {
-
-      return safeError(
-        "invalid credentials",
-        401
-      );
-    }
-
-
-    // =========================
-    // LOAD DRIVERS
-    // =========================
-
-    const list =
-      await env.DRIVERS.list();
-
-    const drivers =
-      await Promise.all(
-        list.keys.map(
-          async key => {
-
-            try {
-
-              const value =
-                await env.DRIVERS.get(
-                  key.name
-                );
-
-              return value
-                ? JSON.parse(value)
-                : null;
-
-            } catch (error) {
-
-              console.error(
-                "DRIVER READ ERROR:",
-                key.name,
-                error
-              );
-
-              return null;
-            }
-          }
-        )
-      );
-
-
-    // =========================
-    // CREDENTIALS
-    // =========================
-
-    const driver =
-      drivers.find(
-        item =>
-          item &&
-          item.phone === phone &&
-          item.password ===
-            password
-      );
-
-    if (!driver) {
-
-      return safeError(
-        "invalid credentials",
-        401
-      );
-    }
-
-
-    // =========================
-    // APPROVAL
-    // =========================
-
-    const driverStatus =
-      String(
-        driver.status || ""
-      )
-        .trim()
-        .toLowerCase();
-
-    if (
-      driverStatus !==
-        "approved" &&
-      driverStatus !==
-        "active"
-    ) {
-
-      return safeError(
-        "driver not approved",
-        403
-      );
-    }
-
-
-    // =========================
-    // JWT
-    // =========================
-
-    let token;
-
-    try {
-
-      token =
-        await signJWT(
-          env.JWT_SECRET,
-          {
-            id:
-              driver.id,
-
-            role:
-              "driver"
-          }
-        );
-
-    } catch (error) {
-
-      console.error(
-        "JWT SIGN ERROR:",
-        error
-      );
-
-      return safeError(
-        "authorization failed",
-        500
-      );
-    }
-
-
-    // =========================
-    // RESPONSE
-    // =========================
-
-    return json(
-      {
-        ok: true,
-
-        token,
-
-        driver:
-          publicDriver(
-            driver
-          )
-      },
-      200,
-      cors
-    );
-  }
-
-
-  // =========================
-  // STATS
-  // =========================
-  //
-  // Пока статистика не содержит
-  // PII, поэтому оставляем
-  // существующее поведение.
-  //
-  // Админ-защиту подключим
-  // вместе с admin API.
-  // =========================
-
-  if (
-    path === "/stats"
-  ) {
-
-    if (
-      req.method !== "GET"
-    ) {
-
-      return safeError(
-        "method not allowed",
-        405
-      );
-    }
-
-    let orders;
-
-    try {
-
-      orders =
-        await listOrders(
-          env,
-          1000
-        );
-
-    } catch (error) {
-
-      console.error(
-        "STATS ERROR:",
-        error
-      );
-
-      return safeError(
-        "stats failed",
-        500
-      );
-    }
-
-    const clean =
-      orders.filter(
-        Boolean
-      );
-
-    return json(
-      {
-        ok: true,
-
-        total:
-          clean.length,
-
-        new:
-          clean.filter(
-            order =>
-              order.status ===
-              "new"
-          ).length,
-
-        taken:
-          clean.filter(
-            order =>
-              order.status ===
-              "taken"
-          ).length,
-
-        inProgress:
-          clean.filter(
-            order =>
-              order.status ===
-              "in_progress"
-          ).length,
-
-        done:
-          clean.filter(
-            order =>
-              order.status ===
-              "done"
-          ).length,
-
-        canceled:
-          clean.filter(
-            order =>
-              order.status ===
-              "canceled"
-          ).length
-      },
-      200,
-      cors
     );
   }
 
@@ -1433,7 +1191,8 @@ export default async function router(
   return json(
     {
       ok: false,
-      error: "not found",
+      error:
+        "not found",
       path
     },
     404,
