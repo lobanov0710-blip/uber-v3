@@ -7,9 +7,18 @@ import {
 } from "./telegram.js";
 
 import {
-  getQuote,
+  insertManualOrder,
+  insertQuotedOrder,
+  getOrderByQuoteId
+} from "./orderRepository.js";
+
+import {
   deleteQuote
 } from "./quotes.js";
+
+import {
+  getActiveQuoteById
+} from "./quoteRepository.js";
 
 
 // =========================
@@ -17,20 +26,11 @@ import {
 // =========================
 
 export const ORDER_STATUS = {
-  NEW:
-    "new",
-
-  TAKEN:
-    "taken",
-
-  IN_PROGRESS:
-    "in_progress",
-
-  DONE:
-    "done",
-
-  CANCELED:
-    "canceled"
+  NEW: "new",
+  TAKEN: "taken",
+  IN_PROGRESS: "in_progress",
+  DONE: "done",
+  CANCELED: "canceled"
 };
 
 
@@ -42,10 +42,7 @@ function cleanText(
   value,
   maxLength = 500
 ) {
-
-  return String(
-    value ?? ""
-  )
+  return String(value ?? "")
     .replace(
       /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,
       ""
@@ -69,10 +66,7 @@ function cleanText(
 function cleanComment(
   value
 ) {
-
-  return String(
-    value ?? ""
-  )
+  return String(value ?? "")
     .replace(
       /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,
       ""
@@ -92,12 +86,8 @@ function cleanComment(
 function normalizePhone(
   value
 ) {
-
   const source =
-    String(
-      value ?? ""
-    )
-      .trim();
+    String(value ?? "").trim();
 
   const digits =
     source.replace(
@@ -109,7 +99,6 @@ function normalizePhone(
     digits.length < 10 ||
     digits.length > 15
   ) {
-
     return null;
   }
 
@@ -127,7 +116,6 @@ function normalizePhone(
 function normalizeDate(
   value
 ) {
-
   const source =
     cleanText(
       value,
@@ -138,13 +126,11 @@ function normalizeDate(
     return null;
   }
 
-  // HTML input[type=date]
   if (
     !/^\d{4}-\d{2}-\d{2}$/.test(
       source
     )
   ) {
-
     return null;
   }
 
@@ -159,7 +145,6 @@ function normalizeDate(
 function normalizeQuoteId(
   value
 ) {
-
   const quoteId =
     cleanText(
       value,
@@ -170,14 +155,12 @@ function normalizeQuoteId(
     return null;
   }
 
-  // crypto.randomUUID()
   if (
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       .test(
         quoteId
       )
   ) {
-
     return null;
   }
 
@@ -192,7 +175,6 @@ function normalizeQuoteId(
 function parseRoute(
   route
 ) {
-
   const text =
     cleanText(
       route,
@@ -200,13 +182,9 @@ function parseRoute(
     );
 
   if (!text) {
-
     return {
-      from:
-        "",
-
-      to:
-        ""
+      from: "",
+      to: ""
     };
   }
 
@@ -216,23 +194,16 @@ function parseRoute(
         /\s*(?:→|->)\s*/
       )
       .map(
-        item =>
-          item.trim()
+        item => item.trim()
       )
-      .filter(
-        Boolean
-      );
+      .filter(Boolean);
 
   if (
     parts.length < 2
   ) {
-
     return {
-      from:
-        "",
-
-      to:
-        ""
+      from: "",
+      to: ""
     };
   }
 
@@ -243,9 +214,7 @@ function parseRoute(
     to:
       parts
         .slice(1)
-        .join(
-          " → "
-        )
+        .join(" → ")
   };
 }
 
@@ -257,23 +226,15 @@ function parseRoute(
 function tariffLabel(
   value
 ) {
-
   const tariff =
-    String(
-      value || ""
-    )
+    String(value || "")
       .trim()
       .toLowerCase();
 
   const labels = {
-    comfort:
-      "Комфорт",
-
-    business:
-      "Бизнес",
-
-    minivan:
-      "Минивэн"
+    comfort: "Комфорт",
+    business: "Бизнес",
+    minivan: "Минивэн"
   };
 
   return (
@@ -287,81 +248,54 @@ function tariffLabel(
 function formatPrice(
   value
 ) {
-
   const number =
-    Number(
-      value
-    );
+    Number(value);
 
   if (
-    !Number.isFinite(
-      number
-    )
+    !Number.isFinite(number)
   ) {
-
     return "";
   }
 
-  return new Intl
-    .NumberFormat(
-      "ru-RU",
-      {
-        maximumFractionDigits:
-          0
-      }
-    )
-    .format(
-      number
-    );
+  return new Intl.NumberFormat(
+    "ru-RU",
+    {
+      maximumFractionDigits: 0
+    }
+  ).format(number);
 }
 
 
 function formatDistance(
   value
 ) {
-
   const number =
-    Number(
-      value
-    );
+    Number(value);
 
   if (
-    !Number.isFinite(
-      number
-    )
+    !Number.isFinite(number)
   ) {
-
     return "";
   }
 
-  return new Intl
-    .NumberFormat(
-      "ru-RU",
-      {
-        minimumFractionDigits:
-          1,
-
-        maximumFractionDigits:
-          1
-      }
-    )
-    .format(
-      number
-    );
+  return new Intl.NumberFormat(
+    "ru-RU",
+    {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    }
+  ).format(number);
 }
 
 
 function formatDuration(
   value
 ) {
-
   const totalMinutes =
     Math.max(
       0,
       Math.round(
-        Number(
-          value
-        ) || 0
+        Number(value) || 0
       )
     );
 
@@ -377,7 +311,6 @@ function formatDuration(
     hours > 0 &&
     minutes > 0
   ) {
-
     return (
       `${hours} ч ` +
       `${minutes} мин`
@@ -387,7 +320,6 @@ function formatDuration(
   if (
     hours > 0
   ) {
-
     return `${hours} ч`;
   }
 
@@ -398,12 +330,8 @@ function formatDuration(
 function formatDate(
   value
 ) {
-
   const source =
-    String(
-      value || ""
-    )
-      .trim();
+    String(value || "").trim();
 
   const match =
     source.match(
@@ -421,9 +349,7 @@ function formatDate(
     day
   ] = match;
 
-  return (
-    `${day}.${month}.${year}`
-  );
+  return `${day}.${month}.${year}`;
 }
 
 
@@ -434,7 +360,6 @@ function formatDate(
 function buildTelegramMessage(
   order
 ) {
-
   const lines = [
     "🚖 Новая заявка",
     "",
@@ -449,37 +374,30 @@ function buildTelegramMessage(
   if (
     order.quoteId
   ) {
-
     lines.push(
       `🚘 Тариф: ${tariffLabel(order.tariff)}`
     );
   }
 
   if (
-    order.distance !==
-      null
+    order.distance !== null
   ) {
-
     lines.push(
       `🛣 Расстояние: ${formatDistance(order.distance)} км`
     );
   }
 
   if (
-    order.duration !==
-      null
+    order.duration !== null
   ) {
-
     lines.push(
       `⏱ Время в пути: ${formatDuration(order.duration)}`
     );
   }
 
   if (
-    order.price !==
-      null
+    order.price !== null
   ) {
-
     lines.push(
       `💰 Стоимость: ${formatPrice(order.price)} ₽`
     );
@@ -488,16 +406,13 @@ function buildTelegramMessage(
   if (
     order.comment
   ) {
-
     lines.push(
       "",
       `💬 Комментарий: ${order.comment}`
     );
   }
 
-  return lines.join(
-    "\n"
-  );
+  return lines.join("\n");
 }
 
 
@@ -509,14 +424,13 @@ function buildTelegramMessage(
 // без предварительного расчёта,
 // заявку всё равно принимаем.
 //
-// Но price / tariff / distance / duration
+// price / tariff / distance / duration
 // из браузера НЕ используем.
 // =========================
 
 function buildManualRouteData(
   input
 ) {
-
   const route =
     cleanText(
       input.route,
@@ -524,47 +438,25 @@ function buildManualRouteData(
     );
 
   if (!route) {
-
     return {
-      ok:
-        false,
-
-      error:
-        "missing route"
+      ok: false,
+      error: "missing route"
     };
   }
 
   const parsed =
-    parseRoute(
-      route
-    );
+    parseRoute(route);
 
   return {
-    ok:
-      true,
-
-    quoteId:
-      null,
-
+    ok: true,
+    quoteId: null,
     route,
-
-    from:
-      parsed.from,
-
-    to:
-      parsed.to,
-
-    tariff:
-      null,
-
-    distance:
-      null,
-
-    duration:
-      null,
-
-    price:
-      null
+    from: parsed.from,
+    to: parsed.to,
+    tariff: null,
+    distance: null,
+    duration: null,
+    price: null
   };
 }
 
@@ -572,67 +464,41 @@ function buildManualRouteData(
 // =========================
 // QUOTED ORDER DATA
 // =========================
+//
+// D1 quotes = source of truth.
+// Browser pricing/route fields are ignored.
+// =========================
 
 async function buildQuotedRouteData(
   input,
   env
 ) {
-
   const quoteId =
     normalizeQuoteId(
       input.quoteId
     );
 
   if (!quoteId) {
-
     return {
-      ok:
-        false,
-
-      status:
-        400,
-
-      error:
-        "invalid quoteId"
+      ok: false,
+      status: 400,
+      error: "invalid quoteId"
     };
   }
 
   const quote =
-    await getQuote(
+    await getActiveQuoteById(
       env,
       quoteId
     );
 
   if (!quote) {
-
     return {
-      ok:
-        false,
-
-      status:
-        409,
-
-      error:
-        "quote expired or not found"
+      ok: false,
+      status: 409,
+      error: "quote expired or not found"
     };
   }
-
-  // =========================
-  // TRUSTED SERVER DATA
-  // =========================
-  //
-  // Здесь принципиально НЕ читаем:
-  //
-  // input.price
-  // input.distance
-  // input.duration
-  // input.tariff
-  // input.from
-  // input.to
-  //
-  // Все эти данные берём только
-  // из QUOTES KV.
-  // =========================
 
   const from =
     cleanText(
@@ -654,34 +520,22 @@ async function buildQuotedRouteData(
       .toLowerCase();
 
   const distance =
-    Number(
-      quote.distance
-    );
+    Number(quote.distance);
 
   const duration =
-    Number(
-      quote.duration
-    );
+    Number(quote.duration);
 
   const price =
-    Number(
-      quote.price
-    );
+    Number(quote.price);
 
   if (
     !from ||
     !to
   ) {
-
     return {
-      ok:
-        false,
-
-      status:
-        500,
-
-      error:
-        "invalid quote route"
+      ok: false,
+      status: 500,
+      error: "invalid quote route"
     };
   }
 
@@ -690,101 +544,173 @@ async function buildQuotedRouteData(
       "comfort",
       "business",
       "minivan"
-    ].includes(
-      tariff
-    )
+    ].includes(tariff)
   ) {
-
     return {
-      ok:
-        false,
-
-      status:
-        500,
-
-      error:
-        "invalid quote tariff"
+      ok: false,
+      status: 500,
+      error: "invalid quote tariff"
     };
   }
 
   if (
-    !Number.isFinite(
-      distance
-    ) ||
+    !Number.isFinite(distance) ||
     distance <= 0
   ) {
-
     return {
-      ok:
-        false,
-
-      status:
-        500,
-
-      error:
-        "invalid quote distance"
+      ok: false,
+      status: 500,
+      error: "invalid quote distance"
     };
   }
 
   if (
-    !Number.isFinite(
-      duration
-    ) ||
+    !Number.isFinite(duration) ||
     duration <= 0
   ) {
-
     return {
-      ok:
-        false,
-
-      status:
-        500,
-
-      error:
-        "invalid quote duration"
+      ok: false,
+      status: 500,
+      error: "invalid quote duration"
     };
   }
 
   if (
-    !Number.isFinite(
-      price
-    ) ||
+    !Number.isFinite(price) ||
     price <= 0
   ) {
-
     return {
-      ok:
-        false,
-
-      status:
-        500,
-
-      error:
-        "invalid quote price"
+      ok: false,
+      status: 500,
+      error: "invalid quote price"
     };
   }
 
   return {
-    ok:
-      true,
-
+    ok: true,
     quoteId,
-
-    route:
-      `${from} → ${to}`,
-
+    route: `${from} → ${to}`,
     from,
-
     to,
-
     tariff,
-
     distance,
-
     duration,
-
     price
   };
+}
+
+
+// =========================
+// IDEMPOTENT SUBMISSION CHECK
+// =========================
+//
+// Один и тот же quoteId можно безопасно
+// повторить только с теми же данными клиента.
+// =========================
+
+function isSameSubmission(
+  order,
+  customer
+) {
+  if (!order) {
+    return false;
+  }
+
+  const existingPhoneDigits =
+    String(order.phone ?? "")
+      .replace(/\D/g, "");
+
+  const requestPhoneDigits =
+    String(customer.phone ?? "")
+      .replace(/\D/g, "");
+
+  return (
+    cleanText(
+      order.name,
+      100
+    ) === customer.name &&
+
+    existingPhoneDigits ===
+      requestPhoneDigits &&
+
+    String(order.date ?? "") ===
+      customer.date &&
+
+    cleanComment(
+      order.comment
+    ) === customer.comment
+  );
+}
+
+
+// =========================
+// KV ORDER MIRROR
+// =========================
+//
+// D1 = source of truth.
+// ORDERS KV временно поддерживаем,
+// потому что GET /orders пока читает KV.
+// =========================
+
+async function mirrorOrderToKv(
+  env,
+  order
+) {
+  try {
+    await saveOrder(
+      env,
+      order
+    );
+  } catch (error) {
+    console.error(
+      "ORDER KV MIRROR ERROR:",
+      {
+        orderId:
+          order?.id || null,
+
+        message:
+          error?.message ||
+          "unknown"
+      }
+    );
+  }
+}
+
+
+// =========================
+// KV QUOTE CLEANUP
+// =========================
+//
+// QUOTES KV больше не source of truth.
+// После успешной D1-транзакции удаляем
+// legacy KV-копию quote.
+// =========================
+
+async function cleanupQuoteKv(
+  env,
+  quoteId
+) {
+  if (!quoteId) {
+    return;
+  }
+
+  try {
+    await deleteQuote(
+      env,
+      quoteId
+    );
+  } catch (error) {
+    console.error(
+      "QUOTE KV CLEANUP ERROR:",
+      {
+        quoteId,
+
+        message:
+          error?.message ||
+          "unknown"
+      }
+    );
+  }
 }
 
 
@@ -796,24 +722,17 @@ export async function createOrder(
   input,
   env
 ) {
-
   if (
     !input ||
-    typeof input !==
-      "object"
+    typeof input !== "object"
   ) {
-
     return {
-      ok:
-        false,
-
-      status:
-        400,
-
-      error:
-        "invalid order data"
+      ok: false,
+      status: 400,
+      error: "invalid order data"
     };
   }
+
 
   // =========================
   // CUSTOMER DATA
@@ -840,90 +759,142 @@ export async function createOrder(
       input.comment
     );
 
+
   // =========================
   // REQUIRED CUSTOMER FIELDS
   // =========================
 
   if (!name) {
-
     return {
-      ok:
-        false,
-
-      status:
-        400,
-
-      error:
-        "missing name"
+      ok: false,
+      status: 400,
+      error: "missing name"
     };
   }
 
   if (!phone) {
-
     return {
-      ok:
-        false,
-
-      status:
-        400,
-
-      error:
-        "invalid phone"
+      ok: false,
+      status: 400,
+      error: "invalid phone"
     };
   }
 
   if (!date) {
-
     return {
-      ok:
-        false,
-
-      status:
-        400,
-
-      error:
-        "invalid date"
+      ok: false,
+      status: 400,
+      error: "invalid date"
     };
   }
+
+  const customerData = {
+    name,
+    phone,
+    date,
+    comment
+  };
+
+
+  // =========================
+  // QUOTE ID
+  // =========================
+
+  let normalizedQuoteId =
+    null;
+
+  if (input.quoteId) {
+    normalizedQuoteId =
+      normalizeQuoteId(
+        input.quoteId
+      );
+
+    if (!normalizedQuoteId) {
+      return {
+        ok: false,
+        status: 400,
+        error: "invalid quoteId"
+      };
+    }
+  }
+
+
+  // =========================
+  // IDEMPOTENT RETRY
+  // =========================
+  //
+  // existing order проверяем ДО active quote.
+  //
+  // После первого успешного заказа quote
+  // уже consumed в D1.
+  // =========================
+
+  if (normalizedQuoteId) {
+    const existingOrder =
+      await getOrderByQuoteId(
+        env,
+        normalizedQuoteId
+      );
+
+    if (existingOrder) {
+      if (
+        !isSameSubmission(
+          existingOrder,
+          customerData
+        )
+      ) {
+        return {
+          ok: false,
+          status: 409,
+          error: "quote already used"
+        };
+      }
+
+      await mirrorOrderToKv(
+        env,
+        existingOrder
+      );
+
+      await cleanupQuoteKv(
+        env,
+        normalizedQuoteId
+      );
+
+      return {
+        ok: true,
+        idempotent: true,
+        order: existingOrder
+      };
+    }
+  }
+
 
   // =========================
   // ROUTE SOURCE
   // =========================
-  //
-  // quoteId есть:
-  //   доверяем только QUOTES.
-  //
-  // quoteId нет:
-  //   обычная ручная заявка.
-  // =========================
 
   let routeData;
 
-  if (
-    input.quoteId
-  ) {
-
+  if (normalizedQuoteId) {
     routeData =
       await buildQuotedRouteData(
-        input,
+        {
+          ...input,
+          quoteId:
+            normalizedQuoteId
+        },
         env
       );
-
   } else {
-
     routeData =
       buildManualRouteData(
         input
       );
   }
 
-  if (
-    !routeData.ok
-  ) {
-
+  if (!routeData.ok) {
     return {
-      ok:
-        false,
+      ok: false,
 
       status:
         routeData.status ||
@@ -935,15 +906,15 @@ export async function createOrder(
     };
   }
 
+
   // =========================
-  // ORDER ENTITY
+  // ORDER CANDIDATE
   // =========================
 
   const now =
     Date.now();
 
-  const order = {
-
+  const candidateOrder = {
     id:
       crypto.randomUUID(),
 
@@ -951,7 +922,6 @@ export async function createOrder(
       routeData.quoteId,
 
     name,
-
     phone,
 
     route:
@@ -964,7 +934,6 @@ export async function createOrder(
       routeData.to,
 
     date,
-
     comment,
 
     tariff:
@@ -992,75 +961,145 @@ export async function createOrder(
       now
   };
 
+
   // =========================
-  // PERSISTENCE
+  // D1 PERSISTENCE
   // =========================
 
-  await saveOrder(
+  let persistenceResult;
+
+  if (routeData.quoteId) {
+    persistenceResult =
+      await insertQuotedOrder(
+        env,
+        candidateOrder
+      );
+  } else {
+    persistenceResult =
+      await insertManualOrder(
+        env,
+        candidateOrder
+      );
+  }
+
+
+  // =========================
+  // PERSISTENCE FAILURE
+  // =========================
+
+  if (
+    !persistenceResult?.ok
+  ) {
+    if (
+      persistenceResult?.reason ===
+      "quote_not_available"
+    ) {
+      return {
+        ok: false,
+        status: 409,
+        error:
+          "quote expired or already used"
+      };
+    }
+
+    throw new Error(
+      "Order persistence failed"
+    );
+  }
+
+  const order =
+    persistenceResult.order;
+
+  if (!order?.id) {
+    throw new Error(
+      "Persisted order is invalid"
+    );
+  }
+
+
+  // =========================
+  // CONCURRENT QUOTE USE
+  // =========================
+  //
+  // insertQuotedOrder() может вернуть
+  // существующий заказ, если другой запрос
+  // выиграл race.
+  // =========================
+
+  if (
+    routeData.quoteId &&
+    persistenceResult.created === false
+  ) {
+    if (
+      !isSameSubmission(
+        order,
+        customerData
+      )
+    ) {
+      return {
+        ok: false,
+        status: 409,
+        error: "quote already used"
+      };
+    }
+  }
+
+
+  // =========================
+  // KV MIRROR
+  // =========================
+
+  await mirrorOrderToKv(
     env,
     order
   );
 
+
   // =========================
-  // CONSUME QUOTE
-  // =========================
-  //
-  // Удаляем только после того,
-  // как заказ успешно сохранён.
+  // LEGACY KV QUOTE CLEANUP
   // =========================
 
-  if (
-    routeData.quoteId
-  ) {
+  await cleanupQuoteKv(
+    env,
+    order.quoteId
+  );
 
-    try {
-
-      await deleteQuote(
-        env,
-        routeData.quoteId
-      );
-
-    } catch (
-      error
-    ) {
-
-      console.error(
-        "QUOTE DELETE ERROR:",
-        error
-      );
-    }
-  }
 
   // =========================
   // TELEGRAM
   // =========================
   //
-  // Ошибка Telegram не уничтожает
-  // уже созданный заказ.
+  // Только реально новый D1-order
+  // отправляет уведомление.
+  //
+  // Повторный/idempotent POST Telegram
+  // второй раз не отправляет.
   // =========================
 
-  try {
-
-    await tgSend(
-      env,
-      buildTelegramMessage(
-        order
-      )
-    );
-
-  } catch (
-    error
+  if (
+    persistenceResult.created === true
   ) {
-
-    console.error(
-      "ORDER TELEGRAM ERROR:",
-      error
-    );
+    try {
+      await tgSend(
+        env,
+        buildTelegramMessage(
+          order
+        )
+      );
+    } catch (error) {
+      console.error(
+        "ORDER TELEGRAM ERROR:",
+        error
+      );
+    }
   }
 
   return {
-    ok:
-      true,
+    ok: true,
+
+    idempotent:
+      persistenceResult
+        .idempotent === true,
 
     order
   };
@@ -1074,7 +1113,6 @@ export async function createOrder(
 export function orderReceipt(
   order
 ) {
-
   return {
     id:
       order.id,

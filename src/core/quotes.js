@@ -1,3 +1,9 @@
+import {
+  insertQuote,
+  getActiveQuoteById
+} from "./quoteRepository.js";
+
+
 // =========================
 // QUOTES
 // =========================
@@ -22,13 +28,19 @@ export const QUOTE_TTL_SECONDS =
 const QUOTE_PREFIX =
   "quote:";
 
+
 // =========================
 // KV
 // =========================
 
-function requireQuotesNamespace(env) {
+function requireQuotesNamespace(
+  env
+) {
 
-  if (!env?.QUOTES) {
+  if (
+    !env?.QUOTES
+  ) {
+
     throw new Error(
       "QUOTES KV binding is not configured"
     );
@@ -36,6 +48,7 @@ function requireQuotesNamespace(env) {
 
   return env.QUOTES;
 }
+
 
 // =========================
 // TEXT
@@ -64,6 +77,7 @@ function cleanText(
     );
 }
 
+
 // =========================
 // NUMBER
 // =========================
@@ -73,17 +87,23 @@ function positiveNumber(
 ) {
 
   const number =
-    Number(value);
+    Number(
+      value
+    );
 
   if (
-    !Number.isFinite(number) ||
+    !Number.isFinite(
+      number
+    ) ||
     number <= 0
   ) {
+
     return null;
   }
 
   return number;
 }
+
 
 // =========================
 // FROM / TO
@@ -127,6 +147,7 @@ function normalizePlace(
   );
 }
 
+
 // =========================
 // KEY
 // =========================
@@ -141,7 +162,10 @@ function quoteKey(
       100
     );
 
-  if (!id) {
+  if (
+    !id
+  ) {
+
     return null;
   }
 
@@ -150,6 +174,115 @@ function quoteKey(
     id
   );
 }
+
+// =========================
+// SHADOW COMPARE
+// =========================
+
+function compareQuotes(
+  kvQuote,
+  d1Quote
+) {
+
+  const fields = [
+    [
+      "id",
+      String(kvQuote?.id ?? ""),
+      String(d1Quote?.id ?? "")
+    ],
+    [
+      "from",
+      String(kvQuote?.from ?? ""),
+      String(d1Quote?.from ?? "")
+    ],
+    [
+      "to",
+      String(kvQuote?.to ?? ""),
+      String(d1Quote?.to ?? "")
+    ],
+    [
+      "tariff",
+      String(kvQuote?.tariff ?? ""),
+      String(d1Quote?.tariff ?? "")
+    ],
+    [
+      "tariffName",
+      String(kvQuote?.tariffName ?? ""),
+      String(d1Quote?.tariffName ?? "")
+    ],
+    [
+      "distance",
+      Number(kvQuote?.distance),
+      Number(d1Quote?.distance)
+    ],
+    [
+      "duration",
+      Number(kvQuote?.duration),
+      Number(d1Quote?.duration)
+    ],
+    [
+      "price",
+      Number(kvQuote?.price),
+      Number(d1Quote?.price)
+    ],
+    [
+      "pricePerKm",
+      Number(
+        kvQuote?.pricing?.pricePerKm
+      ),
+      Number(
+        d1Quote?.pricing?.pricePerKm
+      )
+    ],
+    [
+      "coefficient",
+      Number(
+        kvQuote?.pricing?.coefficient
+      ),
+      Number(
+        d1Quote?.pricing?.coefficient
+      )
+    ],
+    [
+      "minimumPrice",
+      Number(
+        kvQuote?.pricing?.minimumPrice
+      ),
+      Number(
+        d1Quote?.pricing?.minimumPrice
+      )
+    ],
+    [
+      "createdAt",
+      Number(kvQuote?.createdAt),
+      Number(d1Quote?.createdAt)
+    ],
+    [
+      "expiresAt",
+      Number(kvQuote?.expiresAt),
+      Number(d1Quote?.expiresAt)
+    ]
+  ];
+
+  const mismatchFields =
+    fields
+      .filter(
+        ([, left, right]) =>
+          left !== right
+      )
+      .map(
+        ([name]) =>
+          name
+      );
+
+  return {
+    match:
+      mismatchFields.length === 0,
+
+    mismatchFields
+  };
+}
+
 
 // =========================
 // CREATE
@@ -175,6 +308,7 @@ export async function createQuote(
       env
     );
 
+
   // =========================
   // ROUTE
   // =========================
@@ -189,17 +323,24 @@ export async function createQuote(
       input.to
     );
 
-  if (!from) {
+  if (
+    !from
+  ) {
+
     throw new Error(
       "Quote from is required"
     );
   }
 
-  if (!to) {
+  if (
+    !to
+  ) {
+
     throw new Error(
       "Quote to is required"
     );
   }
+
 
   // =========================
   // TARIFF
@@ -218,11 +359,15 @@ export async function createQuote(
       80
     );
 
-  if (!tariff) {
+  if (
+    !tariff
+  ) {
+
     throw new Error(
       "Quote tariff is required"
     );
   }
+
 
   // =========================
   // NUMBERS
@@ -243,23 +388,33 @@ export async function createQuote(
       input.price
     );
 
-  if (distance === null) {
+  if (
+    distance === null
+  ) {
+
     throw new Error(
       "Quote distance is invalid"
     );
   }
 
-  if (duration === null) {
+  if (
+    duration === null
+  ) {
+
     throw new Error(
       "Quote duration is invalid"
     );
   }
 
-  if (price === null) {
+  if (
+    price === null
+  ) {
+
     throw new Error(
       "Quote price is invalid"
     );
   }
+
 
   // =========================
   // PRICING AUDIT DATA
@@ -279,6 +434,34 @@ export async function createQuote(
     positiveNumber(
       input.minimumPrice
     );
+
+  if (
+    pricePerKm === null
+  ) {
+
+    throw new Error(
+      "Quote pricePerKm is invalid"
+    );
+  }
+
+  if (
+    coefficient === null
+  ) {
+
+    throw new Error(
+      "Quote coefficient is invalid"
+    );
+  }
+
+  if (
+    minimumPrice === null
+  ) {
+
+    throw new Error(
+      "Quote minimumPrice is invalid"
+    );
+  }
+
 
   // =========================
   // ENTITY
@@ -332,8 +515,13 @@ export async function createQuote(
       expiresAt
   };
 
+
   // =========================
   // SAVE TO KV
+  // =========================
+  //
+  // Пока QUOTES KV остаётся
+  // production source of truth.
   // =========================
 
   await quotes.put(
@@ -350,6 +538,50 @@ export async function createQuote(
         QUOTE_TTL_SECONDS
     }
   );
+
+
+  // =========================
+  // D1 SHADOW WRITE
+  // =========================
+  //
+  // D1 получает копию quote.
+  //
+  // На этом этапе ошибка D1
+  // НЕ должна ломать работающий
+  // production flow.
+  //
+  // /orders пока продолжает
+  // читать quote из QUOTES KV.
+  // =========================
+
+  try {
+
+    await insertQuote(
+      env,
+      quote
+    );
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      "QUOTE D1 SHADOW WRITE ERROR:",
+      {
+        quoteId:
+          quote.id,
+
+        message:
+          error?.message ||
+          "unknown"
+      }
+    );
+  }
+
+
+  // =========================
+  // LOG
+  // =========================
 
   console.log(
     "QUOTE CREATED:",
@@ -371,8 +603,10 @@ export async function createQuote(
     }
   );
 
+
   return quote;
 }
+
 
 // =========================
 // GET
@@ -393,7 +627,10 @@ export async function getQuote(
       quoteId
     );
 
-  if (!key) {
+  if (
+    !key
+  ) {
+
     return null;
   }
 
@@ -402,7 +639,10 @@ export async function getQuote(
       key
     );
 
-  if (!raw) {
+  if (
+    !raw
+  ) {
+
     return null;
   }
 
@@ -431,8 +671,10 @@ export async function getQuote(
     !quote ||
     typeof quote !== "object"
   ) {
+
     return null;
   }
+
 
   // =========================
   // EXPIRATION CHECK
@@ -469,9 +711,94 @@ export async function getQuote(
 
     return null;
   }
+  // =========================
+// D1 SHADOW READ
+// =========================
+//
+// Production source of truth
+// всё ещё QUOTES KV.
+//
+// D1 только сравниваем.
+// Даже если D1 недоступна,
+// заказ продолжает работать
+// по старой KV-схеме.
+// =========================
+
+try {
+
+  const d1Quote =
+    await getActiveQuoteById(
+      env,
+      quoteId
+    );
+
+  if (
+    !d1Quote
+  ) {
+
+    console.warn(
+      "QUOTE D1 SHADOW MISS:",
+      {
+        quoteId:
+          quote.id
+      }
+    );
+
+  } else {
+
+    const comparison =
+      compareQuotes(
+        quote,
+        d1Quote
+      );
+
+    if (
+      comparison.match
+    ) {
+
+      console.log(
+        "QUOTE D1 SHADOW MATCH:",
+        {
+          quoteId:
+            quote.id
+        }
+      );
+
+    } else {
+
+      console.error(
+        "QUOTE D1 SHADOW MISMATCH:",
+        {
+          quoteId:
+            quote.id,
+
+          fields:
+            comparison.mismatchFields
+        }
+      );
+    }
+  }
+
+} catch (
+  error
+) {
+
+  console.error(
+    "QUOTE D1 SHADOW READ ERROR:",
+    {
+      quoteId:
+        quote.id,
+
+      message:
+        error?.message ||
+        "unknown"
+    }
+  );
+}
 
   return quote;
 }
+
 
 // =========================
 // DELETE
@@ -479,6 +806,9 @@ export async function getQuote(
 //
 // После успешного создания заказа
 // котировку можно удалить.
+//
+// Пока это удаление относится
+// только к QUOTES KV.
 // =========================
 
 export async function deleteQuote(
@@ -496,7 +826,10 @@ export async function deleteQuote(
       quoteId
     );
 
-  if (!key) {
+  if (
+    !key
+  ) {
+
     return false;
   }
 
@@ -506,6 +839,7 @@ export async function deleteQuote(
 
   return true;
 }
+
 
 // =========================
 // PUBLIC RECEIPT
@@ -520,6 +854,7 @@ export function quoteReceipt(
 ) {
 
   return {
+
     quoteId:
       quote.id,
 
