@@ -567,19 +567,22 @@ export default async function router(
   ) {
 
     // =========================
-    // POST /orders
-    // PUBLIC
-    // =========================
-    //
-    // Создание заявки.
-    //
-    // Если передан quoteId,
-    // доверенные price /
-    // distance / duration /
-    // tariff загружаются
-    // внутри createOrder()
-    // только из QUOTES KV.
-    // =========================
+// POST /orders
+// PUBLIC GATEWAY
+// =========================
+//
+// Создание заявки.
+//
+// Если передан quoteId,
+// доверенные route / tariff /
+// distance / duration / price
+// загружаются внутри createOrder()
+// только из authoritative D1 quote.
+//
+// Клиентские значения цены,
+// тарифа и параметров маршрута
+// не являются доверенными.
+// =========================
 
     if (
       req.method === "POST"

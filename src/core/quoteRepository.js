@@ -3,15 +3,21 @@
 // Cloudflare D1
 // =========================================
 //
-// Этот модуль отвечает ТОЛЬКО
-// за persistence quotes в D1.
+// Persistence layer for quote entities.
 //
-// Domain-логика расчёта цены,
-// TTL и создание quoteId
-// остаются вне repository.
+// D1 is the authoritative source
+// of truth for quotes.
 //
-// На текущем этапе этот файл
-// ещё НЕ подключён к production flow.
+// Domain logic such as:
+// - validation
+// - quoteId generation
+// - TTL calculation
+//
+// remains outside this repository.
+//
+// This repository is used by both:
+// - quote creation
+// - quoted order creation
 // =========================================
 
 
