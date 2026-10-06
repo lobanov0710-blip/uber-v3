@@ -263,6 +263,85 @@ export async function getOrderByQuoteId(
   return mapOrderRow(row);
 }
 
+// =========================================
+// LIST ORDERS
+// =========================================
+//
+// D1 is the authoritative source
+// of truth for order reads.
+//
+// The current private GET /orders route
+// still performs role/status filtering
+// itself. This repository method only
+// returns persisted orders ordered
+// newest first.
+// =========================================
+
+export async function listOrders(
+  env,
+  maxItems = 1000
+) {
+
+  const requestedLimit =
+    Number(
+      maxItems
+    );
+
+  const limit =
+    Number.isInteger(
+      requestedLimit
+    )
+      ? Math.max(
+          1,
+          Math.min(
+            requestedLimit,
+            1000
+          )
+        )
+      : 1000;
+
+  const db =
+    requireDatabase(
+      env
+    );
+
+  const result =
+    await db
+      .prepare(`
+        ${ORDER_SELECT}
+
+        ORDER BY created_at DESC
+
+        LIMIT ?1
+      `)
+      .bind(
+        limit
+      )
+      .all();
+
+  if (
+    result?.success !== true
+  ) {
+
+    throw new Error(
+      "Order list read failed"
+    );
+  }
+
+  const rows =
+    Array.isArray(
+      result.results
+    )
+      ? result.results
+      : [];
+
+  return rows
+    .map(
+      mapOrderRow
+    )
+    .filter(Boolean);
+}
+
 
 // =========================================
 // INSERT MANUAL ORDER

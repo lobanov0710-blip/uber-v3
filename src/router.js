@@ -30,7 +30,7 @@ import {
 
 import {
   listOrders
-} from "./core/db.js";
+} from "./core/orderRepository.js";
 
 import {
   verifyProxyRequest
