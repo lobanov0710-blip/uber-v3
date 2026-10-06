@@ -1,58 +1,31 @@
 import {
-  insertQuote,
-  getActiveQuoteById
+  insertQuote
 } from "./quoteRepository.js";
 
 
-// =========================
+// =========================================
 // QUOTES
-// =========================
+// =========================================
 //
-// Серверная котировка стоимости поездки.
+// Server-side trip quote.
 //
-// Frontend получает только quoteId,
-// а при создании заказа backend сам
-// загружает доверенные:
-// - маршрут
-// - тариф
-// - расстояние
-// - время
-// - стоимость
+// D1 is the single source of truth.
 //
-// Срок жизни котировки: 30 минут.
-// =========================
+// Frontend receives only quoteId.
+// When an order is created, backend loads
+// trusted route / tariff / distance /
+// duration / price from D1.
+//
+// Quote lifetime: 30 minutes.
+// =========================================
 
 export const QUOTE_TTL_SECONDS =
   30 * 60;
 
-const QUOTE_PREFIX =
-  "quote:";
 
-
-// =========================
-// KV
-// =========================
-
-function requireQuotesNamespace(
-  env
-) {
-
-  if (
-    !env?.QUOTES
-  ) {
-
-    throw new Error(
-      "QUOTES KV binding is not configured"
-    );
-  }
-
-  return env.QUOTES;
-}
-
-
-// =========================
+// =========================================
 // TEXT
-// =========================
+// =========================================
 
 function cleanText(
   value,
@@ -78,9 +51,9 @@ function cleanText(
 }
 
 
-// =========================
+// =========================================
 // NUMBER
-// =========================
+// =========================================
 
 function positiveNumber(
   value
@@ -105,24 +78,9 @@ function positiveNumber(
 }
 
 
-// =========================
+// =========================================
 // FROM / TO
-// =========================
-//
-// /calculate сейчас получает
-// geoResult.from и geoResult.to
-// в виде объектов:
-//
-// {
-//   query,
-//   lat,
-//   lon,
-//   displayName
-// }
-//
-// Но функция также поддерживает
-// обычную строку.
-// =========================
+// =========================================
 
 function normalizePlace(
   value
@@ -148,145 +106,9 @@ function normalizePlace(
 }
 
 
-// =========================
-// KEY
-// =========================
-
-function quoteKey(
-  quoteId
-) {
-
-  const id =
-    cleanText(
-      quoteId,
-      100
-    );
-
-  if (
-    !id
-  ) {
-
-    return null;
-  }
-
-  return (
-    QUOTE_PREFIX +
-    id
-  );
-}
-
-// =========================
-// SHADOW COMPARE
-// =========================
-
-function compareQuotes(
-  kvQuote,
-  d1Quote
-) {
-
-  const fields = [
-    [
-      "id",
-      String(kvQuote?.id ?? ""),
-      String(d1Quote?.id ?? "")
-    ],
-    [
-      "from",
-      String(kvQuote?.from ?? ""),
-      String(d1Quote?.from ?? "")
-    ],
-    [
-      "to",
-      String(kvQuote?.to ?? ""),
-      String(d1Quote?.to ?? "")
-    ],
-    [
-      "tariff",
-      String(kvQuote?.tariff ?? ""),
-      String(d1Quote?.tariff ?? "")
-    ],
-    [
-      "tariffName",
-      String(kvQuote?.tariffName ?? ""),
-      String(d1Quote?.tariffName ?? "")
-    ],
-    [
-      "distance",
-      Number(kvQuote?.distance),
-      Number(d1Quote?.distance)
-    ],
-    [
-      "duration",
-      Number(kvQuote?.duration),
-      Number(d1Quote?.duration)
-    ],
-    [
-      "price",
-      Number(kvQuote?.price),
-      Number(d1Quote?.price)
-    ],
-    [
-      "pricePerKm",
-      Number(
-        kvQuote?.pricing?.pricePerKm
-      ),
-      Number(
-        d1Quote?.pricing?.pricePerKm
-      )
-    ],
-    [
-      "coefficient",
-      Number(
-        kvQuote?.pricing?.coefficient
-      ),
-      Number(
-        d1Quote?.pricing?.coefficient
-      )
-    ],
-    [
-      "minimumPrice",
-      Number(
-        kvQuote?.pricing?.minimumPrice
-      ),
-      Number(
-        d1Quote?.pricing?.minimumPrice
-      )
-    ],
-    [
-      "createdAt",
-      Number(kvQuote?.createdAt),
-      Number(d1Quote?.createdAt)
-    ],
-    [
-      "expiresAt",
-      Number(kvQuote?.expiresAt),
-      Number(d1Quote?.expiresAt)
-    ]
-  ];
-
-  const mismatchFields =
-    fields
-      .filter(
-        ([, left, right]) =>
-          left !== right
-      )
-      .map(
-        ([name]) =>
-          name
-      );
-
-  return {
-    match:
-      mismatchFields.length === 0,
-
-    mismatchFields
-  };
-}
-
-
-// =========================
+// =========================================
 // CREATE
-// =========================
+// =========================================
 
 export async function createQuote(
   env,
@@ -303,15 +125,10 @@ export async function createQuote(
     );
   }
 
-  const quotes =
-    requireQuotesNamespace(
-      env
-    );
 
-
-  // =========================
+  // =======================================
   // ROUTE
-  // =========================
+  // =======================================
 
   const from =
     normalizePlace(
@@ -323,18 +140,14 @@ export async function createQuote(
       input.to
     );
 
-  if (
-    !from
-  ) {
+  if (!from) {
 
     throw new Error(
       "Quote from is required"
     );
   }
 
-  if (
-    !to
-  ) {
+  if (!to) {
 
     throw new Error(
       "Quote to is required"
@@ -342,9 +155,9 @@ export async function createQuote(
   }
 
 
-  // =========================
+  // =======================================
   // TARIFF
-  // =========================
+  // =======================================
 
   const tariff =
     cleanText(
@@ -359,9 +172,7 @@ export async function createQuote(
       80
     );
 
-  if (
-    !tariff
-  ) {
+  if (!tariff) {
 
     throw new Error(
       "Quote tariff is required"
@@ -369,9 +180,9 @@ export async function createQuote(
   }
 
 
-  // =========================
+  // =======================================
   // NUMBERS
-  // =========================
+  // =======================================
 
   const distance =
     positiveNumber(
@@ -388,27 +199,21 @@ export async function createQuote(
       input.price
     );
 
-  if (
-    distance === null
-  ) {
+  if (distance === null) {
 
     throw new Error(
       "Quote distance is invalid"
     );
   }
 
-  if (
-    duration === null
-  ) {
+  if (duration === null) {
 
     throw new Error(
       "Quote duration is invalid"
     );
   }
 
-  if (
-    price === null
-  ) {
+  if (price === null) {
 
     throw new Error(
       "Quote price is invalid"
@@ -416,9 +221,9 @@ export async function createQuote(
   }
 
 
-  // =========================
+  // =======================================
   // PRICING AUDIT DATA
-  // =========================
+  // =======================================
 
   const pricePerKm =
     positiveNumber(
@@ -435,27 +240,21 @@ export async function createQuote(
       input.minimumPrice
     );
 
-  if (
-    pricePerKm === null
-  ) {
+  if (pricePerKm === null) {
 
     throw new Error(
       "Quote pricePerKm is invalid"
     );
   }
 
-  if (
-    coefficient === null
-  ) {
+  if (coefficient === null) {
 
     throw new Error(
       "Quote coefficient is invalid"
     );
   }
 
-  if (
-    minimumPrice === null
-  ) {
+  if (minimumPrice === null) {
 
     throw new Error(
       "Quote minimumPrice is invalid"
@@ -463,9 +262,9 @@ export async function createQuote(
   }
 
 
-  // =========================
+  // =======================================
   // ENTITY
-  // =========================
+  // =======================================
 
   const now =
     Date.now();
@@ -498,90 +297,44 @@ export async function createQuote(
 
     pricing: {
 
-      pricePerKm:
-        pricePerKm,
+      pricePerKm,
 
-      coefficient:
-        coefficient,
+      coefficient,
 
-      minimumPrice:
-        minimumPrice
+      minimumPrice
     },
 
     createdAt:
       now,
 
-    expiresAt:
-      expiresAt
+    expiresAt
   };
 
 
-  // =========================
-  // SAVE TO KV
-  // =========================
+  // =======================================
+  // D1 PERSISTENCE
+  // =======================================
   //
-  // Пока QUOTES KV остаётся
-  // production source of truth.
-  // =========================
+  // Critical invariant:
+  //
+  // quoteId is returned to the client
+  // ONLY after the quote has been
+  // successfully persisted in D1.
+  //
+  // Any D1 failure propagates to
+  // /calculate and the client does not
+  // receive a non-persisted quoteId.
+  // =======================================
 
-  await quotes.put(
-    quoteKey(
-      quoteId
-    ),
-
-    JSON.stringify(
-      quote
-    ),
-
-    {
-      expirationTtl:
-        QUOTE_TTL_SECONDS
-    }
+  await insertQuote(
+    env,
+    quote
   );
 
 
-  // =========================
-  // D1 SHADOW WRITE
-  // =========================
-  //
-  // D1 получает копию quote.
-  //
-  // На этом этапе ошибка D1
-  // НЕ должна ломать работающий
-  // production flow.
-  //
-  // /orders пока продолжает
-  // читать quote из QUOTES KV.
-  // =========================
-
-  try {
-
-    await insertQuote(
-      env,
-      quote
-    );
-
-  } catch (
-    error
-  ) {
-
-    console.error(
-      "QUOTE D1 SHADOW WRITE ERROR:",
-      {
-        quoteId:
-          quote.id,
-
-        message:
-          error?.message ||
-          "unknown"
-      }
-    );
-  }
-
-
-  // =========================
+  // =======================================
   // LOG
-  // =========================
+  // =======================================
 
   console.log(
     "QUOTE CREATED:",
@@ -608,246 +361,9 @@ export async function createQuote(
 }
 
 
-// =========================
-// GET
-// =========================
-
-export async function getQuote(
-  env,
-  quoteId
-) {
-
-  const quotes =
-    requireQuotesNamespace(
-      env
-    );
-
-  const key =
-    quoteKey(
-      quoteId
-    );
-
-  if (
-    !key
-  ) {
-
-    return null;
-  }
-
-  const raw =
-    await quotes.get(
-      key
-    );
-
-  if (
-    !raw
-  ) {
-
-    return null;
-  }
-
-  let quote;
-
-  try {
-
-    quote =
-      JSON.parse(
-        raw
-      );
-
-  } catch (
-    error
-  ) {
-
-    console.error(
-      "QUOTE JSON ERROR:",
-      error
-    );
-
-    return null;
-  }
-
-  if (
-    !quote ||
-    typeof quote !== "object"
-  ) {
-
-    return null;
-  }
-
-
-  // =========================
-  // EXPIRATION CHECK
-  // =========================
-
-  const expiresAt =
-    Number(
-      quote.expiresAt
-    );
-
-  if (
-    !Number.isFinite(
-      expiresAt
-    ) ||
-    expiresAt <=
-      Date.now()
-  ) {
-
-    try {
-
-      await quotes.delete(
-        key
-      );
-
-    } catch (
-      error
-    ) {
-
-      console.warn(
-        "QUOTE DELETE EXPIRED ERROR:",
-        error
-      );
-    }
-
-    return null;
-  }
-  // =========================
-// D1 SHADOW READ
-// =========================
-//
-// Production source of truth
-// всё ещё QUOTES KV.
-//
-// D1 только сравниваем.
-// Даже если D1 недоступна,
-// заказ продолжает работать
-// по старой KV-схеме.
-// =========================
-
-try {
-
-  const d1Quote =
-    await getActiveQuoteById(
-      env,
-      quoteId
-    );
-
-  if (
-    !d1Quote
-  ) {
-
-    console.warn(
-      "QUOTE D1 SHADOW MISS:",
-      {
-        quoteId:
-          quote.id
-      }
-    );
-
-  } else {
-
-    const comparison =
-      compareQuotes(
-        quote,
-        d1Quote
-      );
-
-    if (
-      comparison.match
-    ) {
-
-      console.log(
-        "QUOTE D1 SHADOW MATCH:",
-        {
-          quoteId:
-            quote.id
-        }
-      );
-
-    } else {
-
-      console.error(
-        "QUOTE D1 SHADOW MISMATCH:",
-        {
-          quoteId:
-            quote.id,
-
-          fields:
-            comparison.mismatchFields
-        }
-      );
-    }
-  }
-
-} catch (
-  error
-) {
-
-  console.error(
-    "QUOTE D1 SHADOW READ ERROR:",
-    {
-      quoteId:
-        quote.id,
-
-      message:
-        error?.message ||
-        "unknown"
-    }
-  );
-}
-
-  return quote;
-}
-
-
-// =========================
-// DELETE
-// =========================
-//
-// После успешного создания заказа
-// котировку можно удалить.
-//
-// Пока это удаление относится
-// только к QUOTES KV.
-// =========================
-
-export async function deleteQuote(
-  env,
-  quoteId
-) {
-
-  const quotes =
-    requireQuotesNamespace(
-      env
-    );
-
-  const key =
-    quoteKey(
-      quoteId
-    );
-
-  if (
-    !key
-  ) {
-
-    return false;
-  }
-
-  await quotes.delete(
-    key
-  );
-
-  return true;
-}
-
-
-// =========================
+// =========================================
 // PUBLIC RECEIPT
-// =========================
-//
-// Это можно безопасно вернуть
-// frontend после /calculate.
-// =========================
+// =========================================
 
 export function quoteReceipt(
   quote
