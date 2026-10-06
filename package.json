@@ -1,7 +1,9 @@
 {
   "type": "module",
   "scripts": {
+    "test": "npm run test:pricing && npm run test:quotes",
     "test:pricing": "node ./tests/pricing.test.mjs",
+    "test:quotes": "node ./tests/quotes.test.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },

@@ -13,10 +13,6 @@ import {
 } from "./orderRepository.js";
 
 import {
-  deleteQuote
-} from "./quotes.js";
-
-import {
   getActiveQuoteById
 } from "./quoteRepository.js";
 
@@ -676,44 +672,6 @@ async function mirrorOrderToKv(
   }
 }
 
-
-// =========================
-// KV QUOTE CLEANUP
-// =========================
-//
-// QUOTES KV больше не source of truth.
-// После успешной D1-транзакции удаляем
-// legacy KV-копию quote.
-// =========================
-
-async function cleanupQuoteKv(
-  env,
-  quoteId
-) {
-  if (!quoteId) {
-    return;
-  }
-
-  try {
-    await deleteQuote(
-      env,
-      quoteId
-    );
-  } catch (error) {
-    console.error(
-      "QUOTE KV CLEANUP ERROR:",
-      {
-        quoteId,
-
-        message:
-          error?.message ||
-          "unknown"
-      }
-    );
-  }
-}
-
-
 // =========================
 // CREATE ORDER
 // =========================
@@ -853,11 +811,6 @@ export async function createOrder(
       await mirrorOrderToKv(
         env,
         existingOrder
-      );
-
-      await cleanupQuoteKv(
-        env,
-        normalizedQuoteId
       );
 
       return {
@@ -1053,18 +1006,7 @@ export async function createOrder(
     env,
     order
   );
-
-
-  // =========================
-  // LEGACY KV QUOTE CLEANUP
-  // =========================
-
-  await cleanupQuoteKv(
-    env,
-    order.quoteId
-  );
-
-
+  
   // =========================
   // TELEGRAM
   // =========================
