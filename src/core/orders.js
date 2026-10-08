@@ -1,8 +1,4 @@
 import {
-  saveOrder
-} from "./db.js";
-
-import {
   tgSend
 } from "./telegram.js";
 
@@ -638,40 +634,6 @@ function isSameSubmission(
   );
 }
 
-
-// =========================
-// KV ORDER MIRROR
-// =========================
-//
-// D1 = source of truth.
-// ORDERS KV временно поддерживаем,
-// потому что GET /orders пока читает KV.
-// =========================
-
-async function mirrorOrderToKv(
-  env,
-  order
-) {
-  try {
-    await saveOrder(
-      env,
-      order
-    );
-  } catch (error) {
-    console.error(
-      "ORDER KV MIRROR ERROR:",
-      {
-        orderId:
-          order?.id || null,
-
-        message:
-          error?.message ||
-          "unknown"
-      }
-    );
-  }
-}
-
 // =========================
 // CREATE ORDER
 // =========================
@@ -807,11 +769,6 @@ export async function createOrder(
           error: "quote already used"
         };
       }
-
-      await mirrorOrderToKv(
-        env,
-        existingOrder
-      );
 
       return {
         ok: true,
@@ -996,16 +953,6 @@ export async function createOrder(
       };
     }
   }
-
-
-  // =========================
-  // KV MIRROR
-  // =========================
-
-  await mirrorOrderToKv(
-    env,
-    order
-  );
   
   // =========================
   // TELEGRAM
