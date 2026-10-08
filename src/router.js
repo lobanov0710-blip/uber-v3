@@ -29,6 +29,7 @@ import {
 } from "./core/quotes.js";
 
 import {
+  getOrderById,
   listOrders
 } from "./core/orderRepository.js";
 
@@ -38,7 +39,8 @@ import {
 
 import {
   requirePassengerOrderAccess,
-  issuePassengerOrderAccess
+  issuePassengerOrderAccess,
+  verifyPassengerOrderAccess
 } from "./core/passengerOrderAccess.js";
 
 
@@ -1259,6 +1261,237 @@ export default async function router(
     return safeError(
       "method not allowed",
       405
+    );
+  }
+
+
+    // =========================
+  // PASSENGER ORDER STATUS
+  // =========================
+  //
+  // Public passenger read endpoint.
+  //
+  // Request arrives through the PHP
+  // gateway and therefore requires:
+  //
+  // 1. valid proxy HMAC;
+  // 2. valid passenger capability token.
+  //
+  // The token grants read-only access
+  // to exactly one order.
+  // =========================
+
+  if (
+    path === "/order-status"
+  ) {
+
+    // =========================
+    // METHOD
+    // =========================
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    // =========================
+    // PROXY AUTH
+    // =========================
+
+    const proxyAuth =
+      await verifyProxyRequest(
+        req,
+        env,
+        "/order-status"
+      );
+
+
+    if (
+      proxyAuth.ok !== true
+    ) {
+
+      return safeError(
+        proxyAuth.error,
+        proxyAuth.status
+      );
+    }
+
+
+    // =========================
+    // BODY
+    // =========================
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    const accessToken =
+      String(
+        body?.accessToken ??
+        ""
+      )
+        .trim();
+
+
+    if (!accessToken) {
+
+      return safeError(
+        "missing accessToken",
+        400
+      );
+    }
+
+
+    // =========================
+    // PASSENGER ACCESS
+    // =========================
+
+    let passengerAccess;
+
+
+    try {
+
+      passengerAccess =
+        await verifyPassengerOrderAccess(
+          env,
+          accessToken
+        );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "PASSENGER ORDER ACCESS VERIFY ERROR"
+      );
+
+      return safeError(
+        "order access unavailable",
+        500
+      );
+    }
+
+
+    if (
+      passengerAccess.ok !== true
+    ) {
+
+      return safeError(
+        "forbidden",
+        403
+      );
+    }
+
+
+    // =========================
+    // LOAD EXACT ORDER
+    // =========================
+
+    let order;
+
+
+    try {
+
+      order =
+        await getOrderById(
+          env,
+          passengerAccess.orderId
+        );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "PASSENGER ORDER READ ERROR:",
+        error
+      );
+
+      return safeError(
+        "order read failed",
+        500
+      );
+    }
+
+
+    if (!order) {
+
+      return safeError(
+        "order not found",
+        404
+      );
+    }
+
+
+    // =========================
+    // PASSENGER VIEW
+    // =========================
+    //
+    // Intentionally excluded:
+    //
+    // name
+    // phone
+    // comment
+    // driverId
+    // quoteId
+    //
+    // Passenger receives only data
+    // required for own trip tracking.
+    // =========================
+
+    return json(
+      {
+        ok: true,
+
+        order: {
+
+          id:
+            order.id,
+
+          status:
+            order.status,
+
+          route:
+            order.route,
+
+          from:
+            order.from,
+
+          to:
+            order.to,
+
+          date:
+            order.date,
+
+          tariff:
+            order.tariff,
+
+          distance:
+            order.distance,
+
+          duration:
+            order.duration,
+
+          price:
+            order.price,
+
+          createdAt:
+            order.createdAt,
+
+          updatedAt:
+            order.updatedAt
+        }
+      },
+      200,
+      cors
     );
   }
 

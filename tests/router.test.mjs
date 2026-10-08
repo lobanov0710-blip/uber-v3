@@ -356,6 +356,92 @@ function createOrderDatabase() {
 
 
 // ========================================
+// FAKE D1 FOR ORDER LOOKUP
+// ========================================
+
+function createOrderLookupDatabase(
+  row
+) {
+
+  const requestedIds = [];
+
+
+  const db = {
+
+    prepare(
+      sql
+    ) {
+
+      let args = [];
+
+
+      const statement = {
+
+        bind(
+          ...values
+        ) {
+
+          args =
+            values;
+
+          return statement;
+        },
+
+
+        async first() {
+
+          if (
+            !/WHERE id = \?1/i.test(
+              sql
+            )
+          ) {
+
+            return null;
+          }
+
+
+          const requestedId =
+            String(
+              args[0] ??
+              ""
+            );
+
+
+          requestedIds.push(
+            requestedId
+          );
+
+
+          if (
+            !row ||
+            String(
+              row.id
+            ) !==
+              requestedId
+          ) {
+
+            return null;
+          }
+
+
+          return row;
+        }
+      };
+
+
+      return statement;
+    }
+  };
+
+
+  return {
+    db,
+    requestedIds
+  };
+}
+
+
+// ========================================
 // FAKE D1 FOR ORDER LIST
 // ========================================
 
@@ -390,7 +476,6 @@ function createListDatabase(
     }
   };
 }
-
 
 // ========================================
 // TELEGRAM MOCK
@@ -1749,6 +1834,650 @@ await test(
       body.limit,
       200
     );
+  }
+);
+
+
+// ========================================
+// PASSENGER ORDER STATUS METHOD
+// ========================================
+
+await test(
+  "GET /order-status is rejected",
+  async () => {
+
+    const response =
+      await router(
+        new Request(
+          "https://worker.test/order-status"
+        ),
+        {}
+      );
+
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+
+    assert.equal(
+      response.status,
+      405
+    );
+
+    assert.equal(
+      body.error,
+      "method not allowed"
+    );
+  }
+);
+
+
+// ========================================
+// PASSENGER ORDER STATUS PROXY AUTH
+// ========================================
+
+await test(
+  "POST /order-status without proxy signature is forbidden",
+  async () => {
+
+    const request =
+      new Request(
+        "https://worker.test/order-status",
+        {
+          method:
+            "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              accessToken:
+                "token"
+            })
+        }
+      );
+
+
+    const response =
+      await router(
+        request,
+        {
+          PROXY_HMAC_SECRET:
+            PROXY_SECRET,
+
+          PASSENGER_ORDER_SECRET:
+            PASSENGER_ORDER_SECRET
+        }
+      );
+
+
+    assert.equal(
+      response.status,
+      403
+    );
+  }
+);
+
+
+// ========================================
+// PASSENGER ORDER STATUS TOKEN REQUIRED
+// ========================================
+
+await test(
+  "POST /order-status requires passenger access token",
+  async () => {
+
+    const request =
+      await signedPost(
+        "/order-status",
+        {}
+      );
+
+
+    const response =
+      await router(
+        request,
+        {
+          PROXY_HMAC_SECRET:
+            PROXY_SECRET,
+
+          PASSENGER_ORDER_SECRET:
+            PASSENGER_ORDER_SECRET
+        }
+      );
+
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+
+    assert.equal(
+      response.status,
+      400
+    );
+
+    assert.equal(
+      body.error,
+      "missing accessToken"
+    );
+  }
+);
+
+
+// ========================================
+// INVALID PASSENGER TOKEN
+// ========================================
+
+await test(
+  "invalid passenger access token is rejected before D1 read",
+  async () => {
+
+    const {
+      db,
+      requestedIds
+    } =
+      createOrderLookupDatabase(
+        orderRow()
+      );
+
+
+    const request =
+      await signedPost(
+        "/order-status",
+        {
+          accessToken:
+            "invalid.token.value"
+        }
+      );
+
+
+    const originalError =
+      console.error;
+
+
+    console.error =
+      () => {};
+
+
+    try {
+
+      const response =
+        await router(
+          request,
+          {
+            PROXY_HMAC_SECRET:
+              PROXY_SECRET,
+
+            PASSENGER_ORDER_SECRET:
+              PASSENGER_ORDER_SECRET,
+
+            DB:
+              db
+          }
+        );
+
+
+      const body =
+        await jsonBody(
+          response
+        );
+
+
+      assert.equal(
+        response.status,
+        403
+      );
+
+      assert.equal(
+        body.error,
+        "forbidden"
+      );
+
+
+      assert.equal(
+        requestedIds.length,
+        0
+      );
+
+    } finally {
+
+      console.error =
+        originalError;
+    }
+  }
+);
+
+
+// ========================================
+// PASSENGER ORDER STATUS SUCCESS
+// ========================================
+
+await test(
+  "valid passenger token reads exactly its own order",
+  async () => {
+
+    const token =
+      await signJWT(
+        PASSENGER_ORDER_SECRET,
+        {
+          sub:
+            "passenger-order-1",
+
+          scope:
+            "passenger_order:read"
+        },
+        3600
+      );
+
+
+    const {
+      db,
+      requestedIds
+    } =
+      createOrderLookupDatabase(
+        orderRow({
+          id:
+            "passenger-order-1",
+
+          quote_id:
+            "quote-secret",
+
+          tariff:
+            "comfort",
+
+          distance_km:
+            420,
+
+          duration_minutes:
+            360,
+
+          price_rub:
+            23100,
+
+          status:
+            "taken",
+
+          driver_id:
+            "driver-secret",
+
+          created_at:
+            1000,
+
+          updated_at:
+            2000
+        })
+      );
+
+
+    const request =
+      await signedPost(
+        "/order-status",
+        {
+          accessToken:
+            token
+        }
+      );
+
+
+    const response =
+      await router(
+        request,
+        {
+          PROXY_HMAC_SECRET:
+            PROXY_SECRET,
+
+          PASSENGER_ORDER_SECRET:
+            PASSENGER_ORDER_SECRET,
+
+          DB:
+            db
+        }
+      );
+
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+
+    assert.equal(
+      response.status,
+      200
+    );
+
+    assert.equal(
+      body.ok,
+      true
+    );
+
+    assert.equal(
+      body.order.id,
+      "passenger-order-1"
+    );
+
+    assert.equal(
+      body.order.status,
+      "taken"
+    );
+
+    assert.equal(
+      body.order.tariff,
+      "comfort"
+    );
+
+    assert.equal(
+      body.order.distance,
+      420
+    );
+
+    assert.equal(
+      body.order.duration,
+      360
+    );
+
+    assert.equal(
+      body.order.price,
+      23100
+    );
+
+
+    // Token subject controls the
+    // exact D1 lookup.
+    assert.deepEqual(
+      requestedIds,
+      [
+        "passenger-order-1"
+      ]
+    );
+
+
+    // PII / internal fields must
+    // never enter passenger response.
+    assert.equal(
+      Object.hasOwn(
+        body.order,
+        "name"
+      ),
+      false
+    );
+
+    assert.equal(
+      Object.hasOwn(
+        body.order,
+        "phone"
+      ),
+      false
+    );
+
+    assert.equal(
+      Object.hasOwn(
+        body.order,
+        "comment"
+      ),
+      false
+    );
+
+    assert.equal(
+      Object.hasOwn(
+        body.order,
+        "driverId"
+      ),
+      false
+    );
+
+    assert.equal(
+      Object.hasOwn(
+        body.order,
+        "quoteId"
+      ),
+      false
+    );
+  }
+);
+
+
+// ========================================
+// TOKEN CANNOT SELECT ANOTHER ORDER
+// ========================================
+
+await test(
+  "passenger token cannot select another order id",
+  async () => {
+
+    const token =
+      await signJWT(
+        PASSENGER_ORDER_SECRET,
+        {
+          sub:
+            "order-a",
+
+          scope:
+            "passenger_order:read"
+        },
+        3600
+      );
+
+
+    const {
+      db,
+      requestedIds
+    } =
+      createOrderLookupDatabase(
+        orderRow({
+          id:
+            "order-b"
+        })
+      );
+
+
+    const request =
+      await signedPost(
+        "/order-status",
+        {
+          accessToken:
+            token,
+
+          orderId:
+            "order-b"
+        }
+      );
+
+
+    const response =
+      await router(
+        request,
+        {
+          PROXY_HMAC_SECRET:
+            PROXY_SECRET,
+
+          PASSENGER_ORDER_SECRET:
+            PASSENGER_ORDER_SECRET,
+
+          DB:
+            db
+        }
+      );
+
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+
+    assert.equal(
+      response.status,
+      404
+    );
+
+    assert.equal(
+      body.error,
+      "order not found"
+    );
+
+
+    // Client-supplied orderId must
+    // not control the D1 lookup.
+    assert.deepEqual(
+      requestedIds,
+      [
+        "order-a"
+      ]
+    );
+  }
+);
+
+
+// ========================================
+// PASSENGER ORDER NOT FOUND
+// ========================================
+
+await test(
+  "valid passenger token returns 404 when its order no longer exists",
+  async () => {
+
+    const token =
+      await signJWT(
+        PASSENGER_ORDER_SECRET,
+        {
+          sub:
+            "missing-order",
+
+          scope:
+            "passenger_order:read"
+        },
+        3600
+      );
+
+
+    const {
+      db,
+      requestedIds
+    } =
+      createOrderLookupDatabase(
+        null
+      );
+
+
+    const request =
+      await signedPost(
+        "/order-status",
+        {
+          accessToken:
+            token
+        }
+      );
+
+
+    const response =
+      await router(
+        request,
+        {
+          PROXY_HMAC_SECRET:
+            PROXY_SECRET,
+
+          PASSENGER_ORDER_SECRET:
+            PASSENGER_ORDER_SECRET,
+
+          DB:
+            db
+        }
+      );
+
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+
+    assert.equal(
+      response.status,
+      404
+    );
+
+    assert.equal(
+      body.error,
+      "order not found"
+    );
+
+    assert.deepEqual(
+      requestedIds,
+      [
+        "missing-order"
+      ]
+    );
+  }
+);
+
+
+// ========================================
+// PASSENGER ACCESS CONFIG
+// ========================================
+
+await test(
+  "POST /order-status fails safely when passenger secret is unavailable",
+  async () => {
+
+    const request =
+      await signedPost(
+        "/order-status",
+        {
+          accessToken:
+            "token"
+        }
+      );
+
+
+    const originalError =
+      console.error;
+
+
+    console.error =
+      () => {};
+
+
+    try {
+
+      const response =
+        await router(
+          request,
+          {
+            PROXY_HMAC_SECRET:
+              PROXY_SECRET
+          }
+        );
+
+
+      const body =
+        await jsonBody(
+          response
+        );
+
+
+      assert.equal(
+        response.status,
+        500
+      );
+
+      assert.equal(
+        body.error,
+        "order access unavailable"
+      );
+
+    } finally {
+
+      console.error =
+        originalError;
+    }
   }
 );
 
