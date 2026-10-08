@@ -27,6 +27,9 @@ const PROXY_SECRET =
 const JWT_SECRET =
   "abcdef0123456789abcdef0123456789";
 
+const PASSENGER_ORDER_SECRET =
+  "passenger-order-0123456789abcdef123456789";
+
 
 // ========================================
 // TEST RUNNER
@@ -795,7 +798,7 @@ await test(
 // ========================================
 
 await test(
-  "signed POST /orders creates manual D1 order",
+  "signed POST /orders creates manual D1 order and passenger access token",
   async () => {
 
     const {
@@ -836,6 +839,9 @@ await test(
               PROXY_HMAC_SECRET:
                 PROXY_SECRET,
 
+              PASSENGER_ORDER_SECRET:
+                PASSENGER_ORDER_SECRET,
+
               DB:
                 db,
 
@@ -875,6 +881,38 @@ await test(
     );
 
 
+    // =========================
+    // PASSENGER ACCESS
+    // =========================
+
+    assert.equal(
+      typeof body.accessToken,
+      "string"
+    );
+
+    assert.equal(
+      body.accessToken
+        .split(".")
+        .length,
+      3
+    );
+
+    assert.ok(
+      Number.isSafeInteger(
+        body.accessExpiresAt
+      )
+    );
+
+    assert.ok(
+      body.accessExpiresAt >
+        Date.now()
+    );
+
+
+    // =========================
+    // PUBLIC RECEIPT
+    // =========================
+
     assert.equal(
       Object.hasOwn(
         body.order,
@@ -892,6 +930,10 @@ await test(
     );
 
 
+    // =========================
+    // D1 WRITE
+    // =========================
+
     assert.ok(
       calls.some(
         call =>
@@ -900,6 +942,103 @@ await test(
           )
       )
     );
+  }
+);
+
+
+// ========================================
+// ORDER ACCESS CONFIG
+// ========================================
+
+await test(
+  "POST /orders does not persist order when passenger access is unavailable",
+  async () => {
+
+    const {
+      db,
+      calls
+    } =
+      createOrderDatabase();
+
+
+    const request =
+      await signedPost(
+        "/orders",
+        {
+          name:
+            "Иван",
+
+          phone:
+            "+79990000001",
+
+          route:
+            "Нижний Новгород → Москва",
+
+          date:
+            "2026-10-20",
+
+          comment:
+            ""
+        }
+      );
+
+
+    const originalError =
+      console.error;
+
+    console.error =
+      () => {};
+
+
+    try {
+
+      const response =
+        await router(
+          request,
+          {
+            PROXY_HMAC_SECRET:
+              PROXY_SECRET,
+
+            DB:
+              db
+          }
+        );
+
+
+      const body =
+        await jsonBody(
+          response
+        );
+
+
+      assert.equal(
+        response.status,
+        500
+      );
+
+      assert.equal(
+        body.ok,
+        false
+      );
+
+      assert.equal(
+        body.error,
+        "order access unavailable"
+      );
+
+
+      // createOrder() не должен
+      // был обратиться к D1.
+      assert.equal(
+        calls.length,
+        0
+      );
+
+    } finally {
+
+      console.error =
+        originalError;
+    }
   }
 );
 

@@ -36,6 +36,11 @@ import {
   verifyProxyRequest
 } from "./core/proxyAuth.js";
 
+import {
+  requirePassengerOrderAccess,
+  issuePassengerOrderAccess
+} from "./core/passengerOrderAccess.js";
+
 
 // =========================
 // ROUTER
@@ -584,33 +589,81 @@ export default async function router(
 // не являются доверенными.
 // =========================
 
-    if (
+        if (
       req.method === "POST"
     ) {
 
-          const proxyAuth =
-      await verifyProxyRequest(
-        req,
-        env,
-        "/orders"
-      );
+      // =========================
+      // PROXY AUTH
+      // =========================
 
-    if (
-      proxyAuth.ok !== true
-    ) {
+      const proxyAuth =
+        await verifyProxyRequest(
+          req,
+          env,
+          "/orders"
+        );
 
-      return safeError(
-        proxyAuth.error,
-        proxyAuth.status
-      );
-    }
+
+      if (
+        proxyAuth.ok !== true
+      ) {
+
+        return safeError(
+          proxyAuth.error,
+          proxyAuth.status
+        );
+      }
+
+
+      // =========================
+      // PASSENGER ACCESS CONFIG
+      // =========================
+      //
+      // Проверяем конфигурацию ДО
+      // создания D1-order.
+      //
+      // Новый заказ не должен быть
+      // создан, если клиенту нельзя
+      // безопасно выдать accessToken.
+      // =========================
+
+      try {
+
+        requirePassengerOrderAccess(
+          env
+        );
+
+      } catch (
+        error
+      ) {
+
+        console.error(
+          "PASSENGER ORDER ACCESS CONFIG ERROR"
+        );
+
+        return safeError(
+          "order access unavailable",
+          500
+        );
+      }
+
+
+      // =========================
+      // BODY
+      // =========================
 
       const body =
         await safeJson(
           req
         );
 
+
       try {
+
+        // =========================
+        // CREATE ORDER
+        // =========================
 
         const result =
           await createOrder(
@@ -633,6 +686,21 @@ export default async function router(
         }
 
 
+        // =========================
+        // PASSENGER ACCESS TOKEN
+        // =========================
+
+        const passengerAccess =
+          await issuePassengerOrderAccess(
+            env,
+            result.order
+          );
+
+
+        // =========================
+        // RESPONSE
+        // =========================
+
         return json(
           {
             ok: true,
@@ -640,7 +708,15 @@ export default async function router(
             order:
               orderReceipt(
                 result.order
-              )
+              ),
+
+            accessToken:
+              passengerAccess
+                .accessToken,
+
+            accessExpiresAt:
+              passengerAccess
+                .accessExpiresAt
           },
           201,
           cors
