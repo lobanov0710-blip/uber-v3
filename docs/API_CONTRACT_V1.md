@@ -334,12 +334,18 @@ D1 is the single authoritative source of truth.
 A quote contains trusted:
 
 ```text
-route
+from
+to
 tariff
 distance
 duration
 price
+pricing metadata
 ```
+
+Route geometry returned by `/calculate` is not persisted as part of the quote.
+
+When a quoted order is created, its textual route is reconstructed from the authoritative `from` and `to` values stored in D1.
 
 The current quote TTL is:
 
@@ -411,7 +417,7 @@ duration
 price
 ```
 
-When `quoteId` is supplied, these values are loaded by the backend from the D1 quote.
+When `quoteId` is supplied, `from`, `to`, `tariff`, `distance`, `duration`, and `price` are loaded by the backend from the authoritative D1 quote. The textual order route is constructed from the stored `from` and `to` values.
 
 Client-supplied pricing or route fields must not override the stored quote.
 
