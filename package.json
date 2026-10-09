@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "test": "npm run test:pricing && npm run test:quotes && npm run test:orders && npm run test:orders:write && npm run test:order-domain && npm run test:auth && npm run test:proxy-auth && npm run test:router",
+    "test": "npm run test:pricing && npm run test:quotes && npm run test:orders && npm run test:orders:write && npm run test:order-domain && npm run test:auth && npm run test:proxy-auth && npm run test:router && npm run test:passenger-access",
     "test:pricing": "node ./tests/pricing.test.mjs",
     "test:quotes": "node ./tests/quotes.test.mjs",
     "test:orders": "node ./tests/orderRepository.test.mjs",
@@ -10,6 +10,7 @@
     "test:auth": "node ./tests/auth.test.mjs",
     "test:proxy-auth": "node ./tests/proxyAuth.test.mjs",
     "test:router": "node ./tests/router.test.mjs",
+    "test:passenger-access": "node ./tests/passengerOrderAccess.test.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },
