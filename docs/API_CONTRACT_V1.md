@@ -14,7 +14,7 @@ Breaking changes require a new API version or an explicit coordinated migration 
 
 ---
 
-## 1. Architecture boundary
+# 1. Architecture boundary
 
 Passenger clients do not call the Cloudflare Worker directly.
 
@@ -39,6 +39,7 @@ Public passenger endpoints:
 ```text
 POST /api/calculate.php
 POST /api/order.php
+POST /api/order-status.php
 ```
 
 Internal Worker endpoints:
@@ -46,10 +47,21 @@ Internal Worker endpoints:
 ```text
 POST /calculate
 POST /orders
+POST /order-status
 GET  /orders
 ```
 
 `GET /orders` is a private staff endpoint and is not part of the public passenger API.
+
+`POST /order-status` is not called directly by Android or browser clients.
+
+Passenger traffic reaches it through:
+
+```text
+POST /api/order-status.php
+```
+
+The PHP gateway authenticates the server-to-server request using the proxy HMAC contract.
 
 ---
 
@@ -82,7 +94,16 @@ Additional error fields may be added without breaking the contract.
 
 ## 3.1 Timestamps
 
-All API timestamps are Unix epoch timestamps in **milliseconds**.
+Business-data timestamps returned in API JSON payloads are Unix epoch timestamps in **milliseconds**.
+
+This includes fields such as:
+
+```text
+createdAt
+updatedAt
+quoteExpiresAt
+accessExpiresAt
+```
 
 Example:
 
@@ -91,6 +112,16 @@ Example:
   "createdAt": 1791500000000
 }
 ```
+
+The proxy-authentication header:
+
+```text
+X-Proxy-Timestamp
+```
+
+is an exception.
+
+It uses a **10-digit Unix timestamp in seconds**, as defined by the Proxy HMAC contract in section 18.
 
 ## 3.2 Trip date
 
@@ -154,7 +185,9 @@ The PHP gateway forwards the request to Worker:
 POST /calculate
 ```
 
-The gateway adds HMAC authentication. Passenger applications do not create HMAC signatures themselves.
+The gateway adds HMAC authentication.
+
+Passenger applications do not create HMAC signatures themselves.
 
 ## 4.1 Request
 
@@ -417,7 +450,9 @@ duration
 price
 ```
 
-When `quoteId` is supplied, `from`, `to`, `tariff`, `distance`, `duration`, and `price` are loaded by the backend from the authoritative D1 quote. The textual order route is constructed from the stored `from` and `to` values.
+When `quoteId` is supplied, `from`, `to`, `tariff`, `distance`, `duration`, and `price` are loaded by the backend from the authoritative D1 quote.
+
+The textual order route is constructed from the stored `from` and `to` values.
 
 Client-supplied pricing or route fields must not override the stored quote.
 
@@ -470,11 +505,13 @@ Response:
     "id": "order-id",
     "status": "new",
     "createdAt": 1791500000000
-  }
+  },
+  "accessToken": "<passenger-order-capability>",
+  "accessExpiresAt": 1794092000000
 }
 ```
 
-This intentionally does not expose:
+The public order receipt intentionally does not expose:
 
 ```text
 name
@@ -483,9 +520,179 @@ comment
 route
 price
 driverId
+quoteId
 ```
 
-in the public order receipt.
+`accessToken` is a passenger read capability bound to the created order.
+
+`accessExpiresAt` is a Unix epoch timestamp in milliseconds.
+
+The passenger client must treat `accessToken` as sensitive credential material.
+
+It must not be:
+
+```text
+logged
+embedded in URLs
+included in analytics
+stored in plaintext
+```
+
+The Android passenger application stores the capability encrypted using Android Keystore-backed AES/GCM storage.
+
+---
+
+## 9.1 Passenger order access capability
+
+Passenger order access uses a dedicated signed capability token.
+
+The signing secret is:
+
+```text
+PASSENGER_ORDER_SECRET
+```
+
+It must be separate from:
+
+```text
+JWT_SECRET
+proxy HMAC secret
+```
+
+The capability payload contains:
+
+```text
+sub = order id
+scope = passenger_order:read
+```
+
+The token grants read access to exactly one order.
+
+The capability token is not stored in D1.
+
+Minimum access lifetime:
+
+```text
+30 days
+```
+
+For a future trip, access remains valid until at least:
+
+```text
+end of trip date + 7 days
+```
+
+The server calculates the effective expiration and returns it as:
+
+```text
+accessExpiresAt
+```
+
+in milliseconds.
+
+An idempotent retry of order creation may issue a new valid capability for the same existing order.
+
+---
+
+## 9.2 POST /api/order-status.php
+
+Public passenger endpoint:
+
+```text
+POST /api/order-status.php
+```
+
+The PHP gateway forwards the exact JSON body to:
+
+```text
+POST /order-status
+```
+
+using the server-to-server proxy HMAC contract.
+
+### Request
+
+```json
+{
+  "accessToken": "<passenger-order-capability>"
+}
+```
+
+`accessToken` is required.
+
+The passenger client does not select an order using an `orderId` request parameter.
+
+The Worker verifies the capability and loads the order identified by the token subject:
+
+```text
+token.sub -> exact D1 order id
+```
+
+Client-supplied `orderId` data must not change which order is loaded.
+
+### Successful response
+
+HTTP:
+
+```text
+200 OK
+```
+
+Example:
+
+```json
+{
+  "ok": true,
+  "order": {
+    "id": "order-id",
+    "status": "taken",
+    "route": "Нижний Новгород → Москва",
+    "from": "Нижний Новгород",
+    "to": "Москва",
+    "date": "2026-10-20",
+    "tariff": "comfort",
+    "distance": 420,
+    "duration": 360,
+    "price": 23100,
+    "createdAt": 1791500000000,
+    "updatedAt": 1791503600000
+  }
+}
+```
+
+For manual orders, the following values may be `null`:
+
+```text
+tariff
+distance
+duration
+price
+```
+
+For manual orders created only from a textual route, `from` and `to` may be empty strings.
+
+Passenger status responses intentionally exclude:
+
+```text
+name
+phone
+comment
+driverId
+quoteId
+```
+
+Principal error behavior:
+
+| Status | Meaning |
+|---|---|
+| `400` | missing or invalid request input |
+| `403` | invalid, expired, or unauthorized passenger capability |
+| `404` | capability is valid but the referenced order does not exist |
+| `405` | HTTP method other than POST |
+| `500` | passenger-access configuration or D1 read failure |
+| `502` | PHP gateway upstream failure |
+
+A temporary network or server failure must not cause the Android client to discard a still-valid local passenger capability.
 
 ---
 
@@ -724,7 +931,7 @@ Transactional quote/order data does not use KV.
 
 # 17. Authentication zones
 
-The platform has two separate authentication zones.
+The platform has separate authentication zones.
 
 ## Public passenger traffic
 
@@ -741,6 +948,20 @@ Worker
 
 The HMAC secret must never be embedded in Android or browser JavaScript.
 
+For passenger order-status access there are two independent security layers:
+
+```text
+1. PHP gateway -> Worker:
+   proxy HMAC
+
+2. Passenger -> own order:
+   accessToken capability
+```
+
+The passenger capability does not replace proxy HMAC.
+
+Proxy HMAC does not grant access to an arbitrary passenger order without a valid passenger capability.
+
 ## Private staff traffic
 
 ```text
@@ -750,6 +971,8 @@ Driver / Admin
         v
 Worker private API
 ```
+
+Staff JWT and passenger capability credentials are separate security domains.
 
 ---
 
@@ -796,6 +1019,14 @@ The signature is calculated over the **exact raw body**.
 
 Equivalent JSON serialized differently does not have the same signature.
 
+For `/order-status`, the canonical Worker pathname is:
+
+```text
+/order-status
+```
+
+The passenger `accessToken` remains inside the JSON request body.
+
 ---
 
 # 19. HTTP status contract
@@ -809,7 +1040,7 @@ The API currently uses the following principal statuses:
 | `204` | CORS preflight |
 | `400` | invalid input |
 | `401` | authentication required/invalid |
-| `403` | forbidden/authentication failure |
+| `403` | forbidden/authentication failure/capability rejection |
 | `404` | resource/route unavailable |
 | `405` | method not allowed |
 | `409` | quote conflict/expired/already used |
@@ -828,8 +1059,9 @@ HTTP status and `ok` remain the primary machine-readable indicators until typed 
 Current public gateway limits:
 
 ```text
-/api/calculate.php : 32768 bytes
-/api/order.php     : 65536 bytes
+/api/calculate.php    : 32768 bytes
+/api/order.php        : 65536 bytes
+/api/order-status.php : 32768 bytes
 ```
 
 The gateway validates:
@@ -841,7 +1073,15 @@ The gateway validates:
 - proxy HMAC configuration
 - valid JSON response from Worker
 
-It passes valid Worker status codes and JSON responses through to the client.
+`/api/order-status.php` additionally validates that:
+
+```text
+accessToken
+```
+
+is present as a non-empty string before forwarding the request.
+
+The gateway passes valid Worker status codes and JSON responses through to the client.
 
 ---
 
@@ -852,13 +1092,15 @@ For API v1, the following are breaking changes:
 - removing an existing required response field;
 - renaming an existing field;
 - changing an existing field type;
-- changing timestamp units;
+- changing business-data timestamp units;
 - changing tariff identifiers;
 - changing status identifiers;
 - changing coordinate ordering;
 - changing the meaning of `quoteId`;
 - allowing client pricing to override server pricing;
-- changing public authentication requirements.
+- changing public authentication requirements;
+- changing the meaning or scope of the passenger order capability;
+- allowing a passenger capability to select an order other than its token subject.
 
 The following may be introduced compatibly:
 
@@ -877,9 +1119,12 @@ The Android passenger application currently uses:
 ```text
 POST /api/calculate.php
 POST /api/order.php
+POST /api/order-status.php
 ```
 
-Calculation request:
+## Calculation request
+
+The Android client sends:
 
 ```text
 from
@@ -904,7 +1149,9 @@ pricing
 route
 ```
 
-Order request sends:
+## Order creation request
+
+The Android client sends:
 
 ```text
 quoteId
@@ -914,14 +1161,89 @@ date
 comment
 ```
 
-Order response consumes:
+Order creation response consumes:
 
 ```text
 ok
 order.id
 order.status
 order.createdAt
+accessToken
+accessExpiresAt
 ```
+
+A successful order receipt is not considered valid by the Android repository if the required passenger capability is missing or invalid.
+
+The Android application securely persists:
+
+```text
+orderId
+accessExpiresAt
+encrypted accessToken
+```
+
+The encryption key is held by Android Keystore.
+
+The access token ciphertext and IV may be stored in application-private preferences.
+
+The plaintext token must not be persisted.
+
+## Active order restore
+
+After application restart, Android loads the secure passenger session and requests the current authoritative order from:
+
+```text
+POST /api/order-status.php
+```
+
+Request:
+
+```text
+accessToken
+```
+
+The active-order response consumes:
+
+```text
+ok
+order.id
+order.status
+order.route
+order.from
+order.to
+order.date
+order.tariff
+order.distance
+order.duration
+order.price
+order.createdAt
+order.updatedAt
+```
+
+The Android application verifies that the returned:
+
+```text
+order.id
+```
+
+matches the locally stored order id.
+
+D1 remains authoritative for current order state.
+
+Android local storage is not authoritative for:
+
+```text
+status
+route
+tariff
+distance
+duration
+price
+```
+
+Temporary network or backend failure does not automatically destroy the still-valid passenger capability.
+
+## Routing provider
 
 The Android DTO currently contains an optional `routingProvider` property.
 
@@ -956,6 +1278,8 @@ DRIVERS
 
 for existing driver authorization/account status.
 
+Passenger order capability tokens are signed credentials and are not stored as authoritative order state in D1 or KV.
+
 ---
 
 # 24. Contract ownership
@@ -965,10 +1289,19 @@ Any code change affecting:
 ```text
 POST /calculate
 POST /orders
+POST /order-status
 GET /orders
 ```
 
 must be checked against this document and the backend test suite.
+
+Changes to the passenger capability contract must also be coordinated with:
+
+```text
+/api/order.php
+/api/order-status.php
+Android passenger application
+```
 
 Before merge:
 
