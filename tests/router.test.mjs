@@ -442,31 +442,286 @@ function createOrderLookupDatabase(
 
 
 // ========================================
-// FAKE D1 FOR ORDER LIST
+// STAFF AUTH TEST FIXTURES
+// ========================================
+
+function staffAccountRow(
+  {
+    id = "admin-1",
+    role = "admin",
+    status = "active",
+    tokenVersion = 1
+  } = {}
+) {
+
+  return {
+    id,
+
+    login:
+      `${role}1`,
+
+    display_name:
+      role === "admin"
+        ? "Admin One"
+        : "Driver One",
+
+    role,
+    status,
+
+    password_algorithm:
+      "pbkdf2-sha256",
+
+    password_iterations:
+      600000,
+
+    password_salt:
+      "aaaaaaaaaaaaaaaaaaaaaa",
+
+    password_hash:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+
+    token_version:
+      tokenVersion,
+
+    failed_login_count:
+      0,
+
+    locked_until:
+      null,
+
+    last_failed_login_at:
+      null,
+
+    last_login_at:
+      Date.now(),
+
+    password_changed_at:
+      1000,
+
+    created_at:
+      1000,
+
+    updated_at:
+      Date.now()
+  };
+}
+
+
+function staffSessionRow(
+  {
+    id = "session-admin-1",
+    accountId = "admin-1",
+    revokedAt = null,
+    replacedBySessionId = null,
+    expiresAt =
+      Date.now() +
+      60 * 60 * 1000
+  } = {}
+) {
+
+  return {
+    id,
+
+    account_id:
+      accountId,
+
+    family_id:
+      `family-${accountId}`,
+
+    refresh_token_hash:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+
+    created_at:
+      Date.now() - 1000,
+
+    expires_at:
+      expiresAt,
+
+    last_used_at:
+      null,
+
+    revoked_at:
+      revokedAt,
+
+    replaced_by_session_id:
+      replacedBySessionId
+  };
+}
+
+
+async function createStaffToken(
+  {
+    id = "admin-1",
+    role = "admin",
+    sessionId =
+      `session-${id}`,
+    tokenVersion = 1
+  } = {}
+) {
+
+  return signJWT(
+    JWT_SECRET,
+    {
+      sub:
+        id,
+
+      id,
+
+      role,
+
+      scope:
+        "staff",
+
+      tokenVersion,
+
+      sid:
+        sessionId
+    },
+    900
+  );
+}
+
+
+// ========================================
+// FAKE D1 FOR ORDER LIST + STAFF AUTH
 // ========================================
 
 function createListDatabase(
-  rows
+  rows,
+  {
+    staffId = "admin-1",
+    role = "admin",
+    status = "active",
+    tokenVersion = 1,
+    sessionId =
+      `session-${staffId}`,
+    sessionRevokedAt = null,
+    sessionReplacedBy = null,
+    sessionExpiresAt =
+      Date.now() +
+      60 * 60 * 1000
+  } = {}
 ) {
 
   return {
 
-    prepare() {
+    prepare(
+      sql
+    ) {
+
+      let args =
+        [];
+
 
       const statement = {
 
-        bind() {
+        bind(
+          ...values
+        ) {
+
+          args =
+            values;
+
           return statement;
         },
 
+
+        async first() {
+
+          if (
+            /FROM staff_accounts/i.test(
+              sql
+            )
+          ) {
+
+            if (
+              String(
+                args[0] ?? ""
+              ) !==
+                staffId
+            ) {
+
+              return null;
+            }
+
+
+            return staffAccountRow({
+              id:
+                staffId,
+
+              role,
+
+              status,
+
+              tokenVersion
+            });
+          }
+
+
+          if (
+            /FROM staff_sessions/i.test(
+              sql
+            )
+          ) {
+
+            if (
+              String(
+                args[0] ?? ""
+              ) !==
+                sessionId
+            ) {
+
+              return null;
+            }
+
+
+            return staffSessionRow({
+              id:
+                sessionId,
+
+              accountId:
+                staffId,
+
+              revokedAt:
+                sessionRevokedAt,
+
+              replacedBySessionId:
+                sessionReplacedBy,
+
+              expiresAt:
+                sessionExpiresAt
+            });
+          }
+
+
+          return null;
+        },
+
+
         async all() {
+
+          if (
+            /FROM orders/i.test(
+              sql
+            )
+          ) {
+
+            return {
+              success:
+                true,
+
+              results:
+                rows
+            };
+          }
+
 
           return {
             success:
               true,
 
             results:
-              rows
+              []
           };
         }
       };
@@ -1159,6 +1414,7 @@ await test(
       401
     );
 
+
     assert.equal(
       body.error,
       "authorization required"
@@ -1176,39 +1432,45 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
+      await createStaffToken({
+        id:
+          "admin-1",
+
+        role:
+          "admin"
+      });
+
+
+    const db =
+      createListDatabase(
+        [
+          orderRow({
+            id:
+              "order-new",
+
+            created_at:
+              3000
+          }),
+
+          orderRow({
+            id:
+              "order-old",
+
+            status:
+              "done",
+
+            created_at:
+              1000
+          })
+        ],
         {
-          id:
+          staffId:
             "admin-1",
 
           role:
             "admin"
         }
       );
-
-
-    const db =
-      createListDatabase([
-        orderRow({
-          id:
-            "order-new",
-
-          created_at:
-            3000
-        }),
-
-        orderRow({
-          id:
-            "order-old",
-
-          status:
-            "done",
-
-          created_at:
-            1000
-        })
-      ]);
 
 
     const response =
@@ -1243,35 +1505,42 @@ await test(
       200
     );
 
+
     assert.equal(
       body.ok,
       true
     );
+
 
     assert.equal(
       body.total,
       2
     );
 
+
     assert.equal(
       body.count,
       2
     );
+
 
     assert.equal(
       body.orders[0].id,
       "order-new"
     );
 
+
     assert.equal(
       body.orders[0].name,
       "Иван"
     );
 
+
     assert.equal(
       body.orders[0].phone,
       "+79990000001"
     );
+
 
     assert.equal(
       body.orders[0].comment,
@@ -1290,42 +1559,48 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
+      await createStaffToken({
+        id:
+          "admin-1",
+
+        role:
+          "admin"
+      });
+
+
+    const db =
+      createListDatabase(
+        [
+          orderRow({
+            id:
+              "new-order",
+
+            status:
+              "new",
+
+            created_at:
+              3000
+          }),
+
+          orderRow({
+            id:
+              "done-order",
+
+            status:
+              "done",
+
+            created_at:
+              2000
+          })
+        ],
         {
-          id:
+          staffId:
             "admin-1",
 
           role:
             "admin"
         }
       );
-
-
-    const db =
-      createListDatabase([
-        orderRow({
-          id:
-            "new-order",
-
-          status:
-            "new",
-
-          created_at:
-            3000
-        }),
-
-        orderRow({
-          id:
-            "done-order",
-
-          status:
-            "done",
-
-          created_at:
-            2000
-        })
-      ]);
 
 
     const response =
@@ -1360,15 +1635,18 @@ await test(
       200
     );
 
+
     assert.equal(
       body.total,
       1
     );
 
+
     assert.equal(
       body.orders[0].id,
       "done-order"
     );
+
 
     assert.equal(
       body.status,
@@ -1387,10 +1665,20 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
+      await createStaffToken({
+        id:
+          "admin-1",
+
+        role:
+          "admin"
+      });
+
+
+    const db =
+      createListDatabase(
+        [],
         {
-          id:
+          staffId:
             "admin-1",
 
           role:
@@ -1412,7 +1700,10 @@ await test(
         ),
         {
           JWT_SECRET:
-            JWT_SECRET
+            JWT_SECRET,
+
+          DB:
+            db
         }
       );
 
@@ -1427,6 +1718,7 @@ await test(
       response.status,
       400
     );
+
 
     assert.equal(
       body.error,
@@ -1445,85 +1737,68 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
+      await createStaffToken({
+        id:
+          "driver-1",
+
+        role:
+          "driver"
+      });
+
+
+    const db =
+      createListDatabase(
+        [
+          orderRow({
+            id:
+              "new-order",
+
+            status:
+              "new",
+
+            driver_id:
+              null,
+
+            created_at:
+              3000
+          }),
+
+          orderRow({
+            id:
+              "own-order",
+
+            status:
+              "taken",
+
+            driver_id:
+              "driver-1",
+
+            created_at:
+              2000
+          }),
+
+          orderRow({
+            id:
+              "other-order",
+
+            status:
+              "taken",
+
+            driver_id:
+              "driver-2",
+
+            created_at:
+              1000
+          })
+        ],
         {
-          id:
+          staffId:
             "driver-1",
 
           role:
             "driver"
         }
       );
-
-
-    const db =
-      createListDatabase([
-        orderRow({
-          id:
-            "new-order",
-
-          status:
-            "new",
-
-          driver_id:
-            null,
-
-          created_at:
-            3000
-        }),
-
-        orderRow({
-          id:
-            "own-order",
-
-          status:
-            "taken",
-
-          driver_id:
-            "driver-1",
-
-          created_at:
-            2000
-        }),
-
-        orderRow({
-          id:
-            "other-order",
-
-          status:
-            "taken",
-
-          driver_id:
-            "driver-2",
-
-          created_at:
-            1000
-        })
-      ]);
-
-
-    const drivers = {
-
-      async get(
-        key
-      ) {
-
-        assert.equal(
-          key,
-          "driver-1"
-        );
-
-
-        return JSON.stringify({
-          id:
-            "driver-1",
-
-          status:
-            "approved"
-        });
-      }
-    };
 
 
     const response =
@@ -1542,10 +1817,7 @@ await test(
             JWT_SECRET,
 
           DB:
-            db,
-
-          DRIVERS:
-            drivers
+            db
         }
       );
 
@@ -1561,10 +1833,12 @@ await test(
       200
     );
 
+
     assert.equal(
       body.total,
       2
     );
+
 
     assert.equal(
       body.orders.length,
@@ -1592,13 +1866,12 @@ await test(
       newOrder
     );
 
+
     assert.ok(
       ownOrder
     );
 
 
-    // Новый неназначенный заказ:
-    // PII скрыта.
     assert.equal(
       Object.hasOwn(
         newOrder,
@@ -1606,6 +1879,7 @@ await test(
       ),
       false
     );
+
 
     assert.equal(
       Object.hasOwn(
@@ -1616,12 +1890,11 @@ await test(
     );
 
 
-    // Собственный заказ:
-    // PII доступна.
     assert.equal(
       ownOrder.name,
       "Иван"
     );
+
 
     assert.equal(
       ownOrder.phone,
@@ -1642,11 +1915,86 @@ await test(
 
 
 // ========================================
-// DRIVER ACCOUNT STATUS
+// DISABLED STAFF ACCOUNT
 // ========================================
 
 await test(
-  "unapproved driver cannot read orders",
+  "disabled driver account cannot read orders",
+  async () => {
+
+    const token =
+      await createStaffToken({
+        id:
+          "driver-1",
+
+        role:
+          "driver"
+      });
+
+
+    const db =
+      createListDatabase(
+        [],
+        {
+          staffId:
+            "driver-1",
+
+          role:
+            "driver",
+
+          status:
+            "disabled"
+        }
+      );
+
+
+    const response =
+      await router(
+        new Request(
+          "https://worker.test/orders",
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`
+            }
+          }
+        ),
+        {
+          JWT_SECRET:
+            JWT_SECRET,
+
+          DB:
+            db
+        }
+      );
+
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+
+    assert.equal(
+      response.status,
+      401
+    );
+
+
+    assert.equal(
+      body.error,
+      "invalid or revoked staff token"
+    );
+  }
+);
+
+
+// ========================================
+// LEGACY ROLE-ONLY JWT
+// ========================================
+
+await test(
+  "legacy role-only JWT cannot access private order list",
   async () => {
 
     const token =
@@ -1654,6 +2002,20 @@ await test(
         JWT_SECRET,
         {
           id:
+            "driver-1",
+
+          role:
+            "driver"
+        },
+        900
+      );
+
+
+    const db =
+      createListDatabase(
+        [],
+        {
+          staffId:
             "driver-1",
 
           role:
@@ -1677,19 +2039,8 @@ await test(
           JWT_SECRET:
             JWT_SECRET,
 
-          DRIVERS: {
-
-            async get() {
-
-              return JSON.stringify({
-                id:
-                  "driver-1",
-
-                status:
-                  "pending"
-              });
-            }
-          }
+          DB:
+            db
         }
       );
 
@@ -1702,19 +2053,20 @@ await test(
 
     assert.equal(
       response.status,
-      403
+      401
     );
+
 
     assert.equal(
       body.error,
-      "driver not approved"
+      "invalid or revoked staff token"
     );
   }
 );
 
 
 // ========================================
-// ROLE
+// PASSENGER ROLE JWT
 // ========================================
 
 await test(
@@ -1730,7 +2082,8 @@ await test(
 
           role:
             "passenger"
-        }
+        },
+        900
       );
 
 
@@ -1760,12 +2113,13 @@ await test(
 
     assert.equal(
       response.status,
-      403
+      401
     );
+
 
     assert.equal(
       body.error,
-      "forbidden"
+      "invalid or revoked staff token"
     );
   }
 );
@@ -1780,22 +2134,28 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
+      await createStaffToken({
+        id:
+          "admin-1",
+
+        role:
+          "admin"
+      });
+
+
+    const db =
+      createListDatabase(
+        [
+          orderRow()
+        ],
         {
-          id:
+          staffId:
             "admin-1",
 
           role:
             "admin"
         }
       );
-
-
-    const db =
-      createListDatabase([
-        orderRow()
-      ]);
 
 
     const response =
@@ -1829,6 +2189,7 @@ await test(
       response.status,
       200
     );
+
 
     assert.equal(
       body.limit,

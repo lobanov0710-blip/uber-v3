@@ -5,9 +5,12 @@ import {
 } from "./core/utils.js";
 
 import {
-  authenticateRequest,
   hasRole
 } from "./core/auth.js";
+
+import {
+  authenticateStaffRequest
+} from "./core/staffAuthorization.js";
 
 import {
   geoCalculate
@@ -45,6 +48,12 @@ import {
   issuePassengerOrderAccess,
   verifyPassengerOrderAccess
 } from "./core/passengerOrderAccess.js";
+
+import {
+  loginStaff,
+  refreshStaff,
+  logoutStaff
+} from "./core/staffAuthService.js";
 
 
 // =========================
@@ -159,18 +168,252 @@ export default async function router(
   }
 
 
+    // =========================
+  // STAFF LOGIN
+  // =========================
+  //
+  // Public authentication endpoint.
+  //
+  // This endpoint does NOT use:
+  //
+  // - passenger proxy HMAC
+  // - passenger capability token
+  // - existing staff JWT
+  //
+  // Credentials are verified against
+  // authoritative staff_accounts in D1.
+  // =========================
+
+  if (
+    path === "/staff/login"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await loginStaff(
+          env,
+          body
+        );
+
+
+      if (
+        result?.ok !== true
+      ) {
+
+        return safeError(
+          result?.error ||
+            "authentication failed",
+
+          result?.status ||
+            401
+        );
+      }
+
+
+      return json(
+        result,
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "STAFF LOGIN ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "staff authentication failed",
+        500
+      );
+    }
+  }
+
+
+  // =========================
+  // STAFF REFRESH
+  // =========================
+  //
+  // Possession of the current refresh
+  // token authorizes refresh.
+  //
+  // Refresh-token plaintext is never
+  // persisted in D1.
+  //
+  // Successful refresh rotates the token.
+  // =========================
+
+  if (
+    path === "/staff/refresh"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await refreshStaff(
+          env,
+          body?.refreshToken
+        );
+
+
+      if (
+        result?.ok !== true
+      ) {
+
+        return safeError(
+          result?.error ||
+            "invalid refresh token",
+
+          result?.status ||
+            401
+        );
+      }
+
+
+      return json(
+        result,
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "STAFF REFRESH ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "staff refresh failed",
+        500
+      );
+    }
+  }
+
+
+  // =========================
+  // STAFF LOGOUT
+  // =========================
+  //
+  // Logout is intentionally idempotent.
+  //
+  // An unknown or malformed refresh token
+  // does not reveal session existence.
+  // =========================
+
+  if (
+    path === "/staff/logout"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      await logoutStaff(
+        env,
+        body?.refreshToken
+      );
+
+
+      return json(
+        {
+          ok: true
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "STAFF LOGOUT ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "staff logout failed",
+        500
+      );
+    }
+  }
+
+
   // =========================
   // DISABLED LEGACY ENDPOINTS
   // =========================
   //
-  // Эти endpoints намеренно
-  // отключены до завершения
-  // отдельной защищённой
-  // реализации driver/admin API.
+  // Legacy driver authentication remains
+  // disabled.
   //
-  // Возвращаем 404, чтобы
-  // публично не подтверждать
-  // наличие этих API.
+  // Staff authentication is provided only
+  // through:
+  //
+  // POST /staff/login
+  // POST /staff/refresh
+  // POST /staff/logout
+  //
+  // There is intentionally NO public
+  // staff/register endpoint.
   // =========================
 
   const disabledLegacyPaths =
@@ -180,6 +423,7 @@ export default async function router(
       "/drivers/login",
       "/stats"
     ]);
+
 
   if (
     disabledLegacyPaths.has(
@@ -624,12 +868,26 @@ export default async function router(
     }
 
 
+        // =========================
+    // STAFF AUTHORIZATION
     // =========================
-    // JWT AUTH
+    //
+    // JWT signature alone is not enough.
+    //
+    // authenticateStaffRequest verifies:
+    //
+    // - staff scope
+    // - account identity
+    // - role
+    // - tokenVersion
+    // - active D1 account
+    // - active D1 session
+    // - session ownership
+    // - revocation / rotation / expiration
     // =========================
 
     const auth =
-      await authenticateRequest(
+      await authenticateStaffRequest(
         req,
         env
       );
@@ -757,13 +1015,15 @@ export default async function router(
 
 
     // =========================
-    // DRIVER ACCOUNT
+    // AUTHORITATIVE DRIVER ID
     // =========================
     //
-    // A role=driver JWT is not enough.
+    // user.id was reconstructed from
+    // the active D1 staff account by
+    // authenticateStaffRequest().
     //
-    // Driver must still exist in
-    // DRIVERS KV and be approved/active.
+    // DRIVERS KV is no longer part of
+    // authentication/authorization.
     // =========================
 
     let driverId =
@@ -785,76 +1045,8 @@ export default async function router(
       if (!driverId) {
 
         return safeError(
-          "invalid driver account",
-          403
-        );
-      }
-
-
-      let driver =
-        null;
-
-
-      try {
-
-        const raw =
-          await env.DRIVERS.get(
-            driverId
-          );
-
-
-        if (raw) {
-
-          driver =
-            JSON.parse(
-              raw
-            );
-        }
-
-      } catch (
-        error
-      ) {
-
-        console.error(
-          "DRIVER TRANSITION AUTH READ ERROR:",
-          error
-        );
-
-
-        return safeError(
-          "driver authorization failed",
+          "invalid staff identity",
           500
-        );
-      }
-
-
-      if (!driver) {
-
-        return safeError(
-          "driver not found",
-          403
-        );
-      }
-
-
-      const driverStatus =
-        String(
-          driver.status ??
-          ""
-        )
-          .trim()
-          .toLowerCase();
-
-
-      if (
-        driverStatus !== "approved"
-        &&
-        driverStatus !== "active"
-      ) {
-
-        return safeError(
-          "driver not approved",
-          403
         );
       }
     }
@@ -1235,12 +1427,20 @@ export default async function router(
       req.method === "GET"
     ) {
 
+            // =========================
+      // STAFF AUTHORIZATION
       // =========================
-      // JWT AUTH
+      //
+      // Staff access is authoritative
+      // against D1 account + session.
+      //
+      // Legacy role-only JWTs and
+      // DRIVERS KV are not authorization
+      // mechanisms here anymore.
       // =========================
 
       const auth =
-        await authenticateRequest(
+        await authenticateStaffRequest(
           req,
           env
         );
@@ -1271,6 +1471,7 @@ export default async function router(
           "admin"
         );
 
+
       const isDriver =
         hasRole(
           user,
@@ -1287,108 +1488,6 @@ export default async function router(
           "forbidden",
           403
         );
-      }
-
-
-      // =========================
-      // DRIVER ACCOUNT CHECK
-      // =========================
-      //
-      // Старые login/register
-      // endpoints отключены,
-      // однако эта проверка
-      // остаётся для существующих
-      // валидных JWT и будущей
-      // безопасной driver auth.
-      // =========================
-
-      if (
-        isDriver
-      ) {
-
-        if (
-          !user.id
-        ) {
-
-          return safeError(
-            "invalid driver account",
-            403
-          );
-        }
-
-
-        let driver =
-          null;
-
-
-        try {
-
-          const raw =
-            await env.DRIVERS.get(
-              String(
-                user.id
-              )
-            );
-
-
-          if (
-            raw
-          ) {
-
-            driver =
-              JSON.parse(
-                raw
-              );
-          }
-
-        } catch (
-          error
-        ) {
-
-          console.error(
-            "DRIVER AUTH READ ERROR:",
-            error
-          );
-
-          return safeError(
-            "driver authorization failed",
-            500
-          );
-        }
-
-
-        if (
-          !driver
-        ) {
-
-          return safeError(
-            "driver not found",
-            403
-          );
-        }
-
-
-        const driverStatus =
-          String(
-            driver.status ||
-              ""
-          )
-            .trim()
-            .toLowerCase();
-
-
-        if (
-          driverStatus !==
-            "approved" &&
-          driverStatus !==
-            "active"
-        ) {
-
-          return safeError(
-            "driver not approved",
-            403
-          );
-        }
       }
 
 

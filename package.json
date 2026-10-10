@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "test": "npm run test:pricing && npm run test:quotes && npm run test:orders && npm run test:orders:write && npm run test:orders:transitions && npm run test:order-domain && npm run test:auth && npm run test:proxy-auth && npm run test:router && npm run test:router:transitions && npm run test:passenger-access",
+    "test": "npm run test:pricing && npm run test:quotes && npm run test:orders && npm run test:orders:write && npm run test:orders:transitions && npm run test:order-domain && npm run test:auth && npm run test:staff-auth-crypto && npm run test:staff-auth-accounts && npm run test:staff-auth-sessions && npm run test:staff-auth-service && npm run test:staff-authorization && npm run test:staff-provisioning && npm run test:proxy-auth && npm run test:router && npm run test:router:staff-auth && npm run test:router:transitions && npm run test:passenger-access",
     "test:pricing": "node ./tests/pricing.test.mjs",
     "test:quotes": "node ./tests/quotes.test.mjs",
     "test:orders": "node ./tests/orderRepository.test.mjs",
@@ -9,10 +9,18 @@
     "test:orders:transitions": "node ./tests/orderRepository.transitions.test.mjs",
     "test:order-domain": "node ./tests/orders.test.mjs",
     "test:auth": "node ./tests/auth.test.mjs",
+    "test:staff-auth-crypto": "node ./tests/staffAuthCrypto.test.mjs",
+    "test:staff-auth-accounts": "node ./tests/staffAuthRepository.accounts.test.mjs",
+    "test:staff-auth-sessions": "node ./tests/staffAuthRepository.sessions.test.mjs",
+    "test:staff-auth-service": "node ./tests/staffAuthService.test.mjs",
+    "test:staff-authorization": "node ./tests/staffAuthorization.test.mjs",
+    "test:staff-provisioning": "node ./tests/staffProvisioning.test.mjs",
     "test:proxy-auth": "node ./tests/proxyAuth.test.mjs",
     "test:router": "node ./tests/router.test.mjs",
+    "test:router:staff-auth": "node ./tests/router.staffAuth.test.mjs",
     "test:router:transitions": "node ./tests/router.transitions.test.mjs",
     "test:passenger-access": "node ./tests/passengerOrderAccess.test.mjs",
+    "staff:bootstrap-admin": "node ./scripts/bootstrapAdmin.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },

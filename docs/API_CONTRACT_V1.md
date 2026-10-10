@@ -9,8 +9,9 @@ The contract reflects the implemented behavior of:
 - Cloudflare Worker `uber-v3`
 - public PHP gateway on `transfer-servis52.ru`
 - Android passenger application
+- private staff authentication and order API
 
-Breaking changes require a new API version or an explicit coordinated migration of all clients.
+Breaking changes require a new API version or an explicit coordinated migration of all affected clients.
 
 ---
 
@@ -18,7 +19,7 @@ Breaking changes require a new API version or an explicit coordinated migration 
 
 Passenger clients do not call the Cloudflare Worker directly.
 
-Public traffic:
+Public passenger traffic:
 
 ```text
 Android / Website
@@ -48,13 +49,22 @@ Internal Worker endpoints:
 POST /calculate
 POST /orders
 POST /order-status
+
+POST /staff/login
+POST /staff/refresh
+POST /staff/logout
+
 GET  /orders
 POST /orders/{orderId}/status
 ```
 
+`POST /staff/login`, `POST /staff/refresh`, and `POST /staff/logout` implement the staff authentication lifecycle.
+
 `GET /orders` and `POST /orders/{orderId}/status` are private staff endpoints and are not part of the public passenger API.
 
-They require staff JWT authentication and are called directly by authorized staff clients, not through the public PHP passenger gateway.
+Private staff endpoints require a valid staff access JWT backed by an active D1 staff account and active D1 staff session.
+
+Staff clients communicate directly with the Worker and do not use the public passenger PHP gateway.
 
 `POST /order-status` is not called directly by Android or browser clients.
 
@@ -106,6 +116,7 @@ createdAt
 updatedAt
 quoteExpiresAt
 accessExpiresAt
+refreshExpiresAt
 ```
 
 Example:
@@ -775,7 +786,7 @@ GET /orders
 Authentication:
 
 ```text
-Authorization: Bearer <JWT>
+Authorization: Bearer <staff access JWT>
 ```
 
 Allowed roles:
@@ -785,7 +796,11 @@ admin
 driver
 ```
 
-Passenger JWTs must not access this endpoint.
+The JWT alone is not authoritative.
+
+The Worker also validates the current D1 staff account and D1 staff session associated with the token.
+
+Passenger capability tokens must not access this endpoint.
 
 ---
 
@@ -851,7 +866,7 @@ Request:
 
 ```text
 POST /orders/{orderId}/status
-Authorization: Bearer <staff JWT>
+Authorization: Bearer <staff access JWT>
 Content-Type: application/json
 ```
 
@@ -882,7 +897,14 @@ The authenticated role, current persisted order state, and current `driverId` de
 
 ### Driver transition policy
 
-An authenticated driver whose current driver account is `approved` or `active` may perform:
+An authenticated staff account with:
+
+```text
+role = driver
+status = active
+```
+
+may perform:
 
 ```text
 new
@@ -895,13 +917,17 @@ in_progress
   -> done
 ```
 
+The authoritative driver identity is the `staff_accounts.id` reconstructed by the Worker after validating both the access JWT and the current D1 account/session state.
+
+`DRIVERS` KV is not part of staff authentication or authorization.
+
 When a driver performs:
 
 ```text
 new -> taken
 ```
 
-the authenticated driver id is written to:
+the authenticated staff account id is written to:
 
 ```text
 orders.driver_id
@@ -916,7 +942,7 @@ taken -> in_progress
 in_progress -> done
 ```
 
-the authenticated driver id must exactly match the persisted:
+the authenticated staff account id must exactly match the persisted:
 
 ```text
 orders.driver_id
@@ -973,7 +999,7 @@ and assigns both:
 
 ```text
 status = taken
-driver_id = authenticated driver id
+driver_id = authenticated staff account id
 ```
 
 atomically.
@@ -996,7 +1022,7 @@ Example:
   "order": {
     "id": "order-id",
     "status": "taken",
-    "driverId": "driver-1",
+    "driverId": "staff-driver-id",
     "updatedAt": 1791503600000
   }
 }
@@ -1018,12 +1044,12 @@ Customer PII is not returned by this response.
 | Status | Meaning |
 |---|---|
 | `400` | invalid order id or target status |
-| `401` | missing, invalid, or expired staff JWT |
+| `401` | missing, invalid, expired, or revoked staff authentication |
 | `403` | role/account is not authorized for the requested transition |
 | `404` | order does not exist |
 | `405` | HTTP method other than POST |
 | `409` | order exists but its current state/assignment does not permit the requested transition |
-| `500` | driver authorization storage, D1, or transition processing failure |
+| `500` | staff authorization, D1, or transition processing failure |
 
 A `409 Conflict` is expected for races such as two drivers attempting to take the same `new` order.
 
@@ -1092,37 +1118,74 @@ Orders assigned to another driver are not visible.
 
 ---
 
-# 16. Driver account requirement
+# 16. Staff account and session requirement
 
-A JWT with role:
+A signed JWT is not sufficient by itself to access private staff endpoints.
 
-```text
-driver
-```
-
-is not sufficient by itself.
-
-The corresponding driver record must exist and its current status must be:
+For every protected staff request, the Worker validates:
 
 ```text
-approved
+JWT signature and expiration
+scope = staff
+sub / id identity consistency
+role
+tokenVersion
+sid
 ```
 
-or:
+and then checks authoritative D1 state.
+
+The corresponding row in:
 
 ```text
-active
+staff_accounts
 ```
 
-The current driver registry remains in `DRIVERS` KV.
+must exist and have:
 
-Transactional quote/order data does not use KV.
+```text
+status = active
+```
+
+The account role and `token_version` stored in D1 must match the JWT claims.
+
+The JWT is also bound to a row in:
+
+```text
+staff_sessions
+```
+
+through its:
+
+```text
+sid
+```
+
+claim.
+
+That session must:
+
+```text
+exist
+belong to the authenticated account
+not be revoked
+not have been replaced
+not be expired
+```
+
+The authenticated principal used by private routes is reconstructed from current D1 data.
+
+Therefore changing account state, token version, or session state can invalidate previously issued access tokens without trusting stale role/account data contained only in the JWT.
+
+`DRIVERS` KV is not authoritative for staff authentication or authorization.
+
+Order state and assignment remain authoritative in D1.
 
 ---
 
 # 17. Authentication zones
 
-The platform has separate authentication zones.
+The platform has separate passenger and staff authentication zones.
 
 ## Public passenger traffic
 
@@ -1155,12 +1218,177 @@ Proxy HMAC does not grant access to an arbitrary passenger order without a valid
 
 Passenger credentials provide no authority to mutate order state.
 
+## Staff authentication
+
+Staff authentication is handled directly by the Worker.
+
+There is no public staff self-registration endpoint.
+
+Legacy endpoints:
+
+```text
+/drivers/register
+/drivers/login
+```
+
+are disabled.
+
+### Login
+
+```text
+POST /staff/login
+```
+
+Request:
+
+```json
+{
+  "login": "admin.main",
+  "password": "staff password"
+}
+```
+
+Credentials are checked against authoritative:
+
+```text
+staff_accounts
+```
+
+in D1.
+
+Only accounts with:
+
+```text
+status = active
+```
+
+may authenticate.
+
+Unknown, inactive, locked, and incorrect-password cases use generic authentication errors rather than exposing account existence.
+
+Successful login returns:
+
+```json
+{
+  "ok": true,
+  "staff": {
+    "id": "staff-account-id",
+    "displayName": "Staff member",
+    "role": "admin"
+  },
+  "accessToken": "JWT",
+  "accessExpiresAt": 1791500900000,
+  "refreshToken": "tsr1....",
+  "refreshExpiresAt": 1794092000000
+}
+```
+
+The access JWT lifetime is:
+
+```text
+15 minutes
+```
+
+A newly authenticated refresh-token family has an absolute maximum lifetime of:
+
+```text
+30 days
+```
+
+Passwords are verified using:
+
+```text
+PBKDF2-HMAC-SHA256
+```
+
+New password verifiers use:
+
+```text
+600000 iterations
+16-byte random salt
+32-byte derived key
+```
+
+Plaintext staff passwords are not stored in D1.
+
+### Refresh
+
+```text
+POST /staff/refresh
+```
+
+Request:
+
+```json
+{
+  "refreshToken": "tsr1...."
+}
+```
+
+Refresh tokens are opaque 256-bit random credentials.
+
+D1 stores only:
+
+```text
+SHA-256(refreshToken)
+```
+
+and never the plaintext refresh token.
+
+A successful refresh rotates the refresh token.
+
+The old session becomes revoked and references its replacement.
+
+The replacement session inherits the original session-family:
+
+```text
+expires_at
+```
+
+so repeated refresh operations cannot extend the absolute refresh lifetime.
+
+Rotation is fail-closed.
+
+The current active session is claimed/revoked before a replacement session is inserted.
+
+A replacement session cannot become active unless the corresponding current session was successfully claimed by that rotation attempt.
+
+Reuse of an already rotated or revoked refresh token revokes its session family.
+
+### Logout
+
+```text
+POST /staff/logout
+```
+
+Request:
+
+```json
+{
+  "refreshToken": "tsr1...."
+}
+```
+
+Logout revokes the corresponding D1 session.
+
+Logout is intentionally idempotent.
+
+Malformed, unknown, or already revoked refresh tokens do not reveal whether a session existed.
+
+Successful logout returns:
+
+```json
+{
+  "ok": true
+}
+```
+
 ## Private staff traffic
 
 ```text
 Transfer Driver / Admin
         |
-        | staff JWT
+        | staff access JWT
         v
 Cloudflare Worker
         |
@@ -1168,7 +1396,7 @@ Cloudflare Worker
 D1
 ```
 
-Private staff endpoints currently include:
+Private staff endpoints include:
 
 ```text
 GET  /orders
@@ -1177,26 +1405,14 @@ POST /orders/{orderId}/status
 
 Staff traffic does not use the passenger PHP gateway.
 
-Staff JWT and passenger capability credentials are separate security domains.
+Staff JWTs and passenger capability credentials belong to separate security domains.
 
-A JWT with:
+A staff access JWT is accepted only while both its D1 account and its D1 session remain valid.
 
-```text
-role = driver
-```
-
-does not by itself authorize driver operations.
-
-The corresponding current driver record must also exist in `DRIVERS` KV and have status:
+For a driver, the authoritative identity used for order ownership is:
 
 ```text
-approved
-```
-
-or:
-
-```text
-active
+staff_accounts.id
 ```
 
 Order ownership and legal state transitions remain authoritative in D1.
@@ -1254,9 +1470,9 @@ For `/order-status`, the canonical Worker pathname is:
 
 The passenger `accessToken` remains inside the JSON request body.
 
-Private staff endpoints do not use the passenger proxy HMAC authentication zone.
+Private staff authentication and staff API endpoints do not use the passenger proxy HMAC authentication zone.
 
-They use staff JWT authentication.
+They use the separate D1-backed staff authentication model.
 
 ---
 
@@ -1266,17 +1482,17 @@ The API currently uses the following principal statuses:
 
 | Status | Meaning |
 |---|---|
-| `200` | successful calculation/read/state transition |
+| `200` | successful calculation/read/authentication operation/state transition |
 | `201` | order created/accepted |
 | `204` | CORS preflight |
 | `400` | invalid input |
-| `401` | staff authentication required or invalid |
-| `403` | forbidden/authentication failure/capability rejection |
-| `404` | resource/route unavailable |
+| `401` | staff credentials/token/session invalid, expired, revoked, or authentication required |
+| `403` | forbidden operation or passenger capability rejection |
+| `404` | resource/route unavailable or disabled legacy endpoint |
 | `405` | method not allowed |
 | `409` | quote conflict or order state-transition conflict |
 | `413` | PHP gateway request too large |
-| `500` | internal/configuration failure |
+| `500` | internal/configuration/storage failure |
 | `502` | PHP gateway upstream failure |
 
 Clients must not infer business state purely from the text of an error message.
@@ -1314,13 +1530,17 @@ is present as a non-empty string before forwarding the request.
 
 The gateway passes valid Worker status codes and JSON responses through to the client.
 
-The private staff state-transition endpoint:
+Staff endpoints:
 
 ```text
+POST /staff/login
+POST /staff/refresh
+POST /staff/logout
+GET  /orders
 POST /orders/{orderId}/status
 ```
 
-does not pass through the public PHP passenger gateway.
+do not pass through the public PHP passenger gateway.
 
 ---
 
@@ -1337,9 +1557,12 @@ For API v1, the following are breaking changes:
 - changing coordinate ordering;
 - changing the meaning of `quoteId`;
 - allowing client pricing to override server pricing;
-- changing public authentication requirements;
+- changing public passenger authentication requirements;
 - changing the meaning or scope of the passenger order capability;
 - allowing a passenger capability to select an order other than its token subject;
+- changing the staff access-token claim contract;
+- changing the staff refresh-token rotation semantics;
+- allowing staff JWT claims to bypass authoritative D1 account/session validation;
 - allowing unauthorized roles to perform staff state transitions;
 - changing legal order transition semantics without coordinated staff-client support.
 
@@ -1366,11 +1589,14 @@ POST /api/order-status.php
 The Android passenger application does not use:
 
 ```text
-GET /orders
+POST /staff/login
+POST /staff/refresh
+POST /staff/logout
+GET  /orders
 POST /orders/{orderId}/status
 ```
 
-Those endpoints belong to the private staff API.
+Those endpoints belong to the staff authentication/private staff API.
 
 ## Calculation request
 
@@ -1505,7 +1731,7 @@ Therefore `routingProvider` is **not part of API v1** and clients must not depen
 
 # 23. Source of truth
 
-Transactional storage:
+Authoritative transactional and security storage:
 
 ```text
 Cloudflare D1
@@ -1516,17 +1742,38 @@ Authoritative entities:
 ```text
 quotes
 orders
+staff_accounts
+staff_sessions
 ```
 
-KV must not be used as an authoritative or mirrored store for quotes or orders.
-
-Current remaining KV responsibility:
+KV must not be used as an authoritative or mirrored store for:
 
 ```text
-DRIVERS
+quotes
+orders
+staff authentication state
+staff authorization state
+staff refresh sessions
 ```
 
-for existing driver authorization/account status.
+The authoritative staff-security fields include:
+
+```text
+staff_accounts.id
+staff_accounts.role
+staff_accounts.status
+staff_accounts.token_version
+staff_accounts.password_*
+staff_accounts.locked_until
+
+staff_sessions.id
+staff_sessions.account_id
+staff_sessions.family_id
+staff_sessions.refresh_token_hash
+staff_sessions.expires_at
+staff_sessions.revoked_at
+staff_sessions.replaced_by_session_id
+```
 
 The authoritative order fields involved in staff state transitions are:
 
@@ -1536,9 +1783,23 @@ orders.driver_id
 orders.updated_at
 ```
 
+For driver-owned orders:
+
+```text
+orders.driver_id
+```
+
+contains the authoritative D1 staff account id of the assigned driver.
+
 Legal transitions are enforced by conditional D1 updates.
 
 Passenger order capability tokens are signed credentials and are not stored as authoritative order state in D1 or KV.
+
+Staff access JWTs are signed credentials, but their account/session authorization state remains authoritative in D1.
+
+Plaintext staff refresh tokens are not stored in D1.
+
+Only their cryptographic hashes are persisted.
 
 ---
 
@@ -1550,6 +1811,11 @@ Any code change affecting:
 POST /calculate
 POST /orders
 POST /order-status
+
+POST /staff/login
+POST /staff/refresh
+POST /staff/logout
+
 GET  /orders
 POST /orders/{orderId}/status
 ```
@@ -1564,11 +1830,31 @@ Changes to the passenger capability contract must also be coordinated with:
 Android passenger application
 ```
 
+Changes to staff authentication must preserve:
+
+```text
+D1-authoritative account state
+D1-authoritative session state
+generic credential failures
+password verifier policy
+account lockout policy
+tokenVersion validation
+sid/session binding
+refresh-token hashing
+refresh-token rotation
+absolute refresh-family expiration
+refresh replay detection
+session revocation
+disabled public self-registration
+```
+
 Changes to staff order-transition behavior must preserve:
 
 ```text
 role authorization
-driver account validation
+D1 staff account validation
+D1 staff session validation
+driver identity
 driver ownership
 legal state transitions
 terminal states
