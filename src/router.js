@@ -5,9 +5,12 @@ import {
 } from "./core/utils.js";
 
 import {
-  authenticateRequest,
   hasRole
 } from "./core/auth.js";
+
+import {
+  authenticateStaffRequest
+} from "./core/staffAuthorization.js";
 
 import {
   geoCalculate
@@ -865,12 +868,26 @@ export default async function router(
     }
 
 
+        // =========================
+    // STAFF AUTHORIZATION
     // =========================
-    // JWT AUTH
+    //
+    // JWT signature alone is not enough.
+    //
+    // authenticateStaffRequest verifies:
+    //
+    // - staff scope
+    // - account identity
+    // - role
+    // - tokenVersion
+    // - active D1 account
+    // - active D1 session
+    // - session ownership
+    // - revocation / rotation / expiration
     // =========================
 
     const auth =
-      await authenticateRequest(
+      await authenticateStaffRequest(
         req,
         env
       );
@@ -998,13 +1015,15 @@ export default async function router(
 
 
     // =========================
-    // DRIVER ACCOUNT
+    // AUTHORITATIVE DRIVER ID
     // =========================
     //
-    // A role=driver JWT is not enough.
+    // user.id was reconstructed from
+    // the active D1 staff account by
+    // authenticateStaffRequest().
     //
-    // Driver must still exist in
-    // DRIVERS KV and be approved/active.
+    // DRIVERS KV is no longer part of
+    // authentication/authorization.
     // =========================
 
     let driverId =
@@ -1026,76 +1045,8 @@ export default async function router(
       if (!driverId) {
 
         return safeError(
-          "invalid driver account",
-          403
-        );
-      }
-
-
-      let driver =
-        null;
-
-
-      try {
-
-        const raw =
-          await env.DRIVERS.get(
-            driverId
-          );
-
-
-        if (raw) {
-
-          driver =
-            JSON.parse(
-              raw
-            );
-        }
-
-      } catch (
-        error
-      ) {
-
-        console.error(
-          "DRIVER TRANSITION AUTH READ ERROR:",
-          error
-        );
-
-
-        return safeError(
-          "driver authorization failed",
+          "invalid staff identity",
           500
-        );
-      }
-
-
-      if (!driver) {
-
-        return safeError(
-          "driver not found",
-          403
-        );
-      }
-
-
-      const driverStatus =
-        String(
-          driver.status ??
-          ""
-        )
-          .trim()
-          .toLowerCase();
-
-
-      if (
-        driverStatus !== "approved"
-        &&
-        driverStatus !== "active"
-      ) {
-
-        return safeError(
-          "driver not approved",
-          403
         );
       }
     }
@@ -1476,12 +1427,20 @@ export default async function router(
       req.method === "GET"
     ) {
 
+            // =========================
+      // STAFF AUTHORIZATION
       // =========================
-      // JWT AUTH
+      //
+      // Staff access is authoritative
+      // against D1 account + session.
+      //
+      // Legacy role-only JWTs and
+      // DRIVERS KV are not authorization
+      // mechanisms here anymore.
       // =========================
 
       const auth =
-        await authenticateRequest(
+        await authenticateStaffRequest(
           req,
           env
         );
@@ -1512,6 +1471,7 @@ export default async function router(
           "admin"
         );
 
+
       const isDriver =
         hasRole(
           user,
@@ -1528,108 +1488,6 @@ export default async function router(
           "forbidden",
           403
         );
-      }
-
-
-      // =========================
-      // DRIVER ACCOUNT CHECK
-      // =========================
-      //
-      // Старые login/register
-      // endpoints отключены,
-      // однако эта проверка
-      // остаётся для существующих
-      // валидных JWT и будущей
-      // безопасной driver auth.
-      // =========================
-
-      if (
-        isDriver
-      ) {
-
-        if (
-          !user.id
-        ) {
-
-          return safeError(
-            "invalid driver account",
-            403
-          );
-        }
-
-
-        let driver =
-          null;
-
-
-        try {
-
-          const raw =
-            await env.DRIVERS.get(
-              String(
-                user.id
-              )
-            );
-
-
-          if (
-            raw
-          ) {
-
-            driver =
-              JSON.parse(
-                raw
-              );
-          }
-
-        } catch (
-          error
-        ) {
-
-          console.error(
-            "DRIVER AUTH READ ERROR:",
-            error
-          );
-
-          return safeError(
-            "driver authorization failed",
-            500
-          );
-        }
-
-
-        if (
-          !driver
-        ) {
-
-          return safeError(
-            "driver not found",
-            403
-          );
-        }
-
-
-        const driverStatus =
-          String(
-            driver.status ||
-              ""
-          )
-            .trim()
-            .toLowerCase();
-
-
-        if (
-          driverStatus !==
-            "approved" &&
-          driverStatus !==
-            "active"
-        ) {
-
-          return safeError(
-            "driver not approved",
-            403
-          );
-        }
       }
 
 

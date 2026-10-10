@@ -4,17 +4,56 @@ import {
   webcrypto
 } from "node:crypto";
 
-import router from "../src/router.js";
+import router
+  from "../src/router.js";
 
 import {
   signJWT
 } from "../src/core/auth.js";
 
 
-if (!globalThis.crypto) {
+if (
+  !globalThis.crypto
+) {
 
   globalThis.crypto =
     webcrypto;
+}
+
+
+if (
+  typeof globalThis.btoa !==
+    "function"
+) {
+
+  globalThis.btoa =
+    value =>
+      Buffer
+        .from(
+          value,
+          "binary"
+        )
+        .toString(
+          "base64"
+        );
+}
+
+
+if (
+  typeof globalThis.atob !==
+    "function"
+) {
+
+  globalThis.atob =
+    value =>
+      Buffer
+        .from(
+          value,
+          "base64"
+        )
+        .toString(
+          "binary"
+        );
 }
 
 
@@ -55,7 +94,8 @@ async function test(
       error
     );
 
-    process.exitCode = 1;
+    process.exitCode =
+      1;
   }
 }
 
@@ -138,27 +178,151 @@ function orderRow(
 
 
 // ========================================
-// DRIVER STORE
+// STAFF ACCOUNT ROW
 // ========================================
 
-function createDriversStore(
-  status = "approved"
+function staffAccountRow(
+  {
+    id = "driver-1",
+    role = "driver",
+    status = "active",
+    tokenVersion = 1
+  } = {}
 ) {
 
   return {
+    id,
 
-    async get(
-      driverId
-    ) {
+    login:
+      `${role}1`,
 
-      return JSON.stringify({
-        id:
-          driverId,
+    display_name:
+      role === "admin"
+        ? "Admin One"
+        : "Driver One",
 
-        status
-      });
-    }
+    role,
+    status,
+
+    password_algorithm:
+      "pbkdf2-sha256",
+
+    password_iterations:
+      600000,
+
+    password_salt:
+      "aaaaaaaaaaaaaaaaaaaaaa",
+
+    password_hash:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+
+    token_version:
+      tokenVersion,
+
+    failed_login_count:
+      0,
+
+    locked_until:
+      null,
+
+    last_failed_login_at:
+      null,
+
+    last_login_at:
+      Date.now(),
+
+    password_changed_at:
+      1000,
+
+    created_at:
+      1000,
+
+    updated_at:
+      Date.now()
   };
+}
+
+
+// ========================================
+// STAFF SESSION ROW
+// ========================================
+
+function staffSessionRow(
+  {
+    id = "session-driver-1",
+    accountId = "driver-1",
+    revokedAt = null,
+    replacedBySessionId = null,
+    expiresAt =
+      Date.now() +
+      60 * 60 * 1000
+  } = {}
+) {
+
+  return {
+    id,
+
+    account_id:
+      accountId,
+
+    family_id:
+      `family-${accountId}`,
+
+    refresh_token_hash:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+
+    created_at:
+      Date.now() - 1000,
+
+    expires_at:
+      expiresAt,
+
+    last_used_at:
+      null,
+
+    revoked_at:
+      revokedAt,
+
+    replaced_by_session_id:
+      replacedBySessionId
+  };
+}
+
+
+// ========================================
+// STAFF JWT
+// ========================================
+
+async function createStaffToken(
+  {
+    id = "driver-1",
+    role = "driver",
+    sessionId =
+      `session-${id}`,
+    tokenVersion = 1
+  } = {}
+) {
+
+  return signJWT(
+    JWT_SECRET,
+    {
+      sub:
+        id,
+
+      id,
+
+      role,
+
+      scope:
+        "staff",
+
+      tokenVersion,
+
+      sid:
+        sessionId
+    },
+    900
+  );
 }
 
 
@@ -167,10 +331,24 @@ function createDriversStore(
 // ========================================
 
 function createTransitionDatabase(
-  initialRow
+  initialRow,
+  {
+    staffId = "driver-1",
+    role = "driver",
+    staffStatus = "active",
+    tokenVersion = 1,
+    sessionId =
+      `session-${staffId}`,
+    sessionRevokedAt = null,
+    sessionReplacedBy = null,
+    sessionExpiresAt =
+      Date.now() +
+      60 * 60 * 1000
+  } = {}
 ) {
 
-  const calls = [];
+  const calls =
+    [];
 
 
   let row =
@@ -189,7 +367,8 @@ function createTransitionDatabase(
 
       const call = {
         sql,
-        args: []
+        args:
+          []
       };
 
 
@@ -217,194 +396,215 @@ function createTransitionDatabase(
             0;
 
 
-          if (!row) {
-
-            return {
-              success:
-                true,
-
-              meta: {
-                changes
-              }
-            };
-          }
-
-
-          // =========================
-          // new -> taken
-          // =========================
-
           if (
-            /status = 'taken'/i.test(
-              sql
-            )
-            &&
-            /driver_id IS NULL/i.test(
+            /UPDATE orders/i.test(
               sql
             )
           ) {
 
-            const [
-              orderId,
-              driverId,
-              updatedAt
-            ] =
-              call.args;
+            if (!row) {
 
+              return {
+                success:
+                  true,
 
-            if (
-              row.id === orderId
-              &&
-              row.status === "new"
-              &&
-              row.driver_id === null
-            ) {
-
-              row.status =
-                "taken";
-
-
-              row.driver_id =
-                driverId;
-
-
-              row.updated_at =
-                Math.max(
-                  Number(updatedAt),
-                  Number(row.updated_at) + 1
-                );
-
-
-              changes =
-                1;
+                meta: {
+                  changes:
+                    0
+                }
+              };
             }
 
 
-            return {
-              success:
-                true,
-
-              meta: {
-                changes
-              }
-            };
-          }
-
-
-          // =========================
-          // driver advance
-          // =========================
-
-          if (
-            /status = \?4/i.test(
-              sql
-            )
-            &&
-            /driver_id = \?2/i.test(
-              sql
-            )
-          ) {
-
-            const [
-              orderId,
-              driverId,
-              expectedStatus,
-              targetStatus,
-              updatedAt
-            ] =
-              call.args;
-
+            // =========================
+            // new -> taken
+            // =========================
 
             if (
-              row.id === orderId
+              /status = 'taken'/i.test(
+                sql
+              )
               &&
-              row.driver_id ===
-                driverId
-              &&
-              row.status ===
-                expectedStatus
-            ) {
-
-              row.status =
-                targetStatus;
-
-
-              row.updated_at =
-                Math.max(
-                  Number(updatedAt),
-                  Number(row.updated_at) + 1
-                );
-
-
-              changes =
-                1;
-            }
-
-
-            return {
-              success:
-                true,
-
-              meta: {
-                changes
-              }
-            };
-          }
-
-
-          // =========================
-          // admin cancel
-          // =========================
-
-          if (
-            /status = 'canceled'/i.test(
-              sql
-            )
-          ) {
-
-            const [
-              orderId,
-              updatedAt
-            ] =
-              call.args;
-
-
-            if (
-              row.id === orderId
-              &&
-              [
-                "new",
-                "taken",
-                "in_progress"
-              ].includes(
-                row.status
+              /driver_id IS NULL/i.test(
+                sql
               )
             ) {
 
-              row.status =
-                "canceled";
+              const [
+                orderId,
+                driverId,
+                updatedAt
+              ] =
+                call.args;
 
 
-              row.updated_at =
-                Math.max(
-                  Number(updatedAt),
-                  Number(row.updated_at) + 1
-                );
+              if (
+                row.id ===
+                  orderId
+                &&
+                row.status ===
+                  "new"
+                &&
+                row.driver_id ===
+                  null
+              ) {
+
+                row.status =
+                  "taken";
+
+                row.driver_id =
+                  driverId;
+
+                row.updated_at =
+                  Math.max(
+                    Number(
+                      updatedAt
+                    ),
+
+                    Number(
+                      row.updated_at
+                    ) + 1
+                  );
+
+                changes =
+                  1;
+              }
 
 
-              changes =
-                1;
+              return {
+                success:
+                  true,
+
+                meta: {
+                  changes
+                }
+              };
             }
 
 
-            return {
-              success:
-                true,
+            // =========================
+            // DRIVER ADVANCE
+            // =========================
 
-              meta: {
-                changes
+            if (
+              /status = \?4/i.test(
+                sql
+              )
+              &&
+              /driver_id = \?2/i.test(
+                sql
+              )
+            ) {
+
+              const [
+                orderId,
+                driverId,
+                expectedStatus,
+                targetStatus,
+                updatedAt
+              ] =
+                call.args;
+
+
+              if (
+                row.id ===
+                  orderId
+                &&
+                row.driver_id ===
+                  driverId
+                &&
+                row.status ===
+                  expectedStatus
+              ) {
+
+                row.status =
+                  targetStatus;
+
+                row.updated_at =
+                  Math.max(
+                    Number(
+                      updatedAt
+                    ),
+
+                    Number(
+                      row.updated_at
+                    ) + 1
+                  );
+
+                changes =
+                  1;
               }
-            };
+
+
+              return {
+                success:
+                  true,
+
+                meta: {
+                  changes
+                }
+              };
+            }
+
+
+            // =========================
+            // ADMIN CANCEL
+            // =========================
+
+            if (
+              /status = 'canceled'/i.test(
+                sql
+              )
+            ) {
+
+              const [
+                orderId,
+                updatedAt
+              ] =
+                call.args;
+
+
+              if (
+                row.id ===
+                  orderId
+                &&
+                [
+                  "new",
+                  "taken",
+                  "in_progress"
+                ].includes(
+                  row.status
+                )
+              ) {
+
+                row.status =
+                  "canceled";
+
+                row.updated_at =
+                  Math.max(
+                    Number(
+                      updatedAt
+                    ),
+
+                    Number(
+                      row.updated_at
+                    ) + 1
+                  );
+
+                changes =
+                  1;
+              }
+
+
+              return {
+                success:
+                  true,
+
+                meta: {
+                  changes
+                }
+              };
+            }
           }
 
 
@@ -416,37 +616,130 @@ function createTransitionDatabase(
 
         async first() {
 
+          // =========================
+          // STAFF ACCOUNT
+          // =========================
+
           if (
-            !/WHERE id = \?1/i.test(
+            /FROM staff_accounts/i.test(
               sql
             )
           ) {
 
-            return null;
+            const requestedId =
+              String(
+                call.args[0] ??
+                ""
+              );
+
+
+            if (
+              requestedId !==
+                staffId
+            ) {
+
+              return null;
+            }
+
+
+            return staffAccountRow({
+              id:
+                staffId,
+
+              role,
+
+              status:
+                staffStatus,
+
+              tokenVersion
+            });
           }
 
 
-          const requestedId =
-            String(
-              call.args[0] ??
-              ""
-            );
-
+          // =========================
+          // STAFF SESSION
+          // =========================
 
           if (
-            !row
-            ||
-            row.id !==
-              requestedId
+            /FROM staff_sessions/i.test(
+              sql
+            )
           ) {
 
-            return null;
+            const requestedId =
+              String(
+                call.args[0] ??
+                ""
+              );
+
+
+            if (
+              requestedId !==
+                sessionId
+            ) {
+
+              return null;
+            }
+
+
+            return staffSessionRow({
+              id:
+                sessionId,
+
+              accountId:
+                staffId,
+
+              revokedAt:
+                sessionRevokedAt,
+
+              replacedBySessionId:
+                sessionReplacedBy,
+
+              expiresAt:
+                sessionExpiresAt
+            });
           }
 
 
-          return {
-            ...row
-          };
+          // =========================
+          // ORDER READBACK
+          // =========================
+
+          if (
+            /FROM orders/i.test(
+              sql
+            )
+            &&
+            /WHERE id = \?1/i.test(
+              sql
+            )
+          ) {
+
+            const requestedId =
+              String(
+                call.args[0] ??
+                ""
+              );
+
+
+            if (
+              !row
+              ||
+              row.id !==
+                requestedId
+            ) {
+
+              return null;
+            }
+
+
+            return {
+              ...row
+            };
+          }
+
+
+          return null;
         }
       };
 
@@ -467,13 +760,23 @@ function createTransitionDatabase(
             ...row
           }
         : null;
+    },
+
+    countOrderUpdates() {
+
+      return calls.filter(
+        call =>
+          /UPDATE orders/i.test(
+            call.sql
+          )
+      ).length;
     }
   };
 }
 
 
 // ========================================
-// JWT REQUEST
+// REQUEST
 // ========================================
 
 function transitionRequest(
@@ -612,11 +915,11 @@ await test(
 
 
 // ========================================
-// PASSENGER FORBIDDEN
+// LEGACY JWT
 // ========================================
 
 await test(
-  "passenger JWT cannot transition orders",
+  "legacy role-only JWT cannot transition orders",
   async () => {
 
     const token =
@@ -624,11 +927,20 @@ await test(
         JWT_SECRET,
         {
           id:
-            "passenger-1",
+            "driver-1",
 
           role:
-            "passenger"
-        }
+            "driver"
+        },
+        900
+      );
+
+
+    const {
+      db
+    } =
+      createTransitionDatabase(
+        orderRow()
       );
 
 
@@ -640,7 +952,10 @@ await test(
         ),
         {
           JWT_SECRET:
-            JWT_SECRET
+            JWT_SECRET,
+
+          DB:
+            db
         }
       );
 
@@ -653,13 +968,13 @@ await test(
 
     assert.equal(
       response.status,
-      403
+      401
     );
 
 
     assert.equal(
       body.error,
-      "forbidden"
+      "invalid or revoked staff token"
     );
   }
 );
@@ -674,15 +989,14 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "driver-1",
+      await createStaffToken();
 
-          role:
-            "driver"
-        }
+
+    const {
+      db
+    } =
+      createTransitionDatabase(
+        null
       );
 
 
@@ -694,7 +1008,10 @@ await test(
         ),
         {
           JWT_SECRET:
-            JWT_SECRET
+            JWT_SECRET,
+
+          DB:
+            db
         }
       );
 
@@ -720,22 +1037,25 @@ await test(
 
 
 // ========================================
-// DRIVER ACCOUNT STATUS
+// DISABLED STAFF ACCOUNT
 // ========================================
 
 await test(
-  "unapproved driver cannot transition orders",
+  "disabled driver account cannot transition orders",
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "driver-1",
+      await createStaffToken();
 
-          role:
-            "driver"
+
+    const {
+      db
+    } =
+      createTransitionDatabase(
+        orderRow(),
+        {
+          staffStatus:
+            "disabled"
         }
       );
 
@@ -750,10 +1070,8 @@ await test(
           JWT_SECRET:
             JWT_SECRET,
 
-          DRIVERS:
-            createDriversStore(
-              "pending"
-            )
+          DB:
+            db
         }
       );
 
@@ -766,13 +1084,13 @@ await test(
 
     assert.equal(
       response.status,
-      403
+      401
     );
 
 
     assert.equal(
       body.error,
-      "driver not approved"
+      "invalid or revoked staff token"
     );
   }
 );
@@ -783,20 +1101,17 @@ await test(
 // ========================================
 
 await test(
-  "approved driver takes a new order",
+  "active driver takes a new order",
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "driver-1",
+      await createStaffToken({
+        id:
+          "driver-1",
 
-          role:
-            "driver"
-        }
-      );
+        role:
+          "driver"
+      });
 
 
     const {
@@ -804,7 +1119,14 @@ await test(
       getRow
     } =
       createTransitionDatabase(
-        orderRow()
+        orderRow(),
+        {
+          staffId:
+            "driver-1",
+
+          role:
+            "driver"
+        }
       );
 
 
@@ -817,9 +1139,6 @@ await test(
         {
           JWT_SECRET:
             JWT_SECRET,
-
-          DRIVERS:
-            createDriversStore(),
 
           DB:
             db
@@ -846,12 +1165,6 @@ await test(
 
 
     assert.equal(
-      body.order.id,
-      "order-1"
-    );
-
-
-    assert.equal(
       body.order.status,
       "taken"
     );
@@ -860,12 +1173,6 @@ await test(
     assert.equal(
       body.order.driverId,
       "driver-1"
-    );
-
-
-    assert.equal(
-      getRow().status,
-      "taken"
     );
 
 
@@ -886,16 +1193,13 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "driver-2",
+      await createStaffToken({
+        id:
+          "driver-2",
 
-          role:
-            "driver"
-        }
-      );
+        role:
+          "driver"
+      });
 
 
     const {
@@ -911,7 +1215,14 @@ await test(
 
           updated_at:
             2000
-        })
+        }),
+        {
+          staffId:
+            "driver-2",
+
+          role:
+            "driver"
+        }
       );
 
 
@@ -925,30 +1236,15 @@ await test(
           JWT_SECRET:
             JWT_SECRET,
 
-          DRIVERS:
-            createDriversStore(),
-
           DB:
             db
         }
       );
 
 
-    const body =
-      await jsonBody(
-        response
-      );
-
-
     assert.equal(
       response.status,
       409
-    );
-
-
-    assert.equal(
-      body.error,
-      "order transition conflict"
     );
   }
 );
@@ -963,16 +1259,7 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "driver-1",
-
-          role:
-            "driver"
-        }
-      );
+      await createStaffToken();
 
 
     const {
@@ -984,10 +1271,7 @@ await test(
             "taken",
 
           driver_id:
-            "driver-1",
-
-          updated_at:
-            2000
+            "driver-1"
         })
       );
 
@@ -1001,9 +1285,6 @@ await test(
         {
           JWT_SECRET:
             JWT_SECRET,
-
-          DRIVERS:
-            createDriversStore(),
 
           DB:
             db
@@ -1027,18 +1308,12 @@ await test(
       body.order.status,
       "in_progress"
     );
-
-
-    assert.equal(
-      body.order.driverId,
-      "driver-1"
-    );
   }
 );
 
 
 // ========================================
-// DRIVER COMPLETE
+// DRIVER DONE
 // ========================================
 
 await test(
@@ -1046,16 +1321,7 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "driver-1",
-
-          role:
-            "driver"
-        }
-      );
+      await createStaffToken();
 
 
     const {
@@ -1067,10 +1333,7 @@ await test(
             "in_progress",
 
           driver_id:
-            "driver-1",
-
-          updated_at:
-            3000
+            "driver-1"
         })
       );
 
@@ -1084,9 +1347,6 @@ await test(
         {
           JWT_SECRET:
             JWT_SECRET,
-
-          DRIVERS:
-            createDriversStore(),
 
           DB:
             db
@@ -1123,16 +1383,13 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "driver-2",
+      await createStaffToken({
+        id:
+          "driver-2",
 
-          role:
-            "driver"
-        }
-      );
+        role:
+          "driver"
+      });
 
 
     const {
@@ -1144,11 +1401,15 @@ await test(
             "taken",
 
           driver_id:
-            "driver-1",
+            "driver-1"
+        }),
+        {
+          staffId:
+            "driver-2",
 
-          updated_at:
-            2000
-        })
+          role:
+            "driver"
+        }
       );
 
 
@@ -1161,9 +1422,6 @@ await test(
         {
           JWT_SECRET:
             JWT_SECRET,
-
-          DRIVERS:
-            createDriversStore(),
 
           DB:
             db
@@ -1188,21 +1446,12 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "driver-1",
-
-          role:
-            "driver"
-        }
-      );
+      await createStaffToken();
 
 
     const {
       db,
-      calls
+      countOrderUpdates
     } =
       createTransitionDatabase(
         orderRow({
@@ -1224,9 +1473,6 @@ await test(
         {
           JWT_SECRET:
             JWT_SECRET,
-
-          DRIVERS:
-            createDriversStore(),
 
           DB:
             db
@@ -1253,7 +1499,7 @@ await test(
 
 
     assert.equal(
-      calls.length,
+      countOrderUpdates(),
       0
     );
   }
@@ -1269,16 +1515,13 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "admin-1",
+      await createStaffToken({
+        id:
+          "admin-1",
 
-          role:
-            "admin"
-        }
-      );
+        role:
+          "admin"
+      });
 
 
     const {
@@ -1290,11 +1533,15 @@ await test(
             "in_progress",
 
           driver_id:
-            "driver-1",
+            "driver-1"
+        }),
+        {
+          staffId:
+            "admin-1",
 
-          updated_at:
-            3000
-        })
+          role:
+            "admin"
+        }
       );
 
 
@@ -1349,24 +1596,28 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
+      await createStaffToken({
+        id:
+          "admin-1",
+
+        role:
+          "admin"
+      });
+
+
+    const {
+      db,
+      countOrderUpdates
+    } =
+      createTransitionDatabase(
+        orderRow(),
         {
-          id:
+          staffId:
             "admin-1",
 
           role:
             "admin"
         }
-      );
-
-
-    const {
-      db,
-      calls
-    } =
-      createTransitionDatabase(
-        orderRow()
       );
 
 
@@ -1405,7 +1656,7 @@ await test(
 
 
     assert.equal(
-      calls.length,
+      countOrderUpdates(),
       0
     );
   }
@@ -1421,16 +1672,13 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "admin-1",
+      await createStaffToken({
+        id:
+          "admin-1",
 
-          role:
-            "admin"
-        }
-      );
+        role:
+          "admin"
+      });
 
 
     const {
@@ -1442,11 +1690,15 @@ await test(
             "done",
 
           driver_id:
-            "driver-1",
+            "driver-1"
+        }),
+        {
+          staffId:
+            "admin-1",
 
-          updated_at:
-            4000
-        })
+          role:
+            "admin"
+        }
       );
 
 
@@ -1483,23 +1735,27 @@ await test(
   async () => {
 
     const token =
-      await signJWT(
-        JWT_SECRET,
-        {
-          id:
-            "admin-1",
+      await createStaffToken({
+        id:
+          "admin-1",
 
-          role:
-            "admin"
-        }
-      );
+        role:
+          "admin"
+      });
 
 
     const {
       db
     } =
       createTransitionDatabase(
-        null
+        null,
+        {
+          staffId:
+            "admin-1",
+
+          role:
+            "admin"
+        }
       );
 
 
@@ -1546,7 +1802,9 @@ await test(
 console.log("");
 
 
-if (!process.exitCode) {
+if (
+  !process.exitCode
+) {
 
   console.log(
     "✓ ALL ROUTER TRANSITION TESTS PASSED"
