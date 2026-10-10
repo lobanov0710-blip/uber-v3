@@ -49,9 +49,12 @@ POST /calculate
 POST /orders
 POST /order-status
 GET  /orders
+POST /orders/{orderId}/status
 ```
 
-`GET /orders` is a private staff endpoint and is not part of the public passenger API.
+`GET /orders` and `POST /orders/{orderId}/status` are private staff endpoints and are not part of the public passenger API.
+
+They require staff JWT authentication and are called directly by authorized staff clients, not through the public PHP passenger gateway.
 
 `POST /order-status` is not called directly by Android or browser clients.
 
@@ -166,7 +169,7 @@ Meaning:
 | Status | Meaning |
 |---|---|
 | `new` | new unassigned order |
-| `taken` | accepted/assigned |
+| `taken` | accepted and assigned to a driver |
 | `in_progress` | trip in progress |
 | `done` | completed |
 | `canceled` | canceled |
@@ -840,6 +843,194 @@ Example:
 
 ---
 
+## 13.1 POST /orders/{orderId}/status
+
+Private staff state-transition endpoint.
+
+Request:
+
+```text
+POST /orders/{orderId}/status
+Authorization: Bearer <staff JWT>
+Content-Type: application/json
+```
+
+This endpoint is not part of the passenger PHP gateway.
+
+Passenger capability tokens are not valid credentials for this endpoint.
+
+### Request body
+
+```json
+{
+  "status": "taken"
+}
+```
+
+Allowed target values:
+
+```text
+taken
+in_progress
+done
+canceled
+```
+
+The target value alone does not authorize the transition.
+
+The authenticated role, current persisted order state, and current `driverId` determine whether the transition is permitted.
+
+### Driver transition policy
+
+An authenticated driver whose current driver account is `approved` or `active` may perform:
+
+```text
+new
+  -> taken
+
+taken
+  -> in_progress
+
+in_progress
+  -> done
+```
+
+When a driver performs:
+
+```text
+new -> taken
+```
+
+the authenticated driver id is written to:
+
+```text
+orders.driver_id
+```
+
+as part of the same atomic D1 update that changes the status.
+
+For subsequent driver transitions:
+
+```text
+taken -> in_progress
+in_progress -> done
+```
+
+the authenticated driver id must exactly match the persisted:
+
+```text
+orders.driver_id
+```
+
+A different driver cannot advance another driver's assigned order.
+
+### Admin transition policy
+
+An authenticated admin may perform:
+
+```text
+new
+taken
+in_progress
+    -> canceled
+```
+
+Admin does not perform driver workflow transitions through this endpoint.
+
+In API v1, admin therefore cannot directly perform:
+
+```text
+new -> taken
+taken -> in_progress
+in_progress -> done
+```
+
+### Terminal states
+
+The following states are terminal:
+
+```text
+done
+canceled
+```
+
+No state transition out of either terminal state is permitted by API v1.
+
+### Atomicity and concurrency
+
+State transitions are enforced directly by conditional D1 `UPDATE` statements.
+
+The backend does not rely on a separate read followed by an unconditional write.
+
+For example, driver order acceptance requires the persisted row to satisfy:
+
+```text
+status = new
+driver_id IS NULL
+```
+
+and assigns both:
+
+```text
+status = taken
+driver_id = authenticated driver id
+```
+
+atomically.
+
+Therefore competing drivers cannot both successfully claim the same order.
+
+### Success response
+
+HTTP:
+
+```text
+200 OK
+```
+
+Example:
+
+```json
+{
+  "ok": true,
+  "order": {
+    "id": "order-id",
+    "status": "taken",
+    "driverId": "driver-1",
+    "updatedAt": 1791503600000
+  }
+}
+```
+
+The transition acknowledgement intentionally contains only:
+
+```text
+id
+status
+driverId
+updatedAt
+```
+
+Customer PII is not returned by this response.
+
+### Error behavior
+
+| Status | Meaning |
+|---|---|
+| `400` | invalid order id or target status |
+| `401` | missing, invalid, or expired staff JWT |
+| `403` | role/account is not authorized for the requested transition |
+| `404` | order does not exist |
+| `405` | HTTP method other than POST |
+| `409` | order exists but its current state/assignment does not permit the requested transition |
+| `500` | driver authorization storage, D1, or transition processing failure |
+
+A `409 Conflict` is expected for races such as two drivers attempting to take the same `new` order.
+
+Clients must reload authoritative order state after a conflict instead of assuming that their requested transition occurred.
+
+---
+
 # 14. Staff order object
 
 Base fields:
@@ -962,17 +1153,53 @@ The passenger capability does not replace proxy HMAC.
 
 Proxy HMAC does not grant access to an arbitrary passenger order without a valid passenger capability.
 
+Passenger credentials provide no authority to mutate order state.
+
 ## Private staff traffic
 
 ```text
-Driver / Admin
+Transfer Driver / Admin
         |
-        | JWT
+        | staff JWT
         v
-Worker private API
+Cloudflare Worker
+        |
+        v
+D1
 ```
 
+Private staff endpoints currently include:
+
+```text
+GET  /orders
+POST /orders/{orderId}/status
+```
+
+Staff traffic does not use the passenger PHP gateway.
+
 Staff JWT and passenger capability credentials are separate security domains.
+
+A JWT with:
+
+```text
+role = driver
+```
+
+does not by itself authorize driver operations.
+
+The corresponding current driver record must also exist in `DRIVERS` KV and have status:
+
+```text
+approved
+```
+
+or:
+
+```text
+active
+```
+
+Order ownership and legal state transitions remain authoritative in D1.
 
 ---
 
@@ -1027,6 +1254,10 @@ For `/order-status`, the canonical Worker pathname is:
 
 The passenger `accessToken` remains inside the JSON request body.
 
+Private staff endpoints do not use the passenger proxy HMAC authentication zone.
+
+They use staff JWT authentication.
+
 ---
 
 # 19. HTTP status contract
@@ -1035,15 +1266,15 @@ The API currently uses the following principal statuses:
 
 | Status | Meaning |
 |---|---|
-| `200` | successful calculation/read |
+| `200` | successful calculation/read/state transition |
 | `201` | order created/accepted |
 | `204` | CORS preflight |
 | `400` | invalid input |
-| `401` | authentication required/invalid |
+| `401` | staff authentication required or invalid |
 | `403` | forbidden/authentication failure/capability rejection |
 | `404` | resource/route unavailable |
 | `405` | method not allowed |
-| `409` | quote conflict/expired/already used |
+| `409` | quote conflict or order state-transition conflict |
 | `413` | PHP gateway request too large |
 | `500` | internal/configuration failure |
 | `502` | PHP gateway upstream failure |
@@ -1083,6 +1314,14 @@ is present as a non-empty string before forwarding the request.
 
 The gateway passes valid Worker status codes and JSON responses through to the client.
 
+The private staff state-transition endpoint:
+
+```text
+POST /orders/{orderId}/status
+```
+
+does not pass through the public PHP passenger gateway.
+
 ---
 
 # 21. Compatibility policy
@@ -1100,7 +1339,9 @@ For API v1, the following are breaking changes:
 - allowing client pricing to override server pricing;
 - changing public authentication requirements;
 - changing the meaning or scope of the passenger order capability;
-- allowing a passenger capability to select an order other than its token subject.
+- allowing a passenger capability to select an order other than its token subject;
+- allowing unauthorized roles to perform staff state transitions;
+- changing legal order transition semantics without coordinated staff-client support.
 
 The following may be introduced compatibly:
 
@@ -1121,6 +1362,15 @@ POST /api/calculate.php
 POST /api/order.php
 POST /api/order-status.php
 ```
+
+The Android passenger application does not use:
+
+```text
+GET /orders
+POST /orders/{orderId}/status
+```
+
+Those endpoints belong to the private staff API.
 
 ## Calculation request
 
@@ -1278,6 +1528,16 @@ DRIVERS
 
 for existing driver authorization/account status.
 
+The authoritative order fields involved in staff state transitions are:
+
+```text
+orders.status
+orders.driver_id
+orders.updated_at
+```
+
+Legal transitions are enforced by conditional D1 updates.
+
 Passenger order capability tokens are signed credentials and are not stored as authoritative order state in D1 or KV.
 
 ---
@@ -1290,7 +1550,8 @@ Any code change affecting:
 POST /calculate
 POST /orders
 POST /order-status
-GET /orders
+GET  /orders
+POST /orders/{orderId}/status
 ```
 
 must be checked against this document and the backend test suite.
@@ -1301,6 +1562,17 @@ Changes to the passenger capability contract must also be coordinated with:
 /api/order.php
 /api/order-status.php
 Android passenger application
+```
+
+Changes to staff order-transition behavior must preserve:
+
+```text
+role authorization
+driver account validation
+driver ownership
+legal state transitions
+terminal states
+atomic D1 concurrency control
 ```
 
 Before merge:
