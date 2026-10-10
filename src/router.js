@@ -46,6 +46,12 @@ import {
   verifyPassengerOrderAccess
 } from "./core/passengerOrderAccess.js";
 
+import {
+  loginStaff,
+  refreshStaff,
+  logoutStaff
+} from "./core/staffAuthService.js";
+
 
 // =========================
 // ROUTER
@@ -159,18 +165,252 @@ export default async function router(
   }
 
 
+    // =========================
+  // STAFF LOGIN
+  // =========================
+  //
+  // Public authentication endpoint.
+  //
+  // This endpoint does NOT use:
+  //
+  // - passenger proxy HMAC
+  // - passenger capability token
+  // - existing staff JWT
+  //
+  // Credentials are verified against
+  // authoritative staff_accounts in D1.
+  // =========================
+
+  if (
+    path === "/staff/login"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await loginStaff(
+          env,
+          body
+        );
+
+
+      if (
+        result?.ok !== true
+      ) {
+
+        return safeError(
+          result?.error ||
+            "authentication failed",
+
+          result?.status ||
+            401
+        );
+      }
+
+
+      return json(
+        result,
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "STAFF LOGIN ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "staff authentication failed",
+        500
+      );
+    }
+  }
+
+
+  // =========================
+  // STAFF REFRESH
+  // =========================
+  //
+  // Possession of the current refresh
+  // token authorizes refresh.
+  //
+  // Refresh-token plaintext is never
+  // persisted in D1.
+  //
+  // Successful refresh rotates the token.
+  // =========================
+
+  if (
+    path === "/staff/refresh"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await refreshStaff(
+          env,
+          body?.refreshToken
+        );
+
+
+      if (
+        result?.ok !== true
+      ) {
+
+        return safeError(
+          result?.error ||
+            "invalid refresh token",
+
+          result?.status ||
+            401
+        );
+      }
+
+
+      return json(
+        result,
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "STAFF REFRESH ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "staff refresh failed",
+        500
+      );
+    }
+  }
+
+
+  // =========================
+  // STAFF LOGOUT
+  // =========================
+  //
+  // Logout is intentionally idempotent.
+  //
+  // An unknown or malformed refresh token
+  // does not reveal session existence.
+  // =========================
+
+  if (
+    path === "/staff/logout"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      await logoutStaff(
+        env,
+        body?.refreshToken
+      );
+
+
+      return json(
+        {
+          ok: true
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "STAFF LOGOUT ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "staff logout failed",
+        500
+      );
+    }
+  }
+
+
   // =========================
   // DISABLED LEGACY ENDPOINTS
   // =========================
   //
-  // Эти endpoints намеренно
-  // отключены до завершения
-  // отдельной защищённой
-  // реализации driver/admin API.
+  // Legacy driver authentication remains
+  // disabled.
   //
-  // Возвращаем 404, чтобы
-  // публично не подтверждать
-  // наличие этих API.
+  // Staff authentication is provided only
+  // through:
+  //
+  // POST /staff/login
+  // POST /staff/refresh
+  // POST /staff/logout
+  //
+  // There is intentionally NO public
+  // staff/register endpoint.
   // =========================
 
   const disabledLegacyPaths =
@@ -180,6 +420,7 @@ export default async function router(
       "/drivers/login",
       "/stats"
     ]);
+
 
   if (
     disabledLegacyPaths.has(
