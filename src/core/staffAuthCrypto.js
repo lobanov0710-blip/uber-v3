@@ -6,7 +6,7 @@
 //
 // PBKDF2-HMAC-SHA256
 // unique random salt
-// 600,000 iterations
+// fixed 600,000 iterations
 // 256-bit derived key
 //
 // Refresh tokens:
@@ -40,6 +40,14 @@ export const STAFF_PASSWORD_ALGORITHM =
 export const STAFF_PASSWORD_ITERATIONS =
   600000;
 
+// Historical verifiers may contain a
+// schema-valid work factor in this range.
+//
+// New password hashes are ALWAYS created
+// with STAFF_PASSWORD_ITERATIONS.
+//
+// These limits are used only when
+// verifying persisted verifier metadata.
 const MIN_PASSWORD_ITERATIONS =
   100000;
 
@@ -51,6 +59,7 @@ const PASSWORD_SALT_BYTES =
 
 const PASSWORD_HASH_BYTES =
   32;
+
 
 // Prevent deliberately enormous login
 // payloads from becoming a CPU/memory DoS.
@@ -74,6 +83,9 @@ const REFRESH_TOKEN_BYTES =
 
 const REFRESH_TOKEN_PREFIX =
   "tsr1.";
+
+const REFRESH_TOKEN_PATTERN =
+  /^tsr1\.[A-Za-z0-9_-]{43}$/;
 
 
 // =========================================
@@ -148,11 +160,16 @@ function base64UrlToBytes(
   value
 ) {
 
+  // Deliberately no trim().
+  //
+  // Cryptographic values are exact opaque
+  // strings. Leading/trailing whitespace
+  // must invalidate them rather than be
+  // silently accepted.
   const text =
     String(
       value ?? ""
-    )
-      .trim();
+    );
 
 
   if (
@@ -288,9 +305,9 @@ function passwordToBytes(
 
   // Password is intentionally NOT:
   //
-  // trim()
-  // lowercased
-  // normalized
+  // - trimmed
+  // - lowercased
+  // - normalized
   //
   // The exact password entered by the
   // user is the password being verified.
@@ -317,6 +334,16 @@ function passwordToBytes(
 
 // =========================================
 // ITERATIONS
+// =========================================
+//
+// Used for persisted verifier validation.
+//
+// It intentionally permits the full
+// migration/schema range so historical
+// verifier records remain verifiable.
+//
+// New hashes do NOT use caller-provided
+// iteration counts.
 // =========================================
 
 function requireIterations(
@@ -516,6 +543,15 @@ function timingSafeEqual(
 // HASH STAFF PASSWORD
 // =========================================
 //
+// IMPORTANT:
+//
+// New password hashes ALWAYS use the
+// frozen production work factor:
+//
+// 600,000 PBKDF2-HMAC-SHA256 iterations.
+//
+// Callers cannot lower this value.
+//
 // Returns exactly the verifier data that
 // will later be persisted in:
 //
@@ -525,15 +561,11 @@ function timingSafeEqual(
 // =========================================
 
 export async function hashStaffPassword(
-  password,
-  options = {}
+  password
 ) {
 
   const iterations =
-    requireIterations(
-      options.iterations ??
-        STAFF_PASSWORD_ITERATIONS
-    );
+    STAFF_PASSWORD_ITERATIONS;
 
 
   const salt =
@@ -572,6 +604,14 @@ export async function hashStaffPassword(
 
 // =========================================
 // VERIFY STAFF PASSWORD
+// =========================================
+//
+// Verification accepts schema-valid
+// historical iteration counts.
+//
+// This allows safe verification/migration
+// of existing records without allowing
+// creation of new weakened hashes.
 // =========================================
 
 export async function verifyStaffPassword(
@@ -681,6 +721,17 @@ export async function verifyStaffPassword(
 // =========================================
 // REFRESH TOKEN VALIDATION
 // =========================================
+//
+// Refresh token is an opaque credential.
+//
+// No:
+// - trim()
+// - normalization
+// - case conversion
+//
+// Even one extra whitespace character
+// makes the credential invalid.
+// =========================================
 
 function requireRefreshToken(
   value
@@ -698,12 +749,12 @@ function requireRefreshToken(
 
 
   const token =
-    value.trim();
+    value;
 
 
   if (
-    !token.startsWith(
-      REFRESH_TOKEN_PREFIX
+    !REFRESH_TOKEN_PATTERN.test(
+      token
     )
   ) {
 

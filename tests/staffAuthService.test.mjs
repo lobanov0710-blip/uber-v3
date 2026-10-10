@@ -978,7 +978,7 @@ await test(
 // ========================================
 
 await test(
-  "active refresh token rotates and issues new access token",
+  "active refresh token rotates and preserves absolute expiry",
   async () => {
 
     await withNow(
@@ -987,6 +987,16 @@ await test(
 
         const originalRefresh =
           await createRefreshToken();
+
+
+        // Deliberately shorter than a fresh
+        // 30-day window.
+        //
+        // Successful refresh must preserve
+        // this exact absolute expiration.
+        const absoluteExpiresAt =
+          FIXED_NOW +
+          1234567;
 
 
         const {
@@ -1000,7 +1010,10 @@ await test(
                   {
                     refresh_token_hash:
                       originalRefresh
-                        .refreshTokenHash
+                        .refreshTokenHash,
+
+                    expires_at:
+                      absoluteExpiresAt
                   }
                 ),
 
@@ -1009,7 +1022,10 @@ await test(
                 sessionRow(
                   {
                     id:
-                      "replacement-session"
+                      "replacement-session",
+
+                    expires_at:
+                      absoluteExpiresAt
                   }
                 )
               ]
@@ -1043,9 +1059,64 @@ await test(
         );
 
 
+        // Refresh must not create another
+        // rolling 30-day lifetime.
+        assert.equal(
+          result.refreshExpiresAt,
+          absoluteExpiresAt
+        );
+
+
+        assert.notEqual(
+          result.refreshExpiresAt,
+          FIXED_NOW +
+          STAFF_REFRESH_TTL_MS
+        );
+
+
         assert.equal(
           batchCalls.length,
           1
+        );
+
+
+        assert.equal(
+          batchCalls[0].length,
+          2
+        );
+
+
+        // Repository must use:
+        //
+        // UPDATE current -> INSERT successor.
+        assert.match(
+          batchCalls[0][0].sql,
+          /UPDATE staff_sessions/i
+        );
+
+
+        assert.match(
+          batchCalls[0][1].sql,
+          /INSERT INTO staff_sessions/i
+        );
+
+
+        assert.match(
+          batchCalls[0][1].sql,
+          /current\.expires_at/i
+        );
+
+
+        // Service must not pass the absolute
+        // expiration as a replacement bind
+        // value to D1.
+        assert.equal(
+          batchCalls[0][1]
+            .args
+            .includes(
+              absoluteExpiresAt
+            ),
+          false
         );
 
 
@@ -1076,7 +1147,6 @@ await test(
     );
   }
 );
-
 
 // ========================================
 // REFRESH REPLAY

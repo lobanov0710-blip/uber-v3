@@ -1571,31 +1571,50 @@ export async function insertStaffSession(
 //
 // Rotation is security-critical.
 //
-// Two statements execute in one D1 batch:
+// D1 batch order:
 //
-// 1. INSERT replacement session only if
-//    current session is still active.
+// 1. Revoke the current active session.
+// 2. Insert the replacement only from the
+//    exact row revoked by step 1.
 //
-// 2. Revoke current session and point it
-//    to the replacement.
+// This is intentionally UPDATE -> INSERT.
 //
-// INSERT uses SELECT from the authoritative
-// current session, so account_id/family_id
-// cannot be supplied or forged by client.
+// Security property:
+//
+// A replacement session must never become
+// active unless the old session was first
+// successfully claimed/revoked by this
+// exact rotation attempt.
+//
+// The replacement inherits:
+//
+// - account_id
+// - family_id
+// - expires_at
+//
+// directly from the authoritative current
+// row.
+//
+// Therefore refresh rotation cannot extend
+// the absolute lifetime of a session
+// family.
 //
 // Concurrent refresh requests:
 //
 // request A:
-//   insert replacement -> 1
 //   revoke old         -> 1
+//   insert replacement -> 1
 //
 // request B:
 //   old already revoked
-//   insert replacement -> 0
 //   revoke old         -> 0
+//   insert replacement -> 0
 //
-// B therefore cannot create a second valid
-// descendant from the same refresh token.
+// B cannot create a second descendant.
+//
+// D1 batch is transactional. A SQL failure
+// in the INSERT rolls back the preceding
+// UPDATE.
 // =========================================
 
 export async function rotateStaffSession(
@@ -1659,29 +1678,64 @@ export async function rotateStaffSession(
     );
 
 
-  const replacementExpiresAt =
-    requiredTimestamp(
-      replacement.expiresAt,
-      "replacementExpiresAt"
-    );
-
-
-  if (
-    replacementExpiresAt <=
-      timestamp
-  ) {
-
-    throw new Error(
-      "Invalid staff replacement expiry"
-    );
-  }
-
-
   const db =
     requireDatabase(
       env
     );
 
+
+  // =======================================
+  // STEP 1: CLAIM / REVOKE CURRENT SESSION
+  // =======================================
+  //
+  // Only one concurrent caller can change
+  // an active session from:
+  //
+  // revoked_at = NULL
+  // replaced_by_session_id = NULL
+  //
+  // to the replacement marker.
+  // =======================================
+
+  const revokeCurrent =
+    db
+      .prepare(`
+        UPDATE staff_sessions
+
+        SET
+          last_used_at = ?2,
+          revoked_at = ?2,
+          replaced_by_session_id = ?1
+
+        WHERE refresh_token_hash = ?3
+          AND revoked_at IS NULL
+          AND replaced_by_session_id IS NULL
+          AND expires_at > ?2
+      `)
+      .bind(
+        replacementId,
+        timestamp,
+        currentHash
+      );
+
+
+  // =======================================
+  // STEP 2: INSERT REPLACEMENT
+  // =======================================
+  //
+  // The replacement is derived only from
+  // the row marked by this exact rotation:
+  //
+  // replaced_by_session_id = replacementId
+  // revoked_at              = timestamp
+  // last_used_at            = timestamp
+  //
+  // expires_at is copied from current.
+  //
+  // It is NOT supplied by the service
+  // layer, so rotation cannot slide or
+  // extend the refresh-family lifetime.
+  // =======================================
 
   const insertReplacement =
     db
@@ -1704,7 +1758,7 @@ export async function rotateStaffSession(
           current.family_id,
           ?2,
           ?3,
-          ?4,
+          current.expires_at,
           NULL,
           NULL,
           NULL
@@ -1712,9 +1766,10 @@ export async function rotateStaffSession(
         FROM staff_sessions
           AS current
 
-        WHERE current.refresh_token_hash = ?5
-          AND current.revoked_at IS NULL
-          AND current.replaced_by_session_id IS NULL
+        WHERE current.refresh_token_hash = ?4
+          AND current.revoked_at = ?3
+          AND current.last_used_at = ?3
+          AND current.replaced_by_session_id = ?1
           AND current.expires_at > ?3
 
         LIMIT 1
@@ -1723,45 +1778,6 @@ export async function rotateStaffSession(
         replacementId,
         replacementHash,
         timestamp,
-        replacementExpiresAt,
-        currentHash
-      );
-
-
-  const revokeCurrent =
-    db
-      .prepare(`
-        UPDATE staff_sessions
-
-        SET
-          last_used_at = ?3,
-          revoked_at = ?3,
-          replaced_by_session_id = ?1
-
-        WHERE refresh_token_hash = ?5
-          AND revoked_at IS NULL
-          AND replaced_by_session_id IS NULL
-          AND expires_at > ?3
-
-          AND EXISTS (
-            SELECT 1
-
-            FROM staff_sessions
-              AS replacement
-
-            WHERE replacement.id = ?1
-              AND replacement.refresh_token_hash = ?2
-              AND replacement.account_id =
-                    staff_sessions.account_id
-              AND replacement.family_id =
-                    staff_sessions.family_id
-          )
-      `)
-      .bind(
-        replacementId,
-        replacementHash,
-        timestamp,
-        replacementExpiresAt,
         currentHash
       );
 
@@ -1773,8 +1789,8 @@ export async function rotateStaffSession(
 
     results =
       await db.batch([
-        insertReplacement,
-        revokeCurrent
+        revokeCurrent,
+        insertReplacement
       ]);
 
   } catch (
@@ -1802,7 +1818,7 @@ export async function rotateStaffSession(
   }
 
 
-  const insertChanges =
+  const revokeChanges =
     requireRunResult(
       results[0],
       {
@@ -1812,7 +1828,7 @@ export async function rotateStaffSession(
     );
 
 
-  const revokeChanges =
+  const insertChanges =
     requireRunResult(
       results[1],
       {
@@ -1823,9 +1839,9 @@ export async function rotateStaffSession(
 
 
   if (
-    insertChanges === 1
-    &&
     revokeChanges === 1
+    &&
+    insertChanges === 1
   ) {
 
     const session =
@@ -1851,9 +1867,18 @@ export async function rotateStaffSession(
   }
 
 
+  // UPDATE succeeded but INSERT did not.
+  //
+  // This is fail-closed:
+  //
+  // no replacement session became active.
+  //
+  // It still indicates an impossible or
+  // corrupted rotation result and must not
+  // be silently accepted.
   if (
-    insertChanges !==
-      revokeChanges
+    revokeChanges !==
+      insertChanges
   ) {
 
     throw new Error(

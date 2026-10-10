@@ -514,7 +514,7 @@ await test(
 // ========================================
 
 await test(
-  "refresh session rotation is atomic",
+  "refresh session rotation is atomic and fail-closed",
   async () => {
 
     const replacement =
@@ -529,8 +529,10 @@ await test(
           created_at:
             5000,
 
+          // Replacement inherits the
+          // authoritative current expiry.
           expires_at:
-            200000
+            100000
         }
       );
 
@@ -560,10 +562,7 @@ await test(
             "session-2",
 
           refreshTokenHash:
-            HASH_B,
-
-          expiresAt:
-            200000
+            HASH_B
         },
         5000
       );
@@ -593,12 +592,74 @@ await test(
     );
 
 
-    const insert =
+    // Security-critical order:
+    //
+    // UPDATE old session first.
+    // INSERT replacement second.
+    const revoke =
       batchCalls[0][0];
 
 
-    const revoke =
+    const insert =
       batchCalls[0][1];
+
+
+    assert.match(
+      revoke.sql,
+      /UPDATE staff_sessions/i
+    );
+
+
+    assert.match(
+      revoke.sql,
+      /replaced_by_session_id = \?1/i
+    );
+
+
+    assert.match(
+      revoke.sql,
+      /revoked_at = \?2/i
+    );
+
+
+    assert.match(
+      revoke.sql,
+      /last_used_at = \?2/i
+    );
+
+
+    assert.match(
+      revoke.sql,
+      /refresh_token_hash = \?3/i
+    );
+
+
+    assert.match(
+      revoke.sql,
+      /revoked_at IS NULL/i
+    );
+
+
+    assert.match(
+      revoke.sql,
+      /replaced_by_session_id IS NULL/i
+    );
+
+
+    assert.match(
+      revoke.sql,
+      /expires_at > \?2/i
+    );
+
+
+    assert.deepEqual(
+      revoke.args,
+      [
+        "session-2",
+        5000,
+        HASH_A
+      ]
+    );
 
 
     assert.match(
@@ -625,15 +686,35 @@ await test(
     );
 
 
+    // Absolute session-family expiry must
+    // come from D1, not from a caller.
     assert.match(
       insert.sql,
-      /current\.revoked_at IS NULL/i
+      /current\.expires_at/i
     );
 
 
     assert.match(
       insert.sql,
-      /current\.expires_at > \?3/i
+      /current\.replaced_by_session_id = \?1/i
+    );
+
+
+    assert.match(
+      insert.sql,
+      /current\.revoked_at = \?3/i
+    );
+
+
+    assert.match(
+      insert.sql,
+      /current\.last_used_at = \?3/i
+    );
+
+
+    assert.match(
+      insert.sql,
+      /current\.refresh_token_hash = \?4/i
     );
 
 
@@ -643,27 +724,19 @@ await test(
         "session-2",
         HASH_B,
         5000,
-        200000,
         HASH_A
       ]
     );
 
 
-    assert.match(
-      revoke.sql,
-      /UPDATE staff_sessions/i
-    );
-
-
-    assert.match(
-      revoke.sql,
-      /replaced_by_session_id = \?1/i
-    );
-
-
-    assert.match(
-      revoke.sql,
-      /EXISTS/i
+    // There must be no independently
+    // supplied replacement expiration in
+    // the INSERT bind arguments.
+    assert.equal(
+      insert.args.includes(
+        200000
+      ),
+      false
     );
   }
 );
@@ -731,10 +804,7 @@ await test(
             "session-3",
 
           refreshTokenHash:
-            HASH_B,
-
-          expiresAt:
-            200000
+            HASH_B
         },
         6000
       );
@@ -819,10 +889,7 @@ await test(
             "session-2",
 
           refreshTokenHash:
-            HASH_B,
-
-          expiresAt:
-            200000
+            HASH_B
         },
         5000
       );
@@ -896,10 +963,7 @@ await test(
             "session-2",
 
           refreshTokenHash:
-            HASH_B,
-
-          expiresAt:
-            200000
+            HASH_B
         },
         5000
       );
@@ -927,7 +991,7 @@ await test(
 // ========================================
 
 await test(
-  "inconsistent D1 rotation result is rejected",
+  "revoke without replacement is rejected fail-closed",
   async () => {
 
     const {
@@ -973,10 +1037,7 @@ await test(
               "session-2",
 
             refreshTokenHash:
-              HASH_B,
-
-            expiresAt:
-              200000
+              HASH_B
           },
           5000
         ),
@@ -986,6 +1047,94 @@ await test(
   }
 );
 
+
+// ========================================
+// INVALID ROTATION INPUT
+// ========================================
+
+await test(
+  "rotation does not accept caller-controlled expiry",
+  async () => {
+
+    const replacement =
+      sessionRow(
+        {
+          id:
+            "session-2",
+
+          refresh_token_hash:
+            HASH_B,
+
+          created_at:
+            5000,
+
+          expires_at:
+            100000
+        }
+      );
+
+
+    const {
+      db,
+      batchCalls
+    } =
+      createFakeDatabase(
+        {
+          firstResults: [
+            replacement
+          ]
+        }
+      );
+
+
+    const result =
+      await rotateStaffSession(
+        {
+          DB:
+            db
+        },
+        HASH_A,
+        {
+          id:
+            "session-2",
+
+          refreshTokenHash:
+            HASH_B,
+
+          // Deliberately supplied legacy
+          // field. Repository must ignore
+          // it completely.
+          expiresAt:
+            999999999
+        },
+        5000
+      );
+
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+
+    const insert =
+      batchCalls[0][1];
+
+
+    assert.equal(
+      insert.args.includes(
+        999999999
+      ),
+      false
+    );
+
+
+    assert.match(
+      insert.sql,
+      /current\.expires_at/i
+    );
+  }
+);
 
 // ========================================
 // LOGOUT / REVOKE ONE

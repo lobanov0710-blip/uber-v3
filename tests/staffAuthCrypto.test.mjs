@@ -68,17 +68,18 @@ if (
 
 
 // ========================================
-// TEST ITERATIONS
+// HISTORICAL VERIFIER ITERATIONS
 // ========================================
 //
-// Production default remains 600,000.
+// Verification intentionally accepts
+// schema-valid historical verifier work
+// factors.
 //
-// Unit tests use the lowest schema-valid
-// work factor so the test suite does not
-// spend several seconds hashing passwords.
+// New hashes, however, must always use
+// the frozen production value of 600,000.
 // ========================================
 
-const TEST_ITERATIONS =
+const HISTORICAL_TEST_ITERATIONS =
   100000;
 
 
@@ -111,7 +112,8 @@ async function test(
       error
     );
 
-    process.exitCode = 1;
+    process.exitCode =
+      1;
   }
 }
 
@@ -143,7 +145,7 @@ await test(
 // ========================================
 
 await test(
-  "staff password is hashed with random salt",
+  "staff password is hashed with fixed production work factor",
   async () => {
 
     const first =
@@ -151,18 +153,14 @@ await test(
         "VeryStrongPassword-123!",
         {
           iterations:
-            TEST_ITERATIONS
+            HISTORICAL_TEST_ITERATIONS
         }
       );
 
 
     const second =
       await hashStaffPassword(
-        "VeryStrongPassword-123!",
-        {
-          iterations:
-            TEST_ITERATIONS
-        }
+        "VeryStrongPassword-123!"
       );
 
 
@@ -172,12 +170,34 @@ await test(
     );
 
 
+    // Caller-supplied iteration override
+    // must have no effect.
     assert.equal(
       first.passwordIterations,
-      TEST_ITERATIONS
+      STAFF_PASSWORD_ITERATIONS
     );
 
 
+    assert.equal(
+      second.passwordIterations,
+      STAFF_PASSWORD_ITERATIONS
+    );
+
+
+    assert.equal(
+      first.passwordIterations,
+      600000
+    );
+
+
+    assert.equal(
+      second.passwordIterations,
+      600000
+    );
+
+
+    // Same password must still receive
+    // independent random salts.
     assert.notEqual(
       first.passwordSalt,
       second.passwordSalt
@@ -214,6 +234,50 @@ await test(
       first.passwordHash.length,
       43
     );
+
+
+    assert.match(
+      first.passwordSalt,
+      /^[A-Za-z0-9_-]{22}$/
+    );
+
+
+    assert.match(
+      first.passwordHash,
+      /^[A-Za-z0-9_-]{43}$/
+    );
+  }
+);
+
+
+// ========================================
+// CALLER CANNOT DOWNGRADE HASHING
+// ========================================
+
+await test(
+  "password hashing cannot be downgraded by caller",
+  async () => {
+
+    const verifier =
+      await hashStaffPassword(
+        "Password-123!",
+        {
+          iterations:
+            100000
+        }
+      );
+
+
+    assert.equal(
+      verifier.passwordIterations,
+      STAFF_PASSWORD_ITERATIONS
+    );
+
+
+    assert.equal(
+      verifier.passwordIterations,
+      600000
+    );
   }
 );
 
@@ -228,11 +292,7 @@ await test(
 
     const verifier =
       await hashStaffPassword(
-        "Correct-Horse-Battery-42!",
-        {
-          iterations:
-            TEST_ITERATIONS
-        }
+        "Correct-Horse-Battery-42!"
       );
 
 
@@ -261,11 +321,7 @@ await test(
 
     const verifier =
       await hashStaffPassword(
-        "Correct-Horse-Battery-42!",
-        {
-          iterations:
-            TEST_ITERATIONS
-        }
+        "Correct-Horse-Battery-42!"
       );
 
 
@@ -294,11 +350,7 @@ await test(
 
     const verifier =
       await hashStaffPassword(
-        " Password-123! ",
-        {
-          iterations:
-            TEST_ITERATIONS
-        }
+        " Password-123! "
       );
 
 
@@ -333,11 +385,7 @@ await test(
     await assert.rejects(
       () =>
         hashStaffPassword(
-          "",
-          {
-            iterations:
-              TEST_ITERATIONS
-          }
+          ""
         ),
 
       /Invalid staff password/
@@ -359,38 +407,10 @@ await test(
     await assert.rejects(
       () =>
         hashStaffPassword(
-          oversized,
-          {
-            iterations:
-              TEST_ITERATIONS
-          }
+          oversized
         ),
 
       /Staff password is too long/
-    );
-  }
-);
-
-
-// ========================================
-// INVALID ITERATIONS
-// ========================================
-
-await test(
-  "password hashing rejects unsafe iteration count",
-  async () => {
-
-    await assert.rejects(
-      () =>
-        hashStaffPassword(
-          "Password-123!",
-          {
-            iterations:
-              99999
-          }
-        ),
-
-      /Invalid staff password iterations/
     );
   }
 );
@@ -413,7 +433,7 @@ await test(
               "sha256",
 
             passwordIterations:
-              TEST_ITERATIONS,
+              HISTORICAL_TEST_ITERATIONS,
 
             passwordSalt:
               "aaaaaaaaaaaaaaaaaaaaaa",
@@ -424,6 +444,35 @@ await test(
         ),
 
       /Unsupported staff password algorithm/
+    );
+  }
+);
+
+
+await test(
+  "unsafe persisted verifier iteration count is rejected",
+  async () => {
+
+    await assert.rejects(
+      () =>
+        verifyStaffPassword(
+          "Password-123!",
+          {
+            passwordAlgorithm:
+              "pbkdf2-sha256",
+
+            passwordIterations:
+              99999,
+
+            passwordSalt:
+              "aaaaaaaaaaaaaaaaaaaaaa",
+
+            passwordHash:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ),
+
+      /Invalid staff password iterations/
     );
   }
 );
@@ -442,13 +491,65 @@ await test(
               "pbkdf2-sha256",
 
             passwordIterations:
-              TEST_ITERATIONS,
+              HISTORICAL_TEST_ITERATIONS,
 
             passwordSalt:
               "***invalid***",
 
             passwordHash:
               "also-invalid"
+          }
+        ),
+
+      /Invalid staff password verifier/
+    );
+  }
+);
+
+
+await test(
+  "password verifier base64url does not accept whitespace",
+  async () => {
+
+    await assert.rejects(
+      () =>
+        verifyStaffPassword(
+          "Password-123!",
+          {
+            passwordAlgorithm:
+              "pbkdf2-sha256",
+
+            passwordIterations:
+              HISTORICAL_TEST_ITERATIONS,
+
+            passwordSalt:
+              " aaaaaaaaaaaaaaaaaaaaaa",
+
+            passwordHash:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ),
+
+      /Invalid staff password verifier/
+    );
+
+
+    await assert.rejects(
+      () =>
+        verifyStaffPassword(
+          "Password-123!",
+          {
+            passwordAlgorithm:
+              "pbkdf2-sha256",
+
+            passwordIterations:
+              HISTORICAL_TEST_ITERATIONS,
+
+            passwordSalt:
+              "aaaaaaaaaaaaaaaaaaaaaa",
+
+            passwordHash:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa "
           }
         ),
 
@@ -561,6 +662,70 @@ await test(
 
 
 // ========================================
+// STRICT REFRESH TOKEN
+// ========================================
+
+await test(
+  "refresh token with leading whitespace is rejected",
+  async () => {
+
+    const token =
+      await createRefreshToken();
+
+
+    await assert.rejects(
+      () =>
+        hashRefreshToken(
+          ` ${token.refreshToken}`
+        ),
+
+      /Invalid staff refresh token/
+    );
+  }
+);
+
+
+await test(
+  "refresh token with trailing whitespace is rejected",
+  async () => {
+
+    const token =
+      await createRefreshToken();
+
+
+    await assert.rejects(
+      () =>
+        hashRefreshToken(
+          `${token.refreshToken} `
+        ),
+
+      /Invalid staff refresh token/
+    );
+  }
+);
+
+
+await test(
+  "refresh token with newline is rejected",
+  async () => {
+
+    const token =
+      await createRefreshToken();
+
+
+    await assert.rejects(
+      () =>
+        hashRefreshToken(
+          `${token.refreshToken}\n`
+        ),
+
+      /Invalid staff refresh token/
+    );
+  }
+);
+
+
+// ========================================
 // MALFORMED REFRESH TOKEN
 // ========================================
 
@@ -572,6 +737,33 @@ await test(
       () =>
         hashRefreshToken(
           "not-a-refresh-token"
+        ),
+
+      /Invalid staff refresh token/
+    );
+  }
+);
+
+
+await test(
+  "wrong refresh token prefix is rejected",
+  async () => {
+
+    const token =
+      await createRefreshToken();
+
+
+    const malformed =
+      token.refreshToken.replace(
+        /^tsr1\./,
+        "tsr2."
+      );
+
+
+    await assert.rejects(
+      () =>
+        hashRefreshToken(
+          malformed
         ),
 
       /Invalid staff refresh token/

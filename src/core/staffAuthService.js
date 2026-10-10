@@ -659,10 +659,10 @@ export async function refreshStaff(
   // Reuse of a rotated/revoked refresh
   // token invalidates that token family.
   //
-  // ARCH-09.3 will bind access JWTs to sid,
-  // so family revocation will also make
-  // access tokens for revoked sessions
-  // unusable.
+  // Access JWTs are bound to sid/session,
+  // so family revocation also invalidates
+  // access tokens belonging to revoked
+  // sessions.
   // =======================================
 
   if (
@@ -686,10 +686,14 @@ export async function refreshStaff(
 
 
   // =======================================
-  // EXPIRATION
+  // ABSOLUTE EXPIRATION
   // =======================================
 
   if (
+    !Number.isSafeInteger(
+      currentSession.expiresAt
+    )
+    ||
     currentSession.expiresAt <=
       now
   ) {
@@ -741,21 +745,23 @@ export async function refreshStaff(
     await createRefreshToken();
 
 
+  // =======================================
+  // ABSOLUTE FAMILY LIFETIME
+  // =======================================
+  //
+  // Refresh rotation must NOT extend the
+  // lifetime by another 30 days.
+  //
+  // Every descendant inherits the original
+  // session-family expiration.
+  //
+  // Repository additionally enforces this
+  // by copying current.expires_at directly
+  // inside D1.
+  // =======================================
+
   const replacementExpiresAt =
-    now +
-    STAFF_REFRESH_TTL_MS;
-
-
-  if (
-    !Number.isSafeInteger(
-      replacementExpiresAt
-    )
-  ) {
-
-    throw new Error(
-      "Invalid staff refresh expiration"
-    );
-  }
+    currentSession.expiresAt;
 
 
   // =======================================
@@ -763,6 +769,9 @@ export async function refreshStaff(
   // =======================================
   //
   // Sign before mutating D1.
+  //
+  // If JWT signing fails, no refresh
+  // session state is modified.
   // =======================================
 
   const access =
@@ -787,10 +796,7 @@ export async function refreshStaff(
 
         refreshTokenHash:
           replacementRefresh
-            .refreshTokenHash,
-
-        expiresAt:
-          replacementExpiresAt
+            .refreshTokenHash
       },
       now
     );
