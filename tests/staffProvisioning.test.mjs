@@ -110,6 +110,22 @@ async function test(
 
 
 // ========================================
+// PASSWORD POLICY
+// ========================================
+
+await test(
+  "bootstrap uses Cloudflare-compatible production work factor",
+  async () => {
+
+    assert.equal(
+      STAFF_PASSWORD_ITERATIONS,
+      100000
+    );
+  }
+);
+
+
+// ========================================
 // BOOTSTRAP ACCOUNT
 // ========================================
 
@@ -210,7 +226,7 @@ await test(
     assert.equal(
       account.passwordVerifier
         .passwordIterations,
-      600000
+      100000
     );
 
 
@@ -315,7 +331,7 @@ await test(
 
     assert.match(
       sql,
-      /600000/
+      /100000/
     );
 
 
@@ -568,15 +584,16 @@ await test(
 //
 // Security regression:
 //
-// Even if a caller bypasses
-// createAdminBootstrapAccount() and passes
-// an account object directly to the SQL
-// builder, a weakened verifier must not be
-// accepted.
+// Cloudflare Workers rejects PBKDF2
+// iteration counts above 100,000.
+//
+// Provisioning must therefore reject
+// verifier metadata that does not match
+// the exact production work factor.
 // ========================================
 
 await test(
-  "bootstrap SQL rejects downgraded password verifier",
+  "bootstrap SQL rejects unsupported high password work factor",
   async () => {
 
     const account =
@@ -601,14 +618,14 @@ await test(
       );
 
 
-    const weakenedAccount = {
+    const unsupportedAccount = {
       ...account,
 
       passwordVerifier: {
         ...account.passwordVerifier,
 
         passwordIterations:
-          100000
+          600000
       }
     };
 
@@ -616,7 +633,57 @@ await test(
     assert.throws(
       () =>
         buildStaffAccountInsertSql(
-          weakenedAccount
+          unsupportedAccount
+        ),
+
+      /Invalid staff provisioning password verifier/
+    );
+  }
+);
+
+
+await test(
+  "bootstrap SQL rejects password work factor below production policy",
+  async () => {
+
+    const account =
+      await createAdminBootstrapAccount(
+        {
+          login:
+            "admin",
+
+          displayName:
+            "Admin",
+
+          password:
+            STRONG_PASSWORD
+        },
+        {
+          id:
+            "staff_test_admin_005",
+
+          now:
+            FIXED_NOW
+        }
+      );
+
+
+    const unsupportedAccount = {
+      ...account,
+
+      passwordVerifier: {
+        ...account.passwordVerifier,
+
+        passwordIterations:
+          99999
+      }
+    };
+
+
+    assert.throws(
+      () =>
+        buildStaffAccountInsertSql(
+          unsupportedAccount
         ),
 
       /Invalid staff provisioning password verifier/
@@ -643,7 +710,7 @@ await test(
         },
         {
           id:
-            "staff_test_admin_005",
+            "staff_test_admin_006",
 
           now:
             FIXED_NOW
@@ -654,7 +721,14 @@ await test(
     assert.equal(
       account.passwordVerifier
         .passwordIterations,
-      600000
+      STAFF_PASSWORD_ITERATIONS
+    );
+
+
+    assert.equal(
+      account.passwordVerifier
+        .passwordIterations,
+      100000
     );
 
 
@@ -690,7 +764,7 @@ await test(
         },
         {
           id:
-            "staff_test_admin_006",
+            "staff_test_admin_007",
 
           now:
             FIXED_NOW
@@ -744,7 +818,7 @@ await test(
         },
         {
           id:
-            "staff_test_admin_007",
+            "staff_test_admin_008",
 
           now:
             FIXED_NOW
@@ -794,7 +868,7 @@ await test(
         },
         {
           id:
-            "staff_test_admin_008",
+            "staff_test_admin_009",
 
           now:
             FIXED_NOW

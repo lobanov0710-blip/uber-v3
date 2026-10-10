@@ -307,15 +307,14 @@ function requireTimestamp(
 // Bootstrap provisioning accepts only the
 // current production password policy.
 //
-// This is deliberately stricter than
-// verifyStaffPassword(), which may verify
-// historical records with older
-// schema-valid iteration counts.
+// Verification and provisioning both use
+// the exact Cloudflare-compatible work
+// factor.
 //
 // New bootstrap accounts must always use:
 //
 // PBKDF2-HMAC-SHA256
-// 600,000 iterations
+// 100,000 iterations
 // 16-byte random salt
 // 32-byte derived key
 // =========================================

@@ -6,8 +6,11 @@
 //
 // PBKDF2-HMAC-SHA256
 // unique random salt
-// fixed 600,000 iterations
+// fixed 100,000 iterations
 // 256-bit derived key
+//
+// Cloudflare Workers Web Crypto rejects
+// PBKDF2 iteration counts above 100,000.
 //
 // Refresh tokens:
 //
@@ -38,21 +41,7 @@ export const STAFF_PASSWORD_ALGORITHM =
   "pbkdf2-sha256";
 
 export const STAFF_PASSWORD_ITERATIONS =
-  600000;
-
-// Historical verifiers may contain a
-// schema-valid work factor in this range.
-//
-// New password hashes are ALWAYS created
-// with STAFF_PASSWORD_ITERATIONS.
-//
-// These limits are used only when
-// verifying persisted verifier metadata.
-const MIN_PASSWORD_ITERATIONS =
   100000;
-
-const MAX_PASSWORD_ITERATIONS =
-  5000000;
 
 const PASSWORD_SALT_BYTES =
   16;
@@ -336,14 +325,14 @@ function passwordToBytes(
 // ITERATIONS
 // =========================================
 //
-// Used for persisted verifier validation.
+// Cloudflare Workers currently supports
+// PBKDF2 iteration counts up to 100,000.
 //
-// It intentionally permits the full
-// migration/schema range so historical
-// verifier records remain verifiable.
+// Staff password verifiers therefore use
+// one exact production work factor.
 //
-// New hashes do NOT use caller-provided
-// iteration counts.
+// Unsupported persisted verifier metadata
+// is rejected before Web Crypto is called.
 // =========================================
 
 function requireIterations(
@@ -361,11 +350,8 @@ function requireIterations(
       iterations
     )
     ||
-    iterations <
-      MIN_PASSWORD_ITERATIONS
-    ||
-    iterations >
-      MAX_PASSWORD_ITERATIONS
+    iterations !==
+      STAFF_PASSWORD_ITERATIONS
   ) {
 
     throw new Error(
@@ -548,9 +534,9 @@ function timingSafeEqual(
 // New password hashes ALWAYS use the
 // frozen production work factor:
 //
-// 600,000 PBKDF2-HMAC-SHA256 iterations.
+// 100,000 PBKDF2-HMAC-SHA256 iterations.
 //
-// Callers cannot lower this value.
+// Callers cannot change this value.
 //
 // Returns exactly the verifier data that
 // will later be persisted in:
@@ -606,12 +592,12 @@ export async function hashStaffPassword(
 // VERIFY STAFF PASSWORD
 // =========================================
 //
-// Verification accepts schema-valid
-// historical iteration counts.
+// Verification accepts only the current
+// production work factor.
 //
-// This allows safe verification/migration
-// of existing records without allowing
-// creation of new weakened hashes.
+// This prevents unsupported persisted
+// iteration counts from reaching the
+// Cloudflare Web Crypto PBKDF2 operation.
 // =========================================
 
 export async function verifyStaffPassword(

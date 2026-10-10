@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 
 import {
+  STAFF_PASSWORD_ITERATIONS
+} from "../src/core/staffAuthCrypto.js";
+
+import {
   STAFF_LOGIN_LOCK_THRESHOLD,
   STAFF_LOGIN_LOCK_DURATION_MS,
   getStaffAccountById,
@@ -74,7 +78,7 @@ function accountRow(
       "pbkdf2-sha256",
 
     password_iterations:
-      600000,
+      STAFF_PASSWORD_ITERATIONS,
 
     password_salt:
       "aaaaaaaaaaaaaaaaaaaaaa",
@@ -141,7 +145,7 @@ function accountEntity(
         "pbkdf2-sha256",
 
       passwordIterations:
-        600000,
+        STAFF_PASSWORD_ITERATIONS,
 
       passwordSalt:
         "aaaaaaaaaaaaaaaaaaaaaa",
@@ -294,6 +298,22 @@ function createFakeDatabase(
 
 
 // ========================================
+// PASSWORD POLICY
+// ========================================
+
+await test(
+  "staff account repository uses current production password work factor",
+  async () => {
+
+    assert.equal(
+      STAFF_PASSWORD_ITERATIONS,
+      100000
+    );
+  }
+);
+
+
+// ========================================
 // READ BY ID
 // ========================================
 
@@ -351,7 +371,14 @@ await test(
     assert.equal(
       account.passwordVerifier
         .passwordIterations,
-      600000
+      STAFF_PASSWORD_ITERATIONS
+    );
+
+
+    assert.equal(
+      account.passwordVerifier
+        .passwordIterations,
+      100000
     );
 
 
@@ -500,7 +527,7 @@ await test(
         "driver",
         "active",
         "pbkdf2-sha256",
-        600000,
+        STAFF_PASSWORD_ITERATIONS,
         "aaaaaaaaaaaaaaaaaaaaaa",
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         1,
@@ -514,6 +541,96 @@ await test(
     assert.match(
       calls[1].sql,
       /WHERE id = \?1/i
+    );
+  }
+);
+
+
+await test(
+  "staff account insert rejects unsupported password work factor",
+  async () => {
+
+    const {
+      db,
+      calls
+    } =
+      createFakeDatabase();
+
+
+    const account =
+      accountEntity();
+
+
+    account.passwordVerifier = {
+      ...account.passwordVerifier,
+
+      passwordIterations:
+        600000
+    };
+
+
+    await assert.rejects(
+      () =>
+        insertStaffAccount(
+          {
+            DB:
+              db
+          },
+          account
+        ),
+
+      /Invalid staff passwordIterations/
+    );
+
+
+    assert.equal(
+      calls.length,
+      0
+    );
+  }
+);
+
+
+await test(
+  "staff account insert rejects password work factor below production policy",
+  async () => {
+
+    const {
+      db,
+      calls
+    } =
+      createFakeDatabase();
+
+
+    const account =
+      accountEntity();
+
+
+    account.passwordVerifier = {
+      ...account.passwordVerifier,
+
+      passwordIterations:
+        99999
+    };
+
+
+    await assert.rejects(
+      () =>
+        insertStaffAccount(
+          {
+            DB:
+              db
+          },
+          account
+        ),
+
+      /Invalid staff passwordIterations/
+    );
+
+
+    assert.equal(
+      calls.length,
+      0
     );
   }
 );

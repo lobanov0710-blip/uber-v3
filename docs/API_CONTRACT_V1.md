@@ -1301,13 +1301,15 @@ Passwords are verified using:
 PBKDF2-HMAC-SHA256
 ```
 
-New password verifiers use:
+Staff password verifiers use the exact production parameters:
 
 ```text
-600000 iterations
+100000 iterations
 16-byte random salt
 32-byte derived key
 ```
+
+Verifier metadata with any other iteration count is rejected before PBKDF2 verification.
 
 Plaintext staff passwords are not stored in D1.
 
