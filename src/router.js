@@ -30,7 +30,10 @@ import {
 
 import {
   getOrderById,
-  listOrders
+  listOrders,
+  takeOrderForDriver,
+  advanceDriverOrder,
+  cancelOrder
 } from "./core/orderRepository.js";
 
 import {
@@ -562,6 +565,488 @@ export default async function router(
         500
       );
     }
+  }
+
+
+    // =========================
+  // PRIVATE ORDER TRANSITION
+  // =========================
+  //
+  // Staff-only endpoint:
+  //
+  // POST /orders/{orderId}/status
+  //
+  // Authentication:
+  // staff JWT
+  //
+  // Driver:
+  //
+  // new
+  //   -> taken
+  //
+  // taken
+  //   -> in_progress
+  //
+  // in_progress
+  //   -> done
+  //
+  // Admin:
+  //
+  // new / taken / in_progress
+  //   -> canceled
+  //
+  // Repository performs the actual
+  // transition atomically in D1.
+  // =========================
+
+  const orderTransitionMatch =
+    path.match(
+      /^\/orders\/([^/]+)\/status$/
+    );
+
+
+  if (
+    orderTransitionMatch
+  ) {
+
+    // =========================
+    // METHOD
+    // =========================
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    // =========================
+    // JWT AUTH
+    // =========================
+
+    const auth =
+      await authenticateRequest(
+        req,
+        env
+      );
+
+
+    if (
+      !auth.ok
+    ) {
+
+      return safeError(
+        auth.error,
+        auth.status
+      );
+    }
+
+
+    const user =
+      auth.user;
+
+
+    // =========================
+    // ROLE
+    // =========================
+
+    const isAdmin =
+      hasRole(
+        user,
+        "admin"
+      );
+
+
+    const isDriver =
+      hasRole(
+        user,
+        "driver"
+      );
+
+
+    if (
+      !isAdmin &&
+      !isDriver
+    ) {
+
+      return safeError(
+        "forbidden",
+        403
+      );
+    }
+
+
+    // =========================
+    // ORDER ID
+    // =========================
+
+    let orderId;
+
+
+    try {
+
+      orderId =
+        decodeURIComponent(
+          orderTransitionMatch[1]
+        )
+          .trim();
+
+    } catch (
+      error
+    ) {
+
+      return safeError(
+        "invalid order id",
+        400
+      );
+    }
+
+
+    if (!orderId) {
+
+      return safeError(
+        "invalid order id",
+        400
+      );
+    }
+
+
+    // =========================
+    // BODY
+    // =========================
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    const targetStatus =
+      String(
+        body?.status ??
+        ""
+      )
+        .trim()
+        .toLowerCase();
+
+
+    const allowedTargetStatuses =
+      new Set([
+        "taken",
+        "in_progress",
+        "done",
+        "canceled"
+      ]);
+
+
+    if (
+      !allowedTargetStatuses.has(
+        targetStatus
+      )
+    ) {
+
+      return safeError(
+        "invalid status",
+        400
+      );
+    }
+
+
+    // =========================
+    // DRIVER ACCOUNT
+    // =========================
+    //
+    // A role=driver JWT is not enough.
+    //
+    // Driver must still exist in
+    // DRIVERS KV and be approved/active.
+    // =========================
+
+    let driverId =
+      null;
+
+
+    if (
+      isDriver
+    ) {
+
+      driverId =
+        String(
+          user.id ??
+          ""
+        )
+          .trim();
+
+
+      if (!driverId) {
+
+        return safeError(
+          "invalid driver account",
+          403
+        );
+      }
+
+
+      let driver =
+        null;
+
+
+      try {
+
+        const raw =
+          await env.DRIVERS.get(
+            driverId
+          );
+
+
+        if (raw) {
+
+          driver =
+            JSON.parse(
+              raw
+            );
+        }
+
+      } catch (
+        error
+      ) {
+
+        console.error(
+          "DRIVER TRANSITION AUTH READ ERROR:",
+          error
+        );
+
+
+        return safeError(
+          "driver authorization failed",
+          500
+        );
+      }
+
+
+      if (!driver) {
+
+        return safeError(
+          "driver not found",
+          403
+        );
+      }
+
+
+      const driverStatus =
+        String(
+          driver.status ??
+          ""
+        )
+          .trim()
+          .toLowerCase();
+
+
+      if (
+        driverStatus !== "approved"
+        &&
+        driverStatus !== "active"
+      ) {
+
+        return safeError(
+          "driver not approved",
+          403
+        );
+      }
+    }
+
+
+    // =========================
+    // ROLE -> TRANSITION POLICY
+    // =========================
+
+    let transitionResult;
+
+
+    try {
+
+      if (
+        isDriver
+      ) {
+
+        if (
+          targetStatus === "taken"
+        ) {
+
+          transitionResult =
+            await takeOrderForDriver(
+              env,
+              orderId,
+              driverId
+            );
+
+        } else if (
+          targetStatus ===
+            "in_progress"
+          ||
+          targetStatus ===
+            "done"
+        ) {
+
+          transitionResult =
+            await advanceDriverOrder(
+              env,
+              orderId,
+              driverId,
+              targetStatus
+            );
+
+        } else {
+
+          return safeError(
+            "forbidden transition",
+            403
+          );
+        }
+
+      } else {
+
+        // =========================
+        // ADMIN
+        // =========================
+        //
+        // ARCH-08 intentionally gives
+        // admin only the cancellation
+        // transition.
+        //
+        // Admin must not impersonate
+        // driver workflow.
+        // =========================
+
+        if (
+          targetStatus !==
+            "canceled"
+        ) {
+
+          return safeError(
+            "forbidden transition",
+            403
+          );
+        }
+
+
+        transitionResult =
+          await cancelOrder(
+            env,
+            orderId
+          );
+      }
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ORDER TRANSITION ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "order transition failed",
+        500
+      );
+    }
+
+
+    // =========================
+    // TRANSITION RESULT
+    // =========================
+
+    if (
+      transitionResult?.ok !== true
+    ) {
+
+      if (
+        transitionResult?.reason ===
+          "not_found"
+      ) {
+
+        return safeError(
+          "order not found",
+          404
+        );
+      }
+
+
+      if (
+        transitionResult?.reason ===
+          "conflict"
+      ) {
+
+        return safeError(
+          "order transition conflict",
+          409
+        );
+      }
+
+
+      return safeError(
+        "order transition failed",
+        500
+      );
+    }
+
+
+    const transitionedOrder =
+      transitionResult.order;
+
+
+    if (
+      !transitionedOrder
+      ||
+      !transitionedOrder.id
+    ) {
+
+      return safeError(
+        "order transition failed",
+        500
+      );
+    }
+
+
+    // =========================
+    // RESPONSE
+    // =========================
+    //
+    // Deliberately minimal.
+    //
+    // No passenger PII is required
+    // for acknowledgement of the
+    // state transition itself.
+    // =========================
+
+    return json(
+      {
+        ok: true,
+
+        order: {
+
+          id:
+            transitionedOrder.id,
+
+          status:
+            transitionedOrder.status,
+
+          driverId:
+            transitionedOrder.driverId,
+
+          updatedAt:
+            transitionedOrder.updatedAt
+        }
+      },
+      200,
+      cors
+    );
   }
 
 
