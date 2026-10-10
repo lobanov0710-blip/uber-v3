@@ -68,19 +68,16 @@ if (
 
 
 // ========================================
-// HISTORICAL VERIFIER ITERATIONS
+// VALID VERIFIER ITERATIONS
 // ========================================
 //
-// Verification intentionally accepts
-// schema-valid historical verifier work
-// factors.
-//
-// New hashes, however, must always use
-// the frozen production value of 600,000.
+// Verification accepts only the exact
+// production work factor supported by the
+// Cloudflare Workers runtime.
 // ========================================
 
-const HISTORICAL_TEST_ITERATIONS =
-  100000;
+const VALID_TEST_ITERATIONS =
+  STAFF_PASSWORD_ITERATIONS;
 
 
 // ========================================
@@ -134,7 +131,7 @@ await test(
 
     assert.equal(
       STAFF_PASSWORD_ITERATIONS,
-      600000
+      100000
     );
   }
 );
@@ -153,7 +150,7 @@ await test(
         "VeryStrongPassword-123!",
         {
           iterations:
-            HISTORICAL_TEST_ITERATIONS
+            600000
         }
       );
 
@@ -186,13 +183,13 @@ await test(
 
     assert.equal(
       first.passwordIterations,
-      600000
+      100000
     );
 
 
     assert.equal(
       second.passwordIterations,
-      600000
+      100000
     );
 
 
@@ -251,11 +248,11 @@ await test(
 
 
 // ========================================
-// CALLER CANNOT DOWNGRADE HASHING
+// CALLER CANNOT OVERRIDE HASHING
 // ========================================
 
 await test(
-  "password hashing cannot be downgraded by caller",
+  "password hashing work factor cannot be overridden by caller",
   async () => {
 
     const verifier =
@@ -263,7 +260,7 @@ await test(
         "Password-123!",
         {
           iterations:
-            100000
+            600000
         }
       );
 
@@ -276,7 +273,7 @@ await test(
 
     assert.equal(
       verifier.passwordIterations,
-      600000
+      100000
     );
   }
 );
@@ -433,7 +430,7 @@ await test(
               "sha256",
 
             passwordIterations:
-              HISTORICAL_TEST_ITERATIONS,
+              VALID_TEST_ITERATIONS,
 
             passwordSalt:
               "aaaaaaaaaaaaaaaaaaaaaa",
@@ -450,7 +447,7 @@ await test(
 
 
 await test(
-  "unsafe persisted verifier iteration count is rejected",
+  "non-production persisted verifier iteration count is rejected",
   async () => {
 
     await assert.rejects(
@@ -463,6 +460,34 @@ await test(
 
             passwordIterations:
               99999,
+
+            passwordSalt:
+              "aaaaaaaaaaaaaaaaaaaaaa",
+
+            passwordHash:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ),
+
+      /Invalid staff password iterations/
+    );
+
+
+    // Regression test for the production
+    // Cloudflare PBKDF2 runtime limit.
+    //
+    // 600,000 must be rejected before
+    // Web Crypto deriveBits() is invoked.
+    await assert.rejects(
+      () =>
+        verifyStaffPassword(
+          "Password-123!",
+          {
+            passwordAlgorithm:
+              "pbkdf2-sha256",
+
+            passwordIterations:
+              600000,
 
             passwordSalt:
               "aaaaaaaaaaaaaaaaaaaaaa",
@@ -491,7 +516,7 @@ await test(
               "pbkdf2-sha256",
 
             passwordIterations:
-              HISTORICAL_TEST_ITERATIONS,
+              VALID_TEST_ITERATIONS,
 
             passwordSalt:
               "***invalid***",
@@ -520,7 +545,7 @@ await test(
               "pbkdf2-sha256",
 
             passwordIterations:
-              HISTORICAL_TEST_ITERATIONS,
+              VALID_TEST_ITERATIONS,
 
             passwordSalt:
               " aaaaaaaaaaaaaaaaaaaaaa",
@@ -543,7 +568,7 @@ await test(
               "pbkdf2-sha256",
 
             passwordIterations:
-              HISTORICAL_TEST_ITERATIONS,
+              VALID_TEST_ITERATIONS,
 
             passwordSalt:
               "aaaaaaaaaaaaaaaaaaaaaa",

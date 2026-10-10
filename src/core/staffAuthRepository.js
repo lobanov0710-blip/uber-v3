@@ -23,6 +23,12 @@
 // =========================================
 
 
+import {
+  STAFF_PASSWORD_ALGORITHM,
+  STAFF_PASSWORD_ITERATIONS
+} from "./staffAuthCrypto.js";
+
+
 // =========================================
 // CONSTANTS
 // =========================================
@@ -41,10 +47,6 @@ const STAFF_STATUSES =
     "suspended",
     "disabled"
   ]);
-
-
-const PASSWORD_ALGORITHM =
-  "pbkdf2-sha256";
 
 
 export const STAFF_LOGIN_LOCK_THRESHOLD =
@@ -267,7 +269,7 @@ function requirePasswordVerifier(
 
   if (
     passwordAlgorithm !==
-      PASSWORD_ALGORITHM
+      STAFF_PASSWORD_ALGORITHM
   ) {
 
     throw new Error(
@@ -284,11 +286,8 @@ function requirePasswordVerifier(
 
 
   if (
-    passwordIterations <
-      100000
-    ||
-    passwordIterations >
-      5000000
+    passwordIterations !==
+      STAFF_PASSWORD_ITERATIONS
   ) {
 
     throw new Error(

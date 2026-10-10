@@ -29,6 +29,8 @@ import {
 } from "./auth.js";
 
 import {
+  STAFF_PASSWORD_ALGORITHM,
+  STAFF_PASSWORD_ITERATIONS,
   verifyStaffPassword,
   createRefreshToken,
   hashRefreshToken
@@ -96,10 +98,10 @@ const encoder =
 const DUMMY_PASSWORD_VERIFIER = {
 
   passwordAlgorithm:
-    "pbkdf2-sha256",
+    STAFF_PASSWORD_ALGORITHM,
 
   passwordIterations:
-    600000,
+    STAFF_PASSWORD_ITERATIONS,
 
   passwordSalt:
     "AAAAAAAAAAAAAAAAAAAAAA",

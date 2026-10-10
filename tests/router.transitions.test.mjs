@@ -208,7 +208,7 @@ function staffAccountRow(
       "pbkdf2-sha256",
 
     password_iterations:
-      600000,
+      100000,
 
     password_salt:
       "aaaaaaaaaaaaaaaaaaaaaa",
