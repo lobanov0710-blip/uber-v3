@@ -233,6 +233,397 @@ export async function getOrderById(
 
 
 // =========================================
+// ORDER STATE TRANSITIONS
+// =========================================
+//
+// Все state transitions выполняются
+// атомарным UPDATE ... WHERE.
+//
+// Это критично для конкуренции:
+//
+// два водителя не должны иметь
+// возможность одновременно забрать
+// один и тот же новый заказ.
+//
+// Repository не принимает role/JWT.
+// Авторизация будет отдельным слоем
+// router/service в ARCH-08.2.
+// =========================================
+
+const DRIVER_NEXT_STATUS = {
+  in_progress:
+    "taken",
+
+  done:
+    "in_progress"
+};
+
+
+function transitionTimestamp(
+  value
+) {
+
+  return requiredTimestamp(
+    value,
+    "updatedAt"
+  );
+}
+
+
+async function completeOrderTransition(
+  env,
+  orderId,
+  result
+) {
+
+  if (
+    result?.success !== true
+  ) {
+
+    throw new Error(
+      "Order transition failed"
+    );
+  }
+
+
+  const changes =
+    Number(
+      result?.meta?.changes
+    );
+
+
+  if (
+    !Number.isSafeInteger(
+      changes
+    )
+    || changes < 0
+    || changes > 1
+  ) {
+
+    throw new Error(
+      "Invalid order transition result"
+    );
+  }
+
+
+  const order =
+    await getOrderById(
+      env,
+      orderId
+    );
+
+
+  if (
+    changes === 1
+  ) {
+
+    if (!order) {
+
+      throw new Error(
+        "Order transition readback failed"
+      );
+    }
+
+
+    return {
+      ok: true,
+      reason: null,
+      order
+    };
+  }
+
+
+  if (!order) {
+
+    return {
+      ok: false,
+      reason:
+        "not_found",
+      order: null
+    };
+  }
+
+
+  return {
+    ok: false,
+    reason:
+      "conflict",
+    order
+  };
+}
+
+
+// =========================================
+// TAKE ORDER
+// new -> taken
+// =========================================
+//
+// Driver assignment and status change
+// happen in ONE atomic SQL statement.
+//
+// WHERE:
+//
+// status = new
+// driver_id IS NULL
+//
+// Therefore only one competing driver
+// can successfully claim the order.
+// =========================================
+
+export async function takeOrderForDriver(
+  env,
+  orderId,
+  driverId,
+  updatedAt = Date.now()
+) {
+
+  const id =
+    requiredText(
+      orderId,
+      "id"
+    );
+
+
+  const driver =
+    requiredText(
+      driverId,
+      "driverId"
+    );
+
+
+  const timestamp =
+    transitionTimestamp(
+      updatedAt
+    );
+
+
+  const db =
+    requireDatabase(
+      env
+    );
+
+
+  const result =
+    await db
+      .prepare(`
+        UPDATE orders
+
+        SET
+          status = 'taken',
+          driver_id = ?2,
+          updated_at =
+            CASE
+              WHEN updated_at >= ?3
+                THEN updated_at + 1
+              ELSE ?3
+            END
+
+        WHERE id = ?1
+          AND status = 'new'
+          AND driver_id IS NULL
+      `)
+      .bind(
+        id,
+        driver,
+        timestamp
+      )
+      .run();
+
+
+  return completeOrderTransition(
+    env,
+    id,
+    result
+  );
+}
+
+
+// =========================================
+// DRIVER ADVANCE
+//
+// taken       -> in_progress
+// in_progress -> done
+// =========================================
+//
+// Только тот же driver_id,
+// которому принадлежит заказ,
+// может провести его дальше.
+//
+// Произвольный nextStatus здесь
+// запрещён.
+// =========================================
+
+export async function advanceDriverOrder(
+  env,
+  orderId,
+  driverId,
+  nextStatus,
+  updatedAt = Date.now()
+) {
+
+  const id =
+    requiredText(
+      orderId,
+      "id"
+    );
+
+
+  const driver =
+    requiredText(
+      driverId,
+      "driverId"
+    );
+
+
+  const targetStatus =
+    String(
+      nextStatus ?? ""
+    )
+      .trim()
+      .toLowerCase();
+
+
+  const expectedStatus =
+    DRIVER_NEXT_STATUS[
+      targetStatus
+    ];
+
+
+  if (!expectedStatus) {
+
+    throw new Error(
+      "Invalid driver order transition"
+    );
+  }
+
+
+  const timestamp =
+    transitionTimestamp(
+      updatedAt
+    );
+
+
+  const db =
+    requireDatabase(
+      env
+    );
+
+
+  const result =
+    await db
+      .prepare(`
+        UPDATE orders
+
+        SET
+          status = ?4,
+          updated_at =
+            CASE
+              WHEN updated_at >= ?5
+                THEN updated_at + 1
+              ELSE ?5
+            END
+
+        WHERE id = ?1
+          AND driver_id = ?2
+          AND status = ?3
+      `)
+      .bind(
+        id,
+        driver,
+        expectedStatus,
+        targetStatus,
+        timestamp
+      )
+      .run();
+
+
+  return completeOrderTransition(
+    env,
+    id,
+    result
+  );
+}
+
+
+// =========================================
+// ADMIN CANCEL
+//
+// new         -> canceled
+// taken       -> canceled
+// in_progress -> canceled
+//
+// done / canceled are terminal.
+// =========================================
+//
+// Role enforcement intentionally does
+// NOT live here.
+//
+// Router will allow this operation only
+// for an authenticated admin.
+// =========================================
+
+export async function cancelOrder(
+  env,
+  orderId,
+  updatedAt = Date.now()
+) {
+
+  const id =
+    requiredText(
+      orderId,
+      "id"
+    );
+
+
+  const timestamp =
+    transitionTimestamp(
+      updatedAt
+    );
+
+
+  const db =
+    requireDatabase(
+      env
+    );
+
+
+  const result =
+    await db
+      .prepare(`
+        UPDATE orders
+
+        SET
+          status = 'canceled',
+          updated_at =
+            CASE
+              WHEN updated_at >= ?2
+                THEN updated_at + 1
+              ELSE ?2
+            END
+
+        WHERE id = ?1
+          AND status IN (
+            'new',
+            'taken',
+            'in_progress'
+          )
+      `)
+      .bind(
+        id,
+        timestamp
+      )
+      .run();
+
+
+  return completeOrderTransition(
+    env,
+    id,
+    result
+  );
+}
+
+
+// =========================================
 // GET ORDER BY QUOTE ID
 // =========================================
 
