@@ -55,6 +55,13 @@ import {
   logoutStaff
 } from "./core/staffAuthService.js";
 
+import {
+  listStaffAccounts,
+  createDriverAccount,
+  changeDriverStatus,
+  resetDriverPassword
+} from "./core/staffAccountAdminService.js";
+
 
 // =========================
 // ROUTER
@@ -398,6 +405,604 @@ export default async function router(
   }
 
 
+    // =========================
+  // STAFF ACCOUNT MANAGEMENT
+  // =========================
+  //
+  // ARCH-10
+  //
+  // Private admin-only API.
+  //
+  // Authentication:
+  //
+  // Authorization: Bearer <staff JWT>
+  //
+  // authenticateStaffRequest() additionally
+  // verifies authoritative D1 account and
+  // session state.
+  //
+  // Passenger HMAC/capability credentials
+  // are not valid for these endpoints.
+  // =========================
+
+
+  // =========================
+  // GET /staff/accounts
+  // POST /staff/accounts
+  // =========================
+
+  if (
+    path === "/staff/accounts"
+  ) {
+
+    if (
+      req.method !== "GET"
+      &&
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    // =======================
+    // STAFF AUTHENTICATION
+    // =======================
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+
+      return safeError(
+        auth?.error ||
+          "authorization required",
+
+        auth?.status ||
+          401
+      );
+    }
+
+
+    // =======================
+    // ADMIN ONLY
+    // =======================
+
+    if (
+      !hasRole(
+        auth.user,
+        "admin"
+      )
+    ) {
+
+      return safeError(
+        "forbidden",
+        403
+      );
+    }
+
+
+    // =======================
+    // LIST ACCOUNTS
+    // =======================
+
+    if (
+      req.method === "GET"
+    ) {
+
+      try {
+
+        const result =
+          await listStaffAccounts(
+            env,
+            auth.user
+          );
+
+
+        if (
+          result?.ok !== true
+        ) {
+
+          return safeError(
+            result?.error ||
+              "staff account request failed",
+
+            result?.status ||
+              500
+          );
+        }
+
+
+        return json(
+          {
+            ok: true,
+
+            count:
+              result.count,
+
+            staff:
+              result.staff
+          },
+          200,
+          cors
+        );
+
+      } catch (
+        error
+      ) {
+
+        console.error(
+          "STAFF ACCOUNT LIST ERROR:",
+          error
+        );
+
+
+        return safeError(
+          "staff account request failed",
+          500
+        );
+      }
+    }
+
+
+    // =======================
+    // CREATE DRIVER
+    // =======================
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await createDriverAccount(
+          env,
+          auth.user,
+          body
+        );
+
+
+      if (
+        result?.ok !== true
+      ) {
+
+        return safeError(
+          result?.error ||
+            "staff account creation failed",
+
+          result?.status ||
+            500
+        );
+      }
+
+
+      return json(
+        {
+          ok: true,
+
+          staff:
+            result.staff
+        },
+        201,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "STAFF ACCOUNT CREATE ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "staff account creation failed",
+        500
+      );
+
+    } finally {
+
+      // Reduce plaintext password lifetime
+      // in this request scope.
+      if (
+        body
+        &&
+        typeof body === "object"
+        &&
+        !Array.isArray(
+          body
+        )
+        &&
+        Object.hasOwn(
+          body,
+          "password"
+        )
+      ) {
+
+        body.password =
+          null;
+      }
+    }
+  }
+
+
+  // =========================
+  // PATCH
+  // /staff/accounts/{id}/status
+  // =========================
+
+  const staffStatusMatch =
+    path.match(
+      /^\/staff\/accounts\/([^/]+)\/status$/
+    );
+
+
+  if (
+    staffStatusMatch
+  ) {
+
+    if (
+      req.method !== "PATCH"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    // =======================
+    // STAFF AUTHENTICATION
+    // =======================
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+
+      return safeError(
+        auth?.error ||
+          "authorization required",
+
+        auth?.status ||
+          401
+      );
+    }
+
+
+    // =======================
+    // ADMIN ONLY
+    // =======================
+
+    if (
+      !hasRole(
+        auth.user,
+        "admin"
+      )
+    ) {
+
+      return safeError(
+        "forbidden",
+        403
+      );
+    }
+
+
+    // =======================
+    // ACCOUNT ID
+    // =======================
+
+    let accountId;
+
+
+    try {
+
+      accountId =
+        decodeURIComponent(
+          staffStatusMatch[1]
+        )
+          .trim();
+
+    } catch (
+      error
+    ) {
+
+      return safeError(
+        "invalid staff account id",
+        400
+      );
+    }
+
+
+    if (!accountId) {
+
+      return safeError(
+        "invalid staff account id",
+        400
+      );
+    }
+
+
+    // =======================
+    // BODY
+    // =======================
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await changeDriverStatus(
+          env,
+          auth.user,
+          accountId,
+          body
+        );
+
+
+      if (
+        result?.ok !== true
+      ) {
+
+        return safeError(
+          result?.error ||
+            "staff account update failed",
+
+          result?.status ||
+            500
+        );
+      }
+
+
+      return json(
+        {
+          ok: true,
+
+          changed:
+            result.changed,
+
+          staff:
+            result.staff
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "STAFF ACCOUNT STATUS ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "staff account update failed",
+        500
+      );
+    }
+  }
+
+
+  // =========================
+  // POST
+  // /staff/accounts/{id}/password-reset
+  // =========================
+
+  const staffPasswordResetMatch =
+    path.match(
+      /^\/staff\/accounts\/([^/]+)\/password-reset$/
+    );
+
+
+  if (
+    staffPasswordResetMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    // =======================
+    // STAFF AUTHENTICATION
+    // =======================
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+
+      return safeError(
+        auth?.error ||
+          "authorization required",
+
+        auth?.status ||
+          401
+      );
+    }
+
+
+    // =======================
+    // ADMIN ONLY
+    // =======================
+
+    if (
+      !hasRole(
+        auth.user,
+        "admin"
+      )
+    ) {
+
+      return safeError(
+        "forbidden",
+        403
+      );
+    }
+
+
+    // =======================
+    // ACCOUNT ID
+    // =======================
+
+    let accountId;
+
+
+    try {
+
+      accountId =
+        decodeURIComponent(
+          staffPasswordResetMatch[1]
+        )
+          .trim();
+
+    } catch (
+      error
+    ) {
+
+      return safeError(
+        "invalid staff account id",
+        400
+      );
+    }
+
+
+    if (!accountId) {
+
+      return safeError(
+        "invalid staff account id",
+        400
+      );
+    }
+
+
+    // =======================
+    // BODY
+    // =======================
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await resetDriverPassword(
+          env,
+          auth.user,
+          accountId,
+          body
+        );
+
+
+      if (
+        result?.ok !== true
+      ) {
+
+        return safeError(
+          result?.error ||
+            "staff password reset failed",
+
+          result?.status ||
+            500
+        );
+      }
+
+
+      return json(
+        {
+          ok: true,
+
+          staff:
+            result.staff
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "STAFF PASSWORD RESET ERROR:",
+        error
+      );
+
+
+      return safeError(
+        "staff password reset failed",
+        500
+      );
+
+    } finally {
+
+      // Do not retain the plaintext password
+      // in the router request object longer
+      // than required.
+      if (
+        body
+        &&
+        typeof body === "object"
+        &&
+        !Array.isArray(
+          body
+        )
+        &&
+        Object.hasOwn(
+          body,
+          "password"
+        )
+      ) {
+
+        body.password =
+          null;
+      }
+    }
+  }
+
+
   // =========================
   // DISABLED LEGACY ENDPOINTS
   // =========================
@@ -406,11 +1011,7 @@ export default async function router(
   // disabled.
   //
   // Staff authentication is provided only
-  // through:
-  //
-  // POST /staff/login
-  // POST /staff/refresh
-  // POST /staff/logout
+  // through the D1-backed staff API.
   //
   // There is intentionally NO public
   // staff/register endpoint.

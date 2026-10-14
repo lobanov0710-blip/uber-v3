@@ -9,7 +9,7 @@ The contract reflects the implemented behavior of:
 - Cloudflare Worker `uber-v3`
 - public PHP gateway on `transfer-servis52.ru`
 - Android passenger application
-- private staff authentication and order API
+- private staff authentication, staff administration, and order API
 
 Breaking changes require a new API version or an explicit coordinated migration of all affected clients.
 
@@ -54,15 +54,35 @@ POST /staff/login
 POST /staff/refresh
 POST /staff/logout
 
+GET   /staff/accounts
+POST  /staff/accounts
+PATCH /staff/accounts/{staffAccountId}/status
+POST  /staff/accounts/{staffAccountId}/password-reset
+
 GET  /orders
 POST /orders/{orderId}/status
 ```
 
 `POST /staff/login`, `POST /staff/refresh`, and `POST /staff/logout` implement the staff authentication lifecycle.
 
+The following endpoints implement private administrator-controlled staff account management:
+
+```text
+GET   /staff/accounts
+POST  /staff/accounts
+PATCH /staff/accounts/{staffAccountId}/status
+POST  /staff/accounts/{staffAccountId}/password-reset
+```
+
 `GET /orders` and `POST /orders/{orderId}/status` are private staff endpoints and are not part of the public passenger API.
 
 Private staff endpoints require a valid staff access JWT backed by an active D1 staff account and active D1 staff session.
+
+Staff account management additionally requires:
+
+```text
+role = admin
+```
 
 Staff clients communicate directly with the Worker and do not use the public passenger PHP gateway.
 
@@ -186,6 +206,27 @@ Meaning:
 | `canceled` | canceled |
 
 Existing identifiers must not be renamed without an API migration.
+
+## 3.5 Staff account statuses
+
+Persisted staff account statuses are:
+
+```text
+pending
+active
+suspended
+disabled
+```
+
+The staff administration API currently manages only:
+
+```text
+active
+suspended
+disabled
+```
+
+`pending` remains a persisted lifecycle value but is not an allowed target status for the API v1 staff administration workflow.
 
 ---
 
@@ -1177,6 +1218,8 @@ The authenticated principal used by private routes is reconstructed from current
 
 Therefore changing account state, token version, or session state can invalidate previously issued access tokens without trusting stale role/account data contained only in the JWT.
 
+Administrative status changes and password resets intentionally invalidate existing driver credentials by updating authoritative D1 security state.
+
 `DRIVERS` KV is not authoritative for staff authentication or authorization.
 
 Order state and assignment remain authoritative in D1.
@@ -1385,6 +1428,336 @@ Successful logout returns:
 }
 ```
 
+## Staff account management
+
+Staff account management is a private admin-only API.
+
+Authentication:
+
+```text
+Authorization: Bearer <staff access JWT>
+```
+
+The authenticated staff account must have:
+
+```text
+role = admin
+status = active
+```
+
+The staff access JWT must additionally remain bound to a valid authoritative D1 staff session.
+
+Passenger HMAC credentials and passenger capability tokens are not valid credentials for these endpoints.
+
+### List staff accounts
+
+```text
+GET /staff/accounts
+```
+
+Successful response:
+
+```json
+{
+  "ok": true,
+  "count": 2,
+  "staff": [
+    {
+      "id": "staff-driver-id",
+      "login": "driver.one",
+      "displayName": "Driver One",
+      "role": "driver",
+      "status": "active",
+      "tokenVersion": 1,
+      "createdAt": 1791500000000,
+      "updatedAt": 1791500000000
+    }
+  ]
+}
+```
+
+The staff list response must not expose:
+
+```text
+plaintext password
+password_algorithm
+password_iterations
+password_salt
+password_hash
+password verifier objects
+access tokens
+refresh tokens
+refresh-token hashes
+```
+
+### Create driver account
+
+```text
+POST /staff/accounts
+```
+
+Request:
+
+```json
+{
+  "login": "driver.one",
+  "displayName": "Driver One",
+  "password": "staff password"
+}
+```
+
+The staff administration API creates only:
+
+```text
+role = driver
+status = active
+token_version = 1
+```
+
+The client cannot select:
+
+```text
+role
+status
+```
+
+Supplying either field makes the request invalid.
+
+Admin accounts cannot be created through this endpoint.
+
+New driver passwords use the current production verifier policy:
+
+```text
+PBKDF2-HMAC-SHA256
+100000 iterations
+16-byte random salt
+32-byte derived key
+```
+
+Successful creation:
+
+```text
+201 Created
+```
+
+Example:
+
+```json
+{
+  "ok": true,
+  "staff": {
+    "id": "staff-driver-id",
+    "login": "driver.one",
+    "displayName": "Driver One",
+    "role": "driver",
+    "status": "active",
+    "tokenVersion": 1,
+    "createdAt": 1791500000000,
+    "updatedAt": 1791500000000
+  }
+}
+```
+
+A duplicate or concurrently conflicting staff account returns:
+
+```text
+409 Conflict
+```
+
+Plaintext password data is not persisted in D1 and is not returned in the response.
+
+### Change driver status
+
+```text
+PATCH /staff/accounts/{staffAccountId}/status
+```
+
+Request:
+
+```json
+{
+  "status": "suspended"
+}
+```
+
+Allowed target statuses:
+
+```text
+active
+suspended
+disabled
+```
+
+`pending` is not an admin-managed target state in API v1.
+
+Only accounts with:
+
+```text
+role = driver
+```
+
+may be modified through this endpoint.
+
+Admin accounts are deliberately outside this management API.
+
+A real status change:
+
+```text
+updates staff_accounts.status
+increments staff_accounts.token_version
+revokes all currently active staff_sessions for the driver
+records a staff_admin_audit event
+```
+
+Previously issued access JWTs are invalidated by the token-version change.
+
+Previously active refresh sessions are explicitly revoked.
+
+Reactivating a driver does not revive old credentials.
+
+The driver must authenticate again.
+
+Setting the driver to its already-current status is idempotent.
+
+Example idempotent response:
+
+```json
+{
+  "ok": true,
+  "changed": false,
+  "staff": {
+    "id": "staff-driver-id",
+    "login": "driver.one",
+    "displayName": "Driver One",
+    "role": "driver",
+    "status": "active",
+    "tokenVersion": 2,
+    "createdAt": 1791500000000,
+    "updatedAt": 1791503600000
+  }
+}
+```
+
+Example actual-change response:
+
+```json
+{
+  "ok": true,
+  "changed": true,
+  "staff": {
+    "id": "staff-driver-id",
+    "login": "driver.one",
+    "displayName": "Driver One",
+    "role": "driver",
+    "status": "suspended",
+    "tokenVersion": 2,
+    "createdAt": 1791500000000,
+    "updatedAt": 1791503600000
+  }
+}
+```
+
+### Reset driver password
+
+```text
+POST /staff/accounts/{staffAccountId}/password-reset
+```
+
+Request:
+
+```json
+{
+  "password": "new staff password"
+}
+```
+
+Password policy:
+
+```text
+16-128 characters
+maximum 512 UTF-8 bytes
+```
+
+Only driver accounts can be modified through this endpoint.
+
+Admin passwords cannot be reset through the staff administration API.
+
+A successful password reset:
+
+```text
+generates a new random password salt
+stores a new PBKDF2-HMAC-SHA256 verifier
+uses exactly 100000 iterations
+increments token_version
+sets failed_login_count = 0
+sets locked_until = NULL
+sets last_failed_login_at = NULL
+updates password_changed_at
+revokes all currently active staff_sessions
+records a staff_admin_audit event
+```
+
+Previously issued driver access and refresh credentials therefore become invalid.
+
+Plaintext passwords are never stored in D1 and are not returned by the API.
+
+### Staff administration audit
+
+Security-relevant staff management operations are recorded in:
+
+```text
+staff_admin_audit
+```
+
+Current audit actions:
+
+```text
+account_created
+status_changed
+password_reset
+```
+
+Each audit row identifies:
+
+```text
+id
+actor_account_id
+target_account_id
+action
+created_at
+```
+
+Status-change events additionally record:
+
+```text
+previous_status
+new_status
+```
+
+The audit table must never contain:
+
+```text
+plaintext passwords
+password hashes
+password salts
+access tokens
+refresh tokens
+```
+
+Staff accounts are not physically deleted through this API.
+
+A driver who must no longer use the platform is moved to:
+
+```text
+status = disabled
+```
+
+This preserves historical references such as:
+
+```text
+orders.driver_id
+```
+
 ## Private staff traffic
 
 ```text
@@ -1401,8 +1774,17 @@ D1
 Private staff endpoints include:
 
 ```text
-GET  /orders
-POST /orders/{orderId}/status
+POST  /staff/login
+POST  /staff/refresh
+POST  /staff/logout
+
+GET   /staff/accounts
+POST  /staff/accounts
+PATCH /staff/accounts/{staffAccountId}/status
+POST  /staff/accounts/{staffAccountId}/password-reset
+
+GET   /orders
+POST  /orders/{orderId}/status
 ```
 
 Staff traffic does not use the passenger PHP gateway.
@@ -1484,15 +1866,15 @@ The API currently uses the following principal statuses:
 
 | Status | Meaning |
 |---|---|
-| `200` | successful calculation/read/authentication operation/state transition |
-| `201` | order created/accepted |
+| `200` | successful calculation/read/authentication/staff-management/state-transition operation |
+| `201` | order or staff driver account successfully created |
 | `204` | CORS preflight |
 | `400` | invalid input |
 | `401` | staff credentials/token/session invalid, expired, revoked, or authentication required |
-| `403` | forbidden operation or passenger capability rejection |
-| `404` | resource/route unavailable or disabled legacy endpoint |
+| `403` | forbidden operation, unauthorized staff role/target, or passenger capability rejection |
+| `404` | resource/account/route unavailable or disabled legacy endpoint |
 | `405` | method not allowed |
-| `409` | quote conflict or order state-transition conflict |
+| `409` | quote, staff-account, concurrency, or order state-transition conflict |
 | `413` | PHP gateway request too large |
 | `500` | internal/configuration/storage failure |
 | `502` | PHP gateway upstream failure |
@@ -1535,11 +1917,17 @@ The gateway passes valid Worker status codes and JSON responses through to the c
 Staff endpoints:
 
 ```text
-POST /staff/login
-POST /staff/refresh
-POST /staff/logout
-GET  /orders
-POST /orders/{orderId}/status
+POST  /staff/login
+POST  /staff/refresh
+POST  /staff/logout
+
+GET   /staff/accounts
+POST  /staff/accounts
+PATCH /staff/accounts/{staffAccountId}/status
+POST  /staff/accounts/{staffAccountId}/password-reset
+
+GET   /orders
+POST  /orders/{orderId}/status
 ```
 
 do not pass through the public PHP passenger gateway.
@@ -1566,7 +1954,11 @@ For API v1, the following are breaking changes:
 - changing the staff refresh-token rotation semantics;
 - allowing staff JWT claims to bypass authoritative D1 account/session validation;
 - allowing unauthorized roles to perform staff state transitions;
-- changing legal order transition semantics without coordinated staff-client support.
+- changing legal order transition semantics without coordinated staff-client support;
+- allowing non-admin staff to use staff account management endpoints;
+- allowing staff account management to create admin accounts;
+- allowing the staff management API to modify admin account status or password;
+- changing staff status or password-reset invalidation semantics without coordinated staff-client support.
 
 The following may be introduced compatibly:
 
@@ -1574,6 +1966,7 @@ The following may be introduced compatibly:
 - new optional request fields;
 - new error metadata;
 - new private endpoints;
+- new staff administration audit metadata that does not expose credentials;
 - new order statuses only after coordinated client support.
 
 ---
@@ -1594,7 +1987,13 @@ The Android passenger application does not use:
 POST /staff/login
 POST /staff/refresh
 POST /staff/logout
-GET  /orders
+
+GET /staff/accounts
+POST /staff/accounts
+PATCH /staff/accounts/{staffAccountId}/status
+POST /staff/accounts/{staffAccountId}/password-reset
+
+GET /orders
 POST /orders/{orderId}/status
 ```
 
@@ -1746,6 +2145,7 @@ quotes
 orders
 staff_accounts
 staff_sessions
+staff_admin_audit
 ```
 
 KV must not be used as an authoritative or mirrored store for:
@@ -1756,6 +2156,7 @@ orders
 staff authentication state
 staff authorization state
 staff refresh sessions
+staff administration audit state
 ```
 
 The authoritative staff-security fields include:
@@ -1775,6 +2176,36 @@ staff_sessions.refresh_token_hash
 staff_sessions.expires_at
 staff_sessions.revoked_at
 staff_sessions.replaced_by_session_id
+```
+
+Administrative staff-account operations are recorded in:
+
+```text
+staff_admin_audit
+```
+
+The authoritative audit fields include:
+
+```text
+staff_admin_audit.id
+staff_admin_audit.actor_account_id
+staff_admin_audit.target_account_id
+staff_admin_audit.action
+staff_admin_audit.previous_status
+staff_admin_audit.new_status
+staff_admin_audit.created_at
+```
+
+The audit store contains metadata about administrative operations.
+
+It must not contain:
+
+```text
+plaintext passwords
+password hashes
+password salts
+access tokens
+refresh tokens
 ```
 
 The authoritative order fields involved in staff state transitions are:
@@ -1803,6 +2234,10 @@ Plaintext staff refresh tokens are not stored in D1.
 
 Only their cryptographic hashes are persisted.
 
+Plaintext staff passwords are never stored in D1.
+
+Staff password verifier material remains security-sensitive and must never be exposed through staff administration API responses.
+
 ---
 
 # 24. Contract ownership
@@ -1818,7 +2253,12 @@ POST /staff/login
 POST /staff/refresh
 POST /staff/logout
 
-GET  /orders
+GET /staff/accounts
+POST /staff/accounts
+PATCH /staff/accounts/{staffAccountId}/status
+POST /staff/accounts/{staffAccountId}/password-reset
+
+GET /orders
 POST /orders/{orderId}/status
 ```
 
@@ -1848,6 +2288,35 @@ absolute refresh-family expiration
 refresh replay detection
 session revocation
 disabled public self-registration
+```
+
+Changes to staff account management must preserve:
+
+```text
+admin-only authorization
+driver-only API management
+no API creation of admin accounts
+no API status modification of admin accounts
+no API password reset for admin accounts
+D1-authoritative staff state
+exact production password-verifier policy
+tokenVersion invalidation on security changes
+session revocation on status/password changes
+no plaintext password persistence
+no credential material in API responses
+administrative audit records
+historical staff identity preservation
+```
+
+Changes to staff administration auditing must preserve:
+
+```text
+actor account identity
+target account identity
+operation type
+status transition metadata when applicable
+Unix-millisecond timestamps
+no password or credential material
 ```
 
 Changes to staff order-transition behavior must preserve:
