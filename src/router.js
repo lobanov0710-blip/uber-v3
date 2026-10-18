@@ -62,6 +62,11 @@ import {
   resetDriverPassword
 } from "./core/staffAccountAdminService.js";
 
+import {
+  registerStaffPushDevice,
+  unregisterStaffPushDevice
+} from "./core/staffPushDeviceService.js";
+
 
 // =========================
 // ROUTER
@@ -401,6 +406,157 @@ export default async function router(
         "staff logout failed",
         500
       );
+    }
+  }
+
+
+  // =========================
+  // STAFF PUSH DEVICE
+  // =========================
+  //
+  // Private authenticated staff API.
+  //
+  // PUT:
+  // register/update this application
+  // installation and its current FCM token.
+  //
+  // DELETE:
+  // remove this application installation
+  // for the authenticated staff account.
+  //
+  // account_id and session_family_id are
+  // never accepted from the client.
+  // They come from authoritative D1-backed
+  // staff authorization.
+  // =========================
+
+  if (
+    path === "/staff/push-device"
+  ) {
+
+    if (
+      req.method !== "PUT"
+      &&
+      req.method !== "DELETE"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    // =======================
+    // STAFF AUTHENTICATION
+    // =======================
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+
+      return safeError(
+        auth?.error ||
+          "authorization required",
+
+        auth?.status ||
+          401
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        req.method === "PUT"
+          ? await registerStaffPushDevice(
+              env,
+              auth,
+              body
+            )
+          : await unregisterStaffPushDevice(
+              env,
+              auth,
+              body
+            );
+
+
+      if (
+        result?.ok !== true
+      ) {
+
+        return safeError(
+          result?.error ||
+            "staff push device request failed",
+
+          result?.status ||
+            500
+        );
+      }
+
+
+      return json(
+        {
+          ok: true
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      // Never attach the thrown object here:
+      // a provider/database error must not
+      // accidentally serialize sensitive
+      // FCM routing data.
+      console.error(
+        "STAFF PUSH DEVICE ERROR"
+      );
+
+
+      return safeError(
+        "staff push device request failed",
+        500
+      );
+
+    } finally {
+
+      // Reduce FCM token lifetime in this
+      // request scope. It must never be
+      // logged or returned by the API.
+      if (
+        body
+        &&
+        typeof body === "object"
+        &&
+        !Array.isArray(
+          body
+        )
+        &&
+        Object.hasOwn(
+          body,
+          "token"
+        )
+      ) {
+
+        body.token =
+          null;
+      }
     }
   }
 

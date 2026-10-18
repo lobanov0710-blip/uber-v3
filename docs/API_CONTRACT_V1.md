@@ -54,6 +54,9 @@ POST /staff/login
 POST /staff/refresh
 POST /staff/logout
 
+PUT    /staff/push-device
+DELETE /staff/push-device
+
 GET   /staff/accounts
 POST  /staff/accounts
 PATCH /staff/accounts/{staffAccountId}/status
@@ -64,6 +67,8 @@ POST /orders/{orderId}/status
 ```
 
 `POST /staff/login`, `POST /staff/refresh`, and `POST /staff/logout` implement the staff authentication lifecycle.
+
+`PUT /staff/push-device` and `DELETE /staff/push-device` implement authenticated staff push-device registration lifecycle.
 
 The following endpoints implement private administrator-controlled staff account management:
 
@@ -1758,6 +1763,85 @@ This preserves historical references such as:
 orders.driver_id
 ```
 
+### Staff push device registration
+
+Private authenticated staff clients may register one application installation for push delivery:
+
+```text
+PUT /staff/push-device
+```
+
+Authentication:
+
+```text
+Authorization: Bearer <staff access JWT>
+```
+
+The request body is:
+
+```json
+{
+  "installationId": "11111111-2222-4333-8444-555555555555",
+  "platform": "android",
+  "token": "<FCM registration token>"
+}
+```
+
+Rules:
+
+- `installationId` is a stable UUID generated and persisted by the application installation;
+- `platform` is currently exactly `android`;
+- `token` is the current Firebase Cloud Messaging registration token;
+- `account_id` is never accepted from the client;
+- `session_family_id` is never accepted from the client;
+- account ownership and session-family binding come from `authenticateStaffRequest()` and authoritative D1 state;
+- registration is idempotent by `installation_id`;
+- re-registering the same installation updates its current account/session-family ownership and FCM token;
+- FCM tokens must never be logged or returned in API responses.
+
+Successful registration:
+
+```json
+{
+  "ok": true
+}
+```
+
+The authenticated staff client may unregister its installation:
+
+```text
+DELETE /staff/push-device
+```
+
+Request:
+
+```json
+{
+  "installationId": "11111111-2222-4333-8444-555555555555"
+}
+```
+
+Deletion is idempotent and is scoped by both:
+
+```text
+installation_id
+authenticated account_id
+```
+
+A staff account therefore cannot unregister another account's installation merely by knowing an installation identifier.
+
+Push-device rows are stored in:
+
+```text
+staff_push_devices
+```
+
+The persisted routing token remains plaintext because FCM requires the actual token for delivery. It is treated as sensitive routing data and must not appear in logs, errors, audit rows, or API responses.
+
+`session_family_id` binds a device registration to the login/session lineage. Refresh-token rotation preserves that family id, so ordinary access-token refresh does not require a new logical device identity.
+
+Send-side push delivery must treat current D1 staff/session state as authoritative and must not send solely because a row exists in `staff_push_devices`.
+
 ## Private staff traffic
 
 ```text
@@ -1777,6 +1861,9 @@ Private staff endpoints include:
 POST  /staff/login
 POST  /staff/refresh
 POST  /staff/logout
+
+PUT    /staff/push-device
+DELETE /staff/push-device
 
 GET   /staff/accounts
 POST  /staff/accounts
@@ -1921,6 +2008,9 @@ POST  /staff/login
 POST  /staff/refresh
 POST  /staff/logout
 
+PUT    /staff/push-device
+DELETE /staff/push-device
+
 GET   /staff/accounts
 POST  /staff/accounts
 PATCH /staff/accounts/{staffAccountId}/status
@@ -1987,6 +2077,9 @@ The Android passenger application does not use:
 POST /staff/login
 POST /staff/refresh
 POST /staff/logout
+
+PUT /staff/push-device
+DELETE /staff/push-device
 
 GET /staff/accounts
 POST /staff/accounts
@@ -2145,6 +2238,7 @@ quotes
 orders
 staff_accounts
 staff_sessions
+staff_push_devices
 staff_admin_audit
 ```
 
@@ -2156,6 +2250,7 @@ orders
 staff authentication state
 staff authorization state
 staff refresh sessions
+staff push-device registration state
 staff administration audit state
 ```
 
@@ -2177,6 +2272,20 @@ staff_sessions.expires_at
 staff_sessions.revoked_at
 staff_sessions.replaced_by_session_id
 ```
+
+Authoritative push-device registration fields include:
+
+```text
+staff_push_devices.installation_id
+staff_push_devices.account_id
+staff_push_devices.session_family_id
+staff_push_devices.platform
+staff_push_devices.fcm_token
+staff_push_devices.created_at
+staff_push_devices.updated_at
+```
+
+FCM tokens are sensitive routing data. They are persisted only because the external FCM delivery API requires the current plaintext token. They must not be returned by private API responses or written to application logs.
 
 Administrative staff-account operations are recorded in:
 
@@ -2253,6 +2362,9 @@ POST /staff/login
 POST /staff/refresh
 POST /staff/logout
 
+PUT /staff/push-device
+DELETE /staff/push-device
+
 GET /staff/accounts
 POST /staff/accounts
 PATCH /staff/accounts/{staffAccountId}/status
@@ -2317,6 +2429,20 @@ operation type
 status transition metadata when applicable
 Unix-millisecond timestamps
 no password or credential material
+```
+
+Changes to staff push-device behavior must preserve:
+
+```text
+D1-authoritative staff account/session validation
+server-derived account ownership
+server-derived session-family binding
+stable installation identity
+idempotent registration and unregister
+no FCM token in API responses
+no FCM token logging
+account-scoped device deletion
+no passenger HMAC authentication for staff push endpoints
 ```
 
 Changes to staff order-transition behavior must preserve:
