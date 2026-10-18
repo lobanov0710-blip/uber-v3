@@ -520,9 +520,12 @@ export default async function router(
       error
     ) {
 
+      // Never attach the thrown object here:
+      // a provider/database error must not
+      // accidentally serialize sensitive
+      // FCM routing data.
       console.error(
-        "STAFF PUSH DEVICE ERROR:",
-        error
+        "STAFF PUSH DEVICE ERROR"
       );
 
 
