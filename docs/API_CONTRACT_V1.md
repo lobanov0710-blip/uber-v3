@@ -2362,6 +2362,9 @@ POST /staff/login
 POST /staff/refresh
 POST /staff/logout
 
+PUT /staff/push-device
+DELETE /staff/push-device
+
 GET /staff/accounts
 POST /staff/accounts
 PATCH /staff/accounts/{staffAccountId}/status
