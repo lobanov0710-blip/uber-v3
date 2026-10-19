@@ -1,0 +1,26 @@
+name: ARCH-11.15B3 backend validation
+
+on:
+  push:
+    branches:
+      - arch/11.15b3-fcm-delivery
+    paths:
+      - ".github/workflows/arch-11-15b3-backend-validation.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+      - run: npx wrangler deploy --dry-run
