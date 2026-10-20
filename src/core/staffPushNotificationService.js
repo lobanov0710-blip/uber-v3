@@ -31,6 +31,9 @@ import {
 const ORDER_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const INSTALLATION_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 
 function cleanOrderId(
   value
@@ -52,31 +55,31 @@ function cleanOrderId(
 }
 
 
-export async function notifyActiveDriversOfNewOrder(
-  env,
-  orderId
+function cleanInstallationId(
+  value
 ) {
 
-  const normalizedOrderId =
-    cleanOrderId(
-      orderId
-    );
+  const installationId =
+    String(
+      value ?? ""
+    )
+      .trim()
+      .toLowerCase();
 
 
-  if (!normalizedOrderId) {
+  return INSTALLATION_ID_PATTERN.test(
+    installationId
+  )
+    ? installationId
+    : "";
+}
 
-    throw new Error(
-      "Invalid order id for push delivery"
-    );
-  }
 
-
-  const targets =
-    await listActiveDriverPushTargets(
-      env,
-      Date.now()
-    );
-
+async function deliverNewOrderToTargets(
+  env,
+  normalizedOrderId,
+  targets
+) {
 
   if (targets.length === 0) {
 
@@ -239,4 +242,112 @@ export async function notifyActiveDriversOfNewOrder(
 
     removed
   };
+}
+
+
+export async function notifyActiveDriversOfNewOrder(
+  env,
+  orderId
+) {
+
+  const normalizedOrderId =
+    cleanOrderId(
+      orderId
+    );
+
+
+  if (!normalizedOrderId) {
+
+    throw new Error(
+      "Invalid order id for push delivery"
+    );
+  }
+
+
+  const targets =
+    await listActiveDriverPushTargets(
+      env,
+      Date.now()
+    );
+
+
+  return deliverNewOrderToTargets(
+    env,
+    normalizedOrderId,
+    targets
+  );
+}
+
+
+// =========================================
+// TEMPORARY SINGLE-INSTALLATION TEST SEND
+// =========================================
+//
+// Used only by the ARCH-11.15B3 preview
+// diagnostic endpoint.
+//
+// The installation still has to pass the
+// same authoritative active-driver/session
+// checks as production delivery.
+//
+// REMOVE before B3 merge/deployment.
+// =========================================
+
+export async function notifyActiveDriverInstallationOfNewOrder(
+  env,
+  orderId,
+  installationId
+) {
+
+  const normalizedOrderId =
+    cleanOrderId(
+      orderId
+    );
+
+
+  const normalizedInstallationId =
+    cleanInstallationId(
+      installationId
+    );
+
+
+  if (!normalizedOrderId) {
+
+    throw new Error(
+      "Invalid order id for push delivery"
+    );
+  }
+
+
+  if (!normalizedInstallationId) {
+
+    throw new Error(
+      "Invalid installation id for test push delivery"
+    );
+  }
+
+
+  const targets =
+    await listActiveDriverPushTargets(
+      env,
+      Date.now()
+    );
+
+
+  const target =
+    targets.find(
+      item =>
+        item.installationId
+          .toLowerCase() ===
+        normalizedInstallationId
+    );
+
+
+  return deliverNewOrderToTargets(
+    env,
+    normalizedOrderId,
+    target
+      ? [target]
+      : []
+  );
 }

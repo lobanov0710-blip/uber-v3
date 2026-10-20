@@ -68,7 +68,8 @@ import {
 } from "./core/staffPushDeviceService.js";
 
 import {
-  notifyActiveDriversOfNewOrder
+  notifyActiveDriversOfNewOrder,
+  notifyActiveDriverInstallationOfNewOrder
 } from "./core/staffPushNotificationService.js";
 
 
@@ -2001,6 +2002,183 @@ export default async function router(
       200,
       cors
     );
+  }
+
+
+  // =========================
+  // TEMPORARY ARCH-11.15B3 PUSH TEST
+  // =========================
+  //
+  // Preview-only diagnostic endpoint.
+  //
+  // Security:
+  // - requires B3_TEST_PUSH_KEY Worker secret
+  // - unauthenticated requests receive 404
+  // - targets exactly one active registered
+  //   Android installation
+  // - only an existing order UUID is sent
+  // - response never contains FCM token or PII
+  //
+  // REMOVE before B3 merge/deployment.
+  // =========================
+
+  if (
+    path === "/__arch-11-15b3/test-push"
+  ) {
+
+    const configuredTestKey =
+      String(
+        env?.B3_TEST_PUSH_KEY ?? ""
+      )
+        .trim();
+
+    const suppliedTestKey =
+      String(
+        req.headers.get(
+          "X-B3-Test-Key"
+        ) ?? ""
+      )
+        .trim();
+
+
+    if (
+      configuredTestKey.length < 32
+      ||
+      suppliedTestKey.length < 32
+      ||
+      suppliedTestKey !==
+        configuredTestKey
+    ) {
+
+      return safeError(
+        "not found",
+        404
+      );
+    }
+
+
+    if (
+      req.method !== "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    const orderId =
+      String(
+        body?.orderId ?? ""
+      )
+        .trim()
+        .toLowerCase();
+
+
+    const installationId =
+      String(
+        body?.installationId ?? ""
+      )
+        .trim()
+        .toLowerCase();
+
+
+    if (
+      !orderId
+      ||
+      !installationId
+    ) {
+
+      return safeError(
+        "invalid test push request",
+        400
+      );
+    }
+
+
+    let order;
+
+
+    try {
+
+      order =
+        await getOrderById(
+          env,
+          orderId
+        );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "B3 TEST PUSH ORDER READ ERROR"
+      );
+
+      return safeError(
+        "test push failed",
+        500
+      );
+    }
+
+
+    if (!order) {
+
+      return safeError(
+        "order not found",
+        404
+      );
+    }
+
+
+    try {
+
+      const result =
+        await notifyActiveDriverInstallationOfNewOrder(
+          env,
+          order.id,
+          installationId
+        );
+
+
+      return json(
+        {
+          ok:
+            true,
+
+          attempted:
+            result.attempted,
+
+          delivered:
+            result.delivered,
+
+          removed:
+            result.removed
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "B3 TEST PUSH ERROR"
+      );
+
+      return safeError(
+        "test push failed",
+        500
+      );
+    }
   }
 
 
