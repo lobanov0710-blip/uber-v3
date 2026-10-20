@@ -67,6 +67,10 @@ import {
   unregisterStaffPushDevice
 } from "./core/staffPushDeviceService.js";
 
+import {
+  notifyActiveDriversOfNewOrder
+} from "./core/staffPushNotificationService.js";
+
 
 // =========================
 // ROUTER
@@ -74,7 +78,8 @@ import {
 
 export default async function router(
   req,
-  env
+  env,
+  executionContext = null
 ) {
 
   const url =
@@ -2131,6 +2136,44 @@ export default async function router(
             env,
             result.order
           );
+
+
+        // =========================
+        // DRIVER PUSH
+        // =========================
+        //
+        // Push is best effort and must never
+        // turn a successfully created order
+        // into an HTTP failure.
+        //
+        // Production Workers provide
+        // ExecutionContext.waitUntil().
+        // Unit tests may call router directly
+        // without an execution context.
+        // =========================
+
+        if (
+          executionContext
+          &&
+          typeof executionContext.waitUntil ===
+            "function"
+        ) {
+
+          executionContext.waitUntil(
+            notifyActiveDriversOfNewOrder(
+              env,
+              result.order.id
+            )
+              .catch(
+                () => {
+
+                  console.error(
+                    "NEW ORDER PUSH DELIVERY ERROR"
+                  );
+                }
+              )
+          );
+        }
 
 
         // =========================

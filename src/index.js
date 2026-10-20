@@ -5,14 +5,16 @@ export default {
 
   async fetch(
     req,
-    env
+    env,
+    ctx
   ) {
 
     try {
 
       return await router(
         req,
-        env
+        env,
+        ctx
       );
 
     } catch (
