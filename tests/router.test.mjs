@@ -1147,6 +1147,8 @@ await test(
     } =
       createOrderDatabase();
 
+    const scheduledPush = [];
+
 
     const request =
       await signedPost(
@@ -1190,6 +1192,11 @@ await test(
 
               TG_CHAT_ID:
                 "-1001"
+            },
+            {
+              waitUntil(promise) {
+                scheduledPush.push(promise);
+              }
             }
           )
       );
@@ -1282,9 +1289,138 @@ await test(
           )
       )
     );
+    assert.equal(scheduledPush.length, 1,
+      "A newly persisted order schedules one driver push");
+    await Promise.all(scheduledPush);
+
   }
 );
 
+
+// ========================================
+// IDEMPOTENT ORDER RETRIES MUST NOT PUSH
+// ========================================
+
+await test(
+  "idempotent POST /orders returns the existing receipt without another driver push",
+  async () => {
+    const quoteId = "123e4567-e89b-42d3-a456-426614174000";
+    const orderId = "abcdef12-3456-4234-9abc-123456789abc";
+    const existingRow = orderRow({
+      id: orderId,
+      quote_id: quoteId,
+      name: "Иван",
+      phone: "+79990000001",
+      trip_date: "2026-11-20",
+      comment: "Комментарий"
+    });
+
+    let reads = 0;
+    let writes = 0;
+    const db = {
+      prepare(sql) {
+        let args = [];
+        const statement = {
+          bind(...values) {
+            args = values;
+            return statement;
+          },
+          async first() {
+            assert.match(sql, /WHERE quote_id/i);
+            assert.equal(args[0], quoteId);
+            reads++;
+            return existingRow;
+          },
+          async run() {
+            writes++;
+            throw new Error("A retry must not persist a second order");
+          }
+        };
+        return statement;
+      }
+    };
+
+    const request = await signedPost("/orders", {
+      quoteId,
+      name: "Иван",
+      phone: "+79990000001",
+      date: "2026-11-20",
+      comment: "Комментарий"
+    });
+
+    const scheduledPush = [];
+    const response = await router(request, {
+      PROXY_HMAC_SECRET: PROXY_SECRET,
+      PASSENGER_ORDER_SECRET,
+      DB: db
+    }, {
+      waitUntil(promise) {
+        scheduledPush.push(promise);
+      }
+    });
+    const body = await jsonBody(response);
+
+    assert.equal(response.status, 201);
+    assert.equal(body.ok, true);
+    assert.equal(body.order.id, orderId);
+    assert.equal(typeof body.accessToken, "string");
+    assert.equal(reads, 1);
+    assert.equal(writes, 0);
+    assert.equal(scheduledPush.length, 0,
+      "An idempotent retry must not wake drivers twice");
+  }
+);
+
+await test(
+  "replaying the quote with different passenger data returns conflict without push",
+  async () => {
+    const quoteId = "123e4567-e89b-42d3-a456-426614174000";
+    const existingRow = orderRow({
+      quote_id: quoteId,
+      name: "Иван",
+      phone: "+79990000001",
+      trip_date: "2026-11-20",
+      comment: "Комментарий"
+    });
+
+    const db = {
+      prepare(sql) {
+        return {
+          bind(id) {
+            assert.match(sql, /WHERE quote_id/i);
+            assert.equal(id, quoteId);
+            return this;
+          },
+          async first() {
+            return existingRow;
+          }
+        };
+      }
+    };
+
+    const request = await signedPost("/orders", {
+      quoteId,
+      name: "Другой пассажир",
+      phone: "+79990000002",
+      date: "2026-11-20",
+      comment: "Комментарий"
+    });
+
+    let scheduled = 0;
+    const response = await router(request, {
+      PROXY_HMAC_SECRET: PROXY_SECRET,
+      PASSENGER_ORDER_SECRET,
+      DB: db
+    }, {
+      waitUntil() {
+        scheduled++;
+      }
+    });
+
+    assert.equal(response.status, 409);
+    assert.equal(scheduled, 0);
+  }
+);
 
 // ========================================
 // ORDER ACCESS CONFIG
