@@ -1,7 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "test": "npm run test:pricing && npm run test:quotes && npm run test:orders && npm run test:orders:write && npm run test:orders:transitions && npm run test:order-domain && npm run test:auth && npm run test:staff-auth-crypto && npm run test:staff-auth-accounts && npm run test:staff-auth-sessions && npm run test:staff-auth-service && npm run test:staff-authorization && npm run test:staff-push-devices && npm run test:staff-push-delivery && npm run test:staff-provisioning && npm run test:staff-admin && npm run test:proxy-auth && npm run test:router && npm run test:router:staff-auth && npm run test:router:staff-admin && npm run test:router:staff-push-device && npm run test:router:transitions && npm run test:passenger-access",
+    "test": "npm run test:trip-date && npm run test:pricing && npm run test:quotes && npm run test:orders && npm run test:orders:write && npm run test:orders:transitions && npm run test:order-domain && npm run test:auth && npm run test:staff-auth-crypto && npm run test:staff-auth-accounts && npm run test:staff-auth-sessions && npm run test:staff-auth-service && npm run test:staff-authorization && npm run test:staff-push-devices && npm run test:staff-push-delivery && npm run test:staff-provisioning && npm run test:staff-admin && npm run test:proxy-auth && npm run test:router && npm run test:router:staff-auth && npm run test:router:staff-admin && npm run test:router:staff-push-device && npm run test:router:transitions && npm run test:passenger-access",
+    "test:trip-date": "node ./tests/tripDate.test.mjs",
     "test:pricing": "node ./tests/pricing.test.mjs",
     "test:quotes": "node ./tests/quotes.test.mjs",
     "test:orders": "node ./tests/orderRepository.test.mjs",
