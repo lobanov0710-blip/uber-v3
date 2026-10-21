@@ -2152,7 +2152,12 @@ export default async function router(
         // without an execution context.
         // =========================
 
+        // Only a newly persisted D1 order generates the new-order FCM event.
+        // Idempotent POST retries and concurrent quote insert losers must not
+        // notify drivers again. The passenger still receives a fresh token.
         if (
+          result.idempotent === false
+          &&
           executionContext
           &&
           typeof executionContext.waitUntil ===
