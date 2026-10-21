@@ -1,0 +1,66 @@
+name: Deploy approved PR3 to Cloudflare Worker
+
+on:
+  push:
+    branches:
+      - ops/deploy-pr3-fcm-70737bb
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uber-v3-pr3-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Test and deploy exact reviewed source
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout approved deployment branch
+        uses: actions/checkout@v4
+
+      - name: Require approved PR3 code as immediate parent
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD^)" = "70737bbff7b056d4a54a83d9e7260c39dea0922b"
+          test "$(git show HEAD^:wrangler.toml | grep -c '^name = "uber-v3"$')" -eq 1
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install exact lockfile dependencies
+        run: npm ci
+
+      - name: Run backend regression suite
+        run: npm test
+
+      - name: Ensure Cloudflare deployment credentials exist
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID in uber-v3 repository Actions secrets; deployment was NOT attempted."
+            exit 1
+          fi
+
+      - name: Validate Worker bundle without publishing
+        run: npx wrangler deploy --dry-run
+
+      - name: Deploy existing uber-v3 Worker without D1 migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy --keep-vars
+
+      - name: Read deployed Worker versions
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deployments list
