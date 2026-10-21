@@ -812,7 +812,7 @@ await test(
 
     assert.match(
       telegramBody.text,
-      /20\.10\.2026/
+      /20\.10\.2099/
     );
   }
 );
