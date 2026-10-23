@@ -24,13 +24,12 @@ export function isValidPhone(value) {
       opened = false;
     }
   }
-  if (opened || digits.length < 10 || digits.length > 15) return false;
-  if (source.startsWith("+") && digits.startsWith("0")) return false;
-  if (source.startsWith("+7") && digits.length !== 11) return false;
-
-  const russianStyle = digits[0] === "7" || digits[0] === "8";
-  if (russianStyle && digits.length === 11 && digits[1] < "2") return false;
-  const national = russianStyle && digits.length === 11 ? digits.slice(1) : digits;
+  // New bookings require a Russian +7 or 8 number, with exactly 11 digits.
+  // A local ten-digit number and a bare 7 prefix are intentionally rejected.
+  if (opened || digits.length !== 11) return false;
+  if (!source.startsWith("+7") && !source.startsWith("8")) return false;
+  if (digits[1] < "2") return false;
+  const national = digits.slice(1);
   if (["0123456789", "1234567890", "9876543210"].includes(national)) {
     return false;
   }
