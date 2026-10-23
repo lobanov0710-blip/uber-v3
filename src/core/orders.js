@@ -12,6 +12,11 @@ import {
   getActiveQuoteById
 } from "./quoteRepository.js";
 
+import {
+  normalizeTripDate,
+  isBookableTripDate
+} from "./tripDate.js";
+
 
 // =========================
 // ORDER CONSTANTS
@@ -118,15 +123,7 @@ function normalizeDate(
     return null;
   }
 
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(
-      source
-    )
-  ) {
-    return null;
-  }
-
-  return source;
+  return normalizeTripDate(source);
 }
 
 
@@ -778,6 +775,17 @@ export async function createOrder(
     }
   }
 
+
+  // For a newly created order, the trip date must not precede today in
+  // Europe/Moscow. Check AFTER idempotent lookup so that a previously accepted
+  // order may still recover its passenger token after the scheduled trip date.
+  if (!isBookableTripDate(date)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid date"
+    };
+  }
 
   // =========================
   // ROUTE SOURCE

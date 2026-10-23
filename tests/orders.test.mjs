@@ -142,7 +142,7 @@ function manualOrderRow(
       "Москва",
 
     trip_date:
-      "2026-10-20",
+      "2099-10-20",
 
     comment:
       "",
@@ -203,7 +203,7 @@ function quotedOrderRow(
       "Москва",
 
     trip_date:
-      "2026-10-20",
+      "2099-10-20",
 
     comment:
       "Встреча у подъезда",
@@ -256,7 +256,7 @@ function manualInput(
       "Нижний Новгород → Москва",
 
     date:
-      "2026-10-20",
+      "2099-10-20",
 
     comment:
       "",
@@ -281,7 +281,7 @@ function quotedInput(
       "+79990000001",
 
     date:
-      "2026-10-20",
+      "2099-10-20",
 
     comment:
       "Встреча у подъезда",
@@ -812,7 +812,7 @@ await test(
 
     assert.match(
       telegramBody.text,
-      /20\.10\.2026/
+      /20\.10\.2099/
     );
   }
 );
@@ -1181,6 +1181,57 @@ await test(
   }
 );
 
+
+// ========================================
+// NEW ORDER DATE VALIDATION
+// ========================================
+
+await test(
+  "new manual booking for yesterday is rejected before D1 writes",
+  async () => {
+    const { db, batchCalls } = createFakeDatabase();
+    const result = await createOrder(
+      manualInput({ date: "2020-01-01" }),
+      envWithDatabase(db)
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 400);
+    assert.equal(result.error, "invalid date");
+    assert.equal(batchCalls.length, 0);
+  }
+);
+
+await test(
+  "new quoted booking for yesterday is rejected before D1 writes",
+  async () => {
+    const { db, batchCalls } = createFakeDatabase();
+    const result = await createOrder(
+      quotedInput({ date: "2020-01-01" }),
+      envWithDatabase(db)
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 400);
+    assert.equal(result.error, "invalid date");
+    assert.equal(batchCalls.length, 0);
+  }
+);
+
+await test(
+  "already confirmed quoted order with past date can still recover idempotently",
+  async () => {
+    const { db, batchCalls } = createFakeDatabase({
+      firstResults: [quotedOrderRow({trip_date: "2020-01-01"})]
+    });
+    const result = await createOrder(
+      quotedInput({ date: "2020-01-01" }),
+      envWithDatabase(db)
+    );
+    assert.equal(result.ok, true);
+    assert.equal(result.idempotent, true);
+    assert.equal(result.order.id, "quoted-order-1");
+    assert.equal(batchCalls.length, 0);
+  }
+);
 
 // ========================================
 // EXPIRED / MISSING QUOTE
