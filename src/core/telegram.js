@@ -1,3 +1,5 @@
+import { isStagingEnvironment } from "./deploymentEnvironment.js";
+
 // =========================
 // TELEGRAM
 // =========================
@@ -6,6 +8,11 @@ export async function tgSend(
   env,
   text
 ) {
+  // Never send real Telegram messages from the staging worker.
+  if (isStagingEnvironment(env)) {
+    return { ok: true, skipped: true };
+  }
+
 
   // =========================
   // CONFIG
