@@ -1183,6 +1183,105 @@ await test(
 
 
 // ========================================
+// STRICT PHONE VALIDATION, WITH LEGACY RECOVERY
+// ========================================
+
+await test(
+  "new manual booking without +7 or 8 is rejected before D1 write",
+  async () => {
+    const { db, batchCalls } = createFakeDatabase();
+    const result = await createOrder(
+      manualInput({ phone: "9991234567" }),
+      envWithDatabase(db)
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 400);
+    assert.equal(result.error, "invalid phone");
+    assert.equal(batchCalls.length, 0);
+  }
+);
+
+await test(
+  "new quoted booking without +7 or 8 is rejected before D1 write",
+  async () => {
+    const { db, batchCalls } = createFakeDatabase();
+    const result = await createOrder(
+      quotedInput({ phone: "79991234567" }),
+      envWithDatabase(db)
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 400);
+    assert.equal(result.error, "invalid phone");
+    assert.equal(batchCalls.length, 0);
+  }
+);
+
+await test(
+  "historical quote with prefixless phone can still be recovered",
+  async () => {
+    const { db, batchCalls } = createFakeDatabase({
+      firstResults: [quotedOrderRow({ phone: "9991234567" })]
+    });
+    const result = await createOrder(
+      quotedInput({ phone: "9991234567" }),
+      envWithDatabase(db)
+    );
+    assert.equal(result.ok, true);
+    assert.equal(result.idempotent, true);
+    assert.equal(result.order.id, "quoted-order-1");
+    assert.equal(batchCalls.length, 0);
+  }
+);
+
+await test(
+  "new manual booking rejects text-prefixed phone before D1 write",
+  async () => {
+    const { db, batchCalls } = createFakeDatabase();
+    const result = await createOrder(
+      manualInput({ phone: "тел. +7 (999) 123-45-67" }),
+      envWithDatabase(db)
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 400);
+    assert.equal(result.error, "invalid phone");
+    assert.equal(batchCalls.length, 0);
+  }
+);
+
+await test(
+  "new quoted booking rejects malformed phone before D1 write",
+  async () => {
+    const { db, batchCalls } = createFakeDatabase();
+    const result = await createOrder(
+      quotedInput({ phone: "++79991234567" }),
+      envWithDatabase(db)
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 400);
+    assert.equal(result.error, "invalid phone");
+    assert.equal(batchCalls.length, 0);
+  }
+);
+
+await test(
+  "previously accepted quoted order with a legacy phone still replays safely",
+  async () => {
+    const oldPhone = "тел. +7 (999) 123-45-67";
+    const { db, batchCalls } = createFakeDatabase({
+      firstResults: [quotedOrderRow({ phone: oldPhone })]
+    });
+    const result = await createOrder(
+      quotedInput({ phone: oldPhone }),
+      envWithDatabase(db)
+    );
+    assert.equal(result.ok, true);
+    assert.equal(result.idempotent, true);
+    assert.equal(result.order.id, "quoted-order-1");
+    assert.equal(batchCalls.length, 0);
+  }
+);
+
+// ========================================
 // NEW ORDER DATE VALIDATION
 // ========================================
 

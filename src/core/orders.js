@@ -17,6 +17,8 @@ import {
   isBookableTripDate
 } from "./tripDate.js";
 
+import { isValidPhone } from "./phoneValidation.js";
+
 
 // =========================
 // ORDER CONSTANTS
@@ -775,6 +777,17 @@ export async function createOrder(
     }
   }
 
+
+  // Old, already persisted orders may replay the exact original payload.
+  // Only NEW orders enforce stronger phone-format requirements, after
+  // idempotent quote lookup, so passenger recovery remains possible.
+  if (!isValidPhone(phone)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid phone"
+    };
+  }
 
   // For a newly created order, the trip date must not precede today in
   // Europe/Moscow. Check AFTER idempotent lookup so that a previously accepted
