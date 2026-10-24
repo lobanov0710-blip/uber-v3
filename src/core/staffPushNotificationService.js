@@ -1,3 +1,5 @@
+import { isStagingEnvironment } from "./deploymentEnvironment.js";
+
 // =========================================
 // STAFF PUSH NOTIFICATION SERVICE
 // =========================================
@@ -70,6 +72,11 @@ export async function notifyActiveDriversOfNewOrder(
     );
   }
 
+
+  // Do not query registered devices or send Firebase push in staging.
+  if (isStagingEnvironment(env)) {
+    return { ok: true, attempted: 0, delivered: 0, removed: 0, skipped: true };
+  }
 
   const targets =
     await listActiveDriverPushTargets(
