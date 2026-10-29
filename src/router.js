@@ -2222,7 +2222,8 @@ export default async function router(
           executionContext.waitUntil(
             notifyActiveDriversOfNewOrder(
               env,
-              result.order.id
+              result.order.id,
+              result.order.updatedAt
             )
               .catch(
                 () => {
