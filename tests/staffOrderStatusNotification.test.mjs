@@ -165,7 +165,10 @@ await test(
         updatedAt:
           String(
             FIXED_NOW
-          )
+          ),
+
+        action:
+          "invalidate"
       }
     );
 
@@ -216,6 +219,12 @@ await test(
       plan.accountId,
       "driver-7"
     );
+
+
+    assert.equal(
+      plan.payload.action,
+      "notify"
+    );
   }
 );
 
@@ -249,6 +258,12 @@ await test(
     assert.equal(
       plan.accountId,
       null
+    );
+
+
+    assert.equal(
+      plan.payload.action,
+      "invalidate"
     );
   }
 );
