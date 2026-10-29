@@ -283,7 +283,12 @@ await test(
             "new_order",
 
           orderId:
-            ORDER_ID
+            ORDER_ID,
+
+          updatedAt:
+            String(
+              FIXED_NOW
+            )
         },
         fakeFetch
       );
@@ -320,7 +325,12 @@ await test(
           "new_order",
 
         orderId:
-          ORDER_ID
+          ORDER_ID,
+
+        updatedAt:
+          String(
+            FIXED_NOW
+          )
       }
     );
 
@@ -399,7 +409,12 @@ await test(
             "new_order",
 
           orderId:
-            ORDER_ID
+            ORDER_ID,
+
+          updatedAt:
+            String(
+              FIXED_NOW
+            )
         },
         fakeFetch
       );
