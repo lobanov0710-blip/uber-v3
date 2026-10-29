@@ -94,7 +94,7 @@ export function buildDriverOrderStatusPushPlan(
   }
 
 
-  const payload = {
+  const basePayload = {
     type:
       "order_status_changed",
 
@@ -124,7 +124,11 @@ export function buildDriverOrderStatusPushPlan(
       accountId:
         null,
 
-      payload
+      payload: {
+        ...basePayload,
+        action:
+          "invalidate"
+      }
     };
   }
 
@@ -143,9 +147,15 @@ export function buildDriverOrderStatusPushPlan(
       );
 
 
+    const assigned =
+      Boolean(
+        driverId
+      );
+
+
     return {
       audience:
-        driverId
+        assigned
           ? "account"
           : "all",
 
@@ -153,7 +163,13 @@ export function buildDriverOrderStatusPushPlan(
         driverId ||
         null,
 
-      payload
+      payload: {
+        ...basePayload,
+        action:
+          assigned
+            ? "notify"
+            : "invalidate"
+      }
     };
   }
 
