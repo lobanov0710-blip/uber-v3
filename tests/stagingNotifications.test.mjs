@@ -111,7 +111,7 @@ try {
   assert.equal(calls[0].url, "https://api.telegram.org/botseparate-test-token/sendMessage");
   const body = JSON.parse(calls[0].options.body);
   assert.equal(body.chat_id, "-100987");
-  assert.equal(body.text, "[ТЕСТ / STAGING]\\nSynthetic new order".replace("\\n", "\n"));
+  assert.equal(body.text, "[ТЕСТ / STAGING] Synthetic new order");
 
   // Production behavior/credentials stay independent of staging switches.
   const prodResult = await tgSend(
