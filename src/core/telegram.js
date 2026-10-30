@@ -8,11 +8,19 @@ export async function tgSend(
   env,
   text
 ) {
-  // Never send real Telegram messages from the staging worker.
-  if (isStagingEnvironment(env)) {
+  const staging = isStagingEnvironment(env);
+
+  // Staging is OFF by default. Only an explicit opt-in AND a separate
+  // test bot/chat can enable it. Never fall back to production TG secrets.
+  // Driver FCM remains disabled independently in staging.
+  if (
+    staging &&
+    String(env?.STAGING_TELEGRAM_ENABLED ?? "")
+      .trim()
+      .toLowerCase() !== "true"
+  ) {
     return { ok: true, skipped: true };
   }
-
 
   // =========================
   // CONFIG
@@ -20,23 +28,27 @@ export async function tgSend(
 
   const token =
     String(
-      env?.TG_BOT_TOKEN || ""
+      (staging ? env?.STAGING_TG_BOT_TOKEN : env?.TG_BOT_TOKEN) || ""
     ).trim();
 
   const chatId =
     String(
-      env?.TG_CHAT_ID || ""
+      (staging ? env?.STAGING_TG_CHAT_ID : env?.TG_CHAT_ID) || ""
     ).trim();
 
   if (!token) {
     throw new Error(
-      "Telegram: TG_BOT_TOKEN is missing"
+      staging
+        ? "Telegram: STAGING_TG_BOT_TOKEN is missing"
+        : "Telegram: TG_BOT_TOKEN is missing"
     );
   }
 
   if (!chatId) {
     throw new Error(
-      "Telegram: TG_CHAT_ID is missing"
+      staging
+        ? "Telegram: STAGING_TG_CHAT_ID is missing"
+        : "Telegram: TG_CHAT_ID is missing"
     );
   }
 
@@ -44,16 +56,18 @@ export async function tgSend(
   // MESSAGE
   // =========================
 
-  const message =
-    String(text || "")
-      .trim()
-      .slice(0, 4000);
+  const rawMessage =
+    String(text || "").trim();
 
-  if (!message) {
+  if (!rawMessage) {
     throw new Error(
       "Telegram: empty message"
     );
   }
+
+  const message =
+    `${staging ? "[ТЕСТ / STAGING] " : ""}${rawMessage}`
+      .slice(0, 4000);
 
   // =========================
   // REQUEST

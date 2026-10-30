@@ -1044,6 +1044,74 @@ await test(
 
 
 // ========================================
+// QUOTED ANDROID ORDER / STAGING TELEGRAM
+// ========================================
+
+await test(
+  "new quoted staging order notifies only the separate test bot when explicitly enabled",
+  async () => {
+    const telegramCalls = [];
+    const { db } = createFakeDatabase({
+      firstResults: [
+        null,
+        quoteRow(),
+        null,
+        quotedOrderRow()
+      ]
+    });
+    const stagingEnv = {
+      ...envWithDatabase(db),
+      APP_ENV: "staging",
+      STAGING_TELEGRAM_ENABLED: "true",
+      STAGING_TG_BOT_TOKEN: "staging-test-token",
+      STAGING_TG_CHAT_ID: "-100987"
+    };
+
+    const result = await withFetch(
+      telegramSuccessFetch(telegramCalls),
+      () => createOrder(quotedInput(), stagingEnv)
+    );
+
+    assert.equal(result.ok, true);
+    assert.equal(result.idempotent, false);
+    assert.equal(result.order.id, "quoted-order-1");
+    assert.equal(telegramCalls.length, 1);
+    assert.equal(
+      telegramCalls[0].url,
+      "https://api.telegram.org/botstaging-test-token/sendMessage"
+    );
+    const payload = JSON.parse(telegramCalls[0].options.body);
+    assert.equal(payload.chat_id, "-100987");
+    assert.match(payload.text, /^\[ТЕСТ \/ STAGING\] 🚖 Новая заявка/);
+    assert.match(payload.text, /Нижний Новгород → Москва/);
+  }
+);
+
+await test(
+  "idempotent quoted staging order never sends another Telegram notification",
+  async () => {
+    const telegramCalls = [];
+    const { db } = createFakeDatabase({
+      firstResults: [quotedOrderRow()]
+    });
+    const result = await withFetch(
+      telegramSuccessFetch(telegramCalls),
+      () => createOrder(quotedInput(), {
+        ...envWithDatabase(db),
+        APP_ENV: "staging",
+        STAGING_TELEGRAM_ENABLED: "true",
+        STAGING_TG_BOT_TOKEN: "staging-test-token",
+        STAGING_TG_CHAT_ID: "-100987"
+      })
+    );
+
+    assert.equal(result.ok, true);
+    assert.equal(result.idempotent, true);
+    assert.equal(telegramCalls.length, 0);
+  }
+);
+
+// ========================================
 // IDEMPOTENT RETRY
 // ========================================
 
