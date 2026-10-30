@@ -71,6 +71,15 @@ import {
   notifyActiveDriversOfNewOrder
 } from "./core/staffPushNotificationService.js";
 
+import {
+  notifyDriversOfOrderStatusChange
+} from "./core/staffOrderStatusNotificationService.js";
+
+import {
+  constantTimeSecretEqual,
+  sendArch1116SyntheticPush
+} from "./core/arch1116SyntheticPush.js";
+
 
 // =========================
 // ROUTER
@@ -182,6 +191,107 @@ export default async function router(
       200,
       cors
     );
+  }
+
+
+  // =========================
+  // ARCH-11.16 TEMPORARY TEST PUSH
+  // =========================
+  //
+  // Preview/version-URL only.
+  // Removed before merge.
+  //
+  // Sends synthetic FCM events without
+  // changing order state or writing D1.
+  // =========================
+
+  if (
+    path === "/__arch-11-16/test-push"
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "not found",
+        404
+      );
+    }
+
+
+    const configuredKey =
+      String(
+        env?.ARCH_1116_TEST_PUSH_KEY ??
+        ""
+      )
+        .trim();
+
+
+    const providedKey =
+      String(
+        req.headers.get(
+          "X-ARCH-11-16-Test-Key"
+        ) ??
+        ""
+      )
+        .trim();
+
+
+    if (
+      !configuredKey
+      ||
+      !providedKey
+      ||
+      !await constantTimeSecretEqual(
+        configuredKey,
+        providedKey
+      )
+    ) {
+
+      return safeError(
+        "not found",
+        404
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await sendArch1116SyntheticPush(
+          env,
+          body
+        );
+
+
+      return json(
+        result,
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ARCH-11.16 SYNTHETIC PUSH ERROR"
+      );
+
+
+      return safeError(
+        "test push failed",
+        400
+      );
+    }
   }
 
 
@@ -1969,6 +2079,57 @@ export default async function router(
 
 
     // =========================
+    // ORDER STATUS PUSH
+    // =========================
+    //
+    // Only successful authoritative D1
+    // transitions can schedule an event.
+    //
+    // taken:
+    //   invalidate stale new-order alerts.
+    //
+    // canceled:
+    //   notify assigned driver, or invalidate
+    //   an unassigned new order for everyone.
+    //
+    // Delivery is best effort and must never
+    // turn a successful transition into an
+    // HTTP failure.
+    // =========================
+
+    if (
+      (
+        transitionedOrder.status ===
+          "taken"
+        ||
+        transitionedOrder.status ===
+          "canceled"
+      )
+      &&
+      executionContext
+      &&
+      typeof executionContext.waitUntil ===
+        "function"
+    ) {
+
+      executionContext.waitUntil(
+        notifyDriversOfOrderStatusChange(
+          env,
+          transitionedOrder
+        )
+          .catch(
+            () => {
+
+              console.error(
+                "ORDER STATUS PUSH DELIVERY ERROR"
+              );
+            }
+          )
+      );
+    }
+
+
+    // =========================
     // RESPONSE
     // =========================
     //
@@ -2167,7 +2328,8 @@ export default async function router(
           executionContext.waitUntil(
             notifyActiveDriversOfNewOrder(
               env,
-              result.order.id
+              result.order.id,
+              result.order.updatedAt
             )
               .catch(
                 () => {

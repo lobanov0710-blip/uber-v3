@@ -70,7 +70,11 @@ try {
     },
     FIREBASE_PROJECT_ID: "production-project"
   };
-  const push = await notifyActiveDriversOfNewOrder(env, ORDER_ID);
+  const push = await notifyActiveDriversOfNewOrder(
+    env,
+    ORDER_ID,
+    1700000000000
+  );
   assert.deepEqual(push, {
     ok: true,
     attempted: 0,
@@ -141,7 +145,11 @@ await assert.rejects(
   /TG_BOT_TOKEN is missing/
 );
 await assert.rejects(
-  () => notifyActiveDriversOfNewOrder({ APP_ENV: "production" }, "invalid-order-id"),
+  () => notifyActiveDriversOfNewOrder(
+    { APP_ENV: "production" },
+    "invalid-order-id",
+    1700000000000
+  ),
   /Invalid order id/
 );
 
