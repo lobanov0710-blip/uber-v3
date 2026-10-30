@@ -75,6 +75,11 @@ import {
   notifyDriversOfOrderStatusChange
 } from "./core/staffOrderStatusNotificationService.js";
 
+import {
+  constantTimeSecretEqual,
+  sendArch1116SyntheticPush
+} from "./core/arch1116SyntheticPush.js";
+
 
 // =========================
 // ROUTER
@@ -186,6 +191,107 @@ export default async function router(
       200,
       cors
     );
+  }
+
+
+  // =========================
+  // ARCH-11.16 TEMPORARY TEST PUSH
+  // =========================
+  //
+  // Preview/version-URL only.
+  // Removed before merge.
+  //
+  // Sends synthetic FCM events without
+  // changing order state or writing D1.
+  // =========================
+
+  if (
+    path === "/__arch-11-16/test-push"
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "not found",
+        404
+      );
+    }
+
+
+    const configuredKey =
+      String(
+        env?.ARCH_1116_TEST_PUSH_KEY ??
+        ""
+      )
+        .trim();
+
+
+    const providedKey =
+      String(
+        req.headers.get(
+          "X-ARCH-11-16-Test-Key"
+        ) ??
+        ""
+      )
+        .trim();
+
+
+    if (
+      !configuredKey
+      ||
+      !providedKey
+      ||
+      !await constantTimeSecretEqual(
+        configuredKey,
+        providedKey
+      )
+    ) {
+
+      return safeError(
+        "not found",
+        404
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await sendArch1116SyntheticPush(
+          env,
+          body
+        );
+
+
+      return json(
+        result,
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ARCH-11.16 SYNTHETIC PUSH ERROR"
+      );
+
+
+      return safeError(
+        "test push failed",
+        400
+      );
+    }
   }
 
 
