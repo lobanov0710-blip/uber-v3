@@ -66,7 +66,7 @@ export async function tgSend(
   }
 
   const message =
-    `${staging ? "[ТЕСТ / STAGING]\\n" : ""}${rawMessage}`
+    `${staging ? "[ТЕСТ / STAGING] " : ""}${rawMessage}`
       .slice(0, 4000);
 
   // =========================
