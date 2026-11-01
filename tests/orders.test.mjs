@@ -1044,6 +1044,68 @@ await test(
 
 
 // ========================================
+// QUOTED PRODUCTION ORDER / TELEGRAM FAILURE
+// ========================================
+// A first successful quoted D1 write must remain successful even
+// if Telegram returns HTTP 500. Retrying the same quote/payload
+// must recover the existing order without another D1 write or
+// another outbound Telegram notification.
+// All DB, network and credentials in this test are fake.
+// ========================================
+
+await test(
+  "quoted order survives Telegram failure and retry never duplicates delivery",
+  async () => {
+    const telegramCalls = [];
+    const {
+      db,
+      batchCalls
+    } = createFakeDatabase({
+      firstResults: [
+        null,                  // No existing order on first submission
+        quoteRow(),            // Active trusted quote in fake D1
+        null,                  // No concurrent order before insert
+        quotedOrderRow(),      // Persisted order after D1 transaction
+        quotedOrderRow()       // Same order recovered on retry
+      ]
+    });
+
+    const originalError = console.error;
+    console.error = () => {};
+
+    try {
+      const env = envWithDatabase(db);
+      const first = await withFetch(
+        telegramFailureFetch(telegramCalls),
+        () => createOrder(quotedInput(), env)
+      );
+
+      assert.equal(first.ok, true);
+      assert.equal(first.idempotent, false);
+      assert.equal(first.order.id, "quoted-order-1");
+      assert.equal(batchCalls.length, 1);
+      assert.equal(telegramCalls.length, 1);
+
+      const retry = await withFetch(
+        telegramFailureFetch(telegramCalls),
+        () => createOrder(quotedInput(), env)
+      );
+
+      assert.equal(retry.ok, true);
+      assert.equal(retry.idempotent, true);
+      assert.equal(retry.order.id, first.order.id);
+      assert.equal(batchCalls.length, 1,
+        "An idempotent retry must never write another order");
+      assert.equal(telegramCalls.length, 1,
+        "An idempotent retry must not resend Telegram");
+    } finally {
+      console.error = originalError;
+    }
+  }
+);
+
+
+// ========================================
 // QUOTED ANDROID ORDER / STAGING TELEGRAM
 // ========================================
 
