@@ -47,6 +47,41 @@ GROUP BY q.id;
 
 Verify the **actual** Telegram test-marker message in the intended live chat; check FCM delivery/driver app only if the driver is available and logs/recipient are safe to inspect. An HTTP 201 order response or D1 row alone **does not prove notification delivery**; Telegram errors are best-effort and caught, and FCM may be asynchronously scheduled.
 
+## FCM follow-up: count eligible registered driver devices (read-only)
+
+For the confirmed order `68516805-d870-4bc9-ac4a-43995df5bc05`, owner opened the details **manually** in legacy package `ru.transferservis.transferdriver` (AppOps `POST_NOTIFICATION: ignore`). Thus order-list visibility is PASS but FCM receipt/display is **UNVERIFIED**. A distinct current package `ru.transferservis.driver` has `POST_NOTIFICATIONS: granted=true` and on 01.11 `am start -W` returned `Status: ok`, already running `DriverMainActivity`. Do not confuse packages or infer FCM arrival from a successful app launch.
+
+Cloudflare Dashboard → D1 → `transfer-servis52-core` → Console. This strictly **SELECT-only** query mirrors `src/core/staffPushDeliveryRepository.js` authorization requirements and returns **aggregate counts only**; it does not select `fcm_token`, installation IDs, or staff identities. An absent `staff_push_devices` table means migration/deployment state needs investigation; do not automatically migrate production.
+
+~~~sql
+SELECT
+  COUNT(*) AS registered_android_installations,
+  COALESCE(SUM(
+    CASE WHEN a.role = 'driver' AND a.status = 'active'
+      THEN 1 ELSE 0 END
+  ), 0) AS active_driver_registrations,
+  COALESCE(SUM(
+    CASE
+      WHEN a.role = 'driver'
+       AND a.status = 'active'
+       AND EXISTS (
+         SELECT 1
+         FROM staff_sessions AS s
+         WHERE s.account_id = p.account_id
+           AND s.family_id = p.session_family_id
+           AND s.revoked_at IS NULL
+           AND s.replaced_by_session_id IS NULL
+           AND s.expires_at > CAST(strftime('%s', 'now') AS INTEGER) * 1000
+       )
+      THEN 1 ELSE 0 END
+  ), 0) AS eligible_fcm_targets
+FROM staff_push_devices AS p
+LEFT JOIN staff_accounts AS a ON a.id = p.account_id
+WHERE p.platform = 'android';
+~~~
+
+**Interpretation:** `eligible_fcm_targets=0` means the delivery query currently has no eligible target; nonzero means only that registrations/sessions are eligible **now**, not that the earlier push succeeded or that a specific Android package owns a matching token. Do not query tokens or print full `dumpsys` output containing private identifiers. Check current driver's UI before any additional live push test.
+
 ## Recovery and closeout
 
 - If result is unknown, first query by `quoteId` and inspect pending-submission state, then follow the existing app's idempotent recovery path. Do not manually craft multiple POSTs.
