@@ -82,6 +82,11 @@ WHERE p.platform = 'android';
 
 **Interpretation:** `eligible_fcm_targets=0` means the delivery query currently has no eligible target; nonzero means only that registrations/sessions are eligible **now**, not that the earlier push succeeded or that a specific Android package owns a matching token. Do not query tokens or print full `dumpsys` output containing private identifiers. Check current driver's UI before any additional live push test.
 
+**Observed owner result (01.11.2026):** `registered_android_installations=2`, `active_driver_registrations=2`, `eligible_fcm_targets=2` — server registration/eligibility **PASS at query time**, actual FCM delivery **UNVERIFIED**. Driver package `ru.transferservis.driver` was confirmed to open via `am start -W` (already-running `DriverMainActivity`), and its notification runtime permission was granted. This does not prove either D1 registration belongs to it.
+
+For the next notification delivery smoke, first safely close/cancel prior test order via an authenticated admin action to avoid live test backlog. Then use **one new**, visibly marked order, leaving the modern `ru.transferservis.driver` app installed, signed in and capable of displaying system notifications. Observe the notification shade **before manually opening or refreshing the order list**. Record whether a system notification for the new order appears; no notification does not by itself pinpoint FCM transport versus client filtering. Any new test needs a fresh unexpired quote. Do not use `ru.transferservis.transferdriver` to judge current client behavior; it has Android AppOps `POST_NOTIFICATION: ignore`.
+
+
 ## Recovery and closeout
 
 - If result is unknown, first query by `quoteId` and inspect pending-submission state, then follow the existing app's idempotent recovery path. Do not manually craft multiple POSTs.
