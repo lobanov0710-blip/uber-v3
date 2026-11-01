@@ -15,31 +15,38 @@
 
 ## Safe local preflight (PowerShell, no production writes)
 
-From the existing Windows repository `C:\Users\Lobanov\Desktop\uber-v3`:
+The existing checkout `C:\Users\Lobanov\Desktop\uber-v3` is on **`arch/11.16-order-status-push`** at commit `2577329`, not `main`. **Do not checkout, reset, clean or merge into this branch**. Its tracked changes and local `wrangler.staging.toml` must be preserved. The following creates a **separate detached Git worktree** for the exact reviewed production `main` commit.
 
 ~~~powershell
-Set-Location "$env:USERPROFILE\Desktop\uber-v3"
+$repo = "$env:USERPROFILE\Desktop\uber-v3"
+$worktree = "$env:USERPROFILE\Documents\ProjectApp\uber-v3-prod-preflight"
+$approved = "7fad96a63ac963e6c28bf03f21d52b90e5cb69ff"
 
-git fetch origin main
+if (-not (Test-Path -LiteralPath $repo)) { throw "Original repository not found" }
+git -C $repo fetch origin main
 if ($LASTEXITCODE -ne 0) { throw "Git fetch failed" }
 
-# Preserve existing local staging config and other untracked files.
-if (@(git status --porcelain --untracked-files=no).Count -gt 0) {
-    throw "Tracked local changes present; do not overwrite them."
+$remote = (git -C $repo rev-parse origin/main).Trim()
+Write-Host "REMOTE_MAIN=$remote"
+if ($remote -ne $approved) {
+    throw "main changed since reviewed merge; stop and reassess"
 }
-if ((git branch --show-current).Trim() -ne "main") {
-    throw "Expected main branch. No automatic checkout."
-}
-$head = (git rev-parse HEAD).Trim()
-$remote = (git rev-parse origin/main).Trim()
-$approved = "7fad96a63ac963e6c28bf03f21d52b90e5cb69ff"
-Write-Host "LOCAL=$head REMOTE=$remote"
-if ($head -ne $remote -or $head -ne $approved) {
-    throw "Code differs from reviewed commit; stop and reconcile."
+if (Test-Path -LiteralPath $worktree) {
+    throw "Preflight folder already exists; do not overwrite it"
 }
 
+git -C $repo worktree add --detach $worktree origin/main
+if ($LASTEXITCODE -ne 0) { throw "Cannot create separate preflight worktree" }
+
+Set-Location $worktree
+$head = (git rev-parse HEAD).Trim()
+if ($head -ne $approved) { throw "Preflight code does not match approved commit" }
+if (@(git status --porcelain).Count -gt 0) { throw "Preflight worktree unexpectedly dirty" }
 if (-not (Test-Path ".\wrangler.toml")) { throw "Missing Worker config" }
 if (-not (Test-Path ".\package-lock.json")) { throw "Missing lockfile" }
+
+Write-Host "PREFLIGHT_SOURCE=PASS"
+Write-Host "ORIGINAL_ARCH_BRANCH=UNTOUCHED"
 
 node --version
 npm ci
@@ -55,7 +62,7 @@ Write-Host "LOCAL_PREFLIGHT=PASS"
 Write-Host "PRODUCTION_DEPLOYMENT=NOT_PERFORMED"
 ~~~
 
-`npm ci` downloads and installs local dependencies; `--dry-run` compiles the bundle locally and does **not** upload/deploy a Worker. `.wrangler/` is ignored by Git. Never print/copy `.env`, `.dev.vars`, or tokens. A Wrangler/Node network failure stops preflight and does not authorize live API requests. CI used Node 22; Windows environment previously reported Node 24.14.1.
+`npm ci` downloads and installs local dependencies; `--dry-run` compiles the bundle locally and does **not** deploy a Worker. `.wrangler/` is ignored by Git. Never print/copy `.env`, `.dev.vars`, or tokens. A Wrangler/Node network failure stops preflight and does not authorize live API requests. CI used Node 22; Windows environment previously reported Node 24.14.1. Tests previously run in the ARCH-11.16 checkout do **not** count as tests of merged `main`; hence this isolated run.
 
 ## Cloudflare dashboard verification — read only
 
