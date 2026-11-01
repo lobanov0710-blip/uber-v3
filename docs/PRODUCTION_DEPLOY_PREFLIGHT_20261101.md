@@ -91,13 +91,16 @@ Workers & Pages → `uber-v3` → Deployments → identify the **then-confirmed*
 
 ## Gate log
 
+**01.11.2026 owner-reported Windows worktree result:** from `C:\Users\Lobanov\Documents\ProjectApp\uber-v3-prod-preflight` the owner supplied `DRY_RUN=PASS` and `PRODUCTION_DEPLOYMENT=NOT_PERFORMED` after following the isolated main preflight script. Tests were reported successful by the owner in this workflow, but individual test log lines were not attached. This records a **local bundle build**, not an active Cloudflare version or a complete deployed-versus-main release diff.
+
+
 | Check | Status |
 | --- | --- |
 | PR #9 merged | PASS |
 | Backend CI | PASS |
 | D1 migration required | NO |
-| Local `npm test` after merge | PENDING |
-| Local Wrangler dry-run | PENDING |
+| Local `npm test` after merge | **Owner reported tests passed**; detailed console output was not supplied |
+| Local Wrangler dry-run | **PASS, owner-reported 01.11.2026** (`DRY_RUN=PASS`) |
 | Current active version/bindings reconfirmed | PENDING |
 | Full deployed-versus-main bundle audit | PENDING |
 | Approval to deploy | **NOT GIVEN** |
