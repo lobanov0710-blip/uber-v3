@@ -79,6 +79,8 @@ In Workers & Pages → `uber-v3`:
 4. Do not run D1 migrations, POST `/calculate` or POST `/orders`; do not enable Observability, staging flags, Telegram or FCM.
 5. Preserve the known-good version and its binding compatibility for rollback.
 
+**01.11.2026 Dashboard read-only confirmation:** After both Wrangler `deployments list` and `versions list` failed with `fetch failed`, the owner viewed **Workers & Pages → uber-v3 → Deployments**. The UI text supplied: `svgaab6dd14`, `8 days ago`, `100%` traffic. This confirms the historically seen production version **remains the sole active version** according to the dashboard. Treat `svgaab6dd14` as the **UI-displayed text**, not a verified full Cloudflare UUID; the exact full ID, version-source comparison, and live binding IDs remain **unconfirmed**. Do not deploy yet.
+
 ## Future deployment — separate approval required
 
 Only after all gates above pass, ask for a **specific new authorization** to deploy the reviewed `main` bundle. The eventual command would be:
@@ -106,7 +108,8 @@ Workers & Pages → `uber-v3` → Deployments → identify the **then-confirmed*
 | D1 migration required | NO |
 | Local `npm test` after merge | **Owner reported tests passed**; detailed console output was not supplied |
 | Local Wrangler dry-run | **PASS, owner-reported 01.11.2026** (`DRY_RUN=PASS`) |
-| Current active version/bindings reconfirmed | **BLOCKED: Wrangler read-only API fetch failed twice; use Cloudflare Dashboard** |
+| Active Worker version / traffic in Dashboard | **PASS (owner-confirmed): UI showed `svgaab6dd14`, 8 days old, 100% traffic**. Exact full UUID and source/bundle commit are unverified. |
+| Active production binding IDs in Dashboard | PENDING (not supplied) |
 | Full deployed-versus-main bundle audit | PENDING |
 | Approval to deploy | **NOT GIVEN** |
 | Live deployment | **NOT PERFORMED** |
