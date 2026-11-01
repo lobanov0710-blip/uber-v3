@@ -81,6 +81,10 @@ In Workers & Pages → `uber-v3`:
 
 **01.11.2026 Dashboard read-only confirmation:** After both Wrangler `deployments list` and `versions list` failed with `fetch failed`, the owner viewed **Workers & Pages → uber-v3 → Deployments**. The UI text supplied: `svgaab6dd14`, `8 days ago`, `100%` traffic. This confirms the historically seen production version **remains the sole active version** according to the dashboard. Treat `svgaab6dd14` as the **UI-displayed text**, not a verified full Cloudflare UUID; the exact full ID, version-source comparison, and live binding IDs remain **unconfirmed**. Do not deploy yet.
 
+**01.11.2026 owner-confirmed dashboard bindings:** `Settings → Bindings` lists `DB` → `transfer-servis52-core` (D1 ID `c1d490e4-68f0-4f78-8f53-7d10df7c3395`) and `DRIVERS` → `DRIVERS` (KV ID `a0b3ddaecec4476f983eb28cc3d8a1e5`). Both match `wrangler.toml`. **Binding identity PASS; this does not verify secret values or deployed JavaScript source.**
+
+**GitHub history release-scope warning:** The owner-visible active Cloudflare version is ~8 days old, while `main` has **PR #8** ([staging Telegram opt-in](https://github.com/lobanov0710-blip/uber-v3/pull/8), merged 2026-10-30, commit `1c4683d1c9097787df1507bcfa558725b6041571`) and **PR #9** (canonical quote place names, merged 2026-11-01, commit `7fad96a63ac963e6c28bf03f21d52b90e5cb69ff`). PR #8 changes the shared `src/core/telegram.js` function but branches on `APP_ENV=staging`; code review and tests indicate production Telegram credentials/path are intended unchanged. **However, do not assume these two PRs are the full deployed-versus-main diff**; the active deployed bundle has not been obtained or tied to a Git SHA. Until then, block production deployment.
+
 ## Future deployment — separate approval required
 
 Only after all gates above pass, ask for a **specific new authorization** to deploy the reviewed `main` bundle. The eventual command would be:
@@ -109,7 +113,9 @@ Workers & Pages → `uber-v3` → Deployments → identify the **then-confirmed*
 | Local `npm test` after merge | **Owner reported tests passed**; detailed console output was not supplied |
 | Local Wrangler dry-run | **PASS, owner-reported 01.11.2026** (`DRY_RUN=PASS`) |
 | Active Worker version / traffic in Dashboard | **PASS (owner-confirmed): UI showed `svgaab6dd14`, 8 days old, 100% traffic**. Exact full UUID and source/bundle commit are unverified. |
-| Active production binding IDs in Dashboard | PENDING (not supplied) |
+| Active production binding IDs in Dashboard | **PASS, owner-confirmed**: `DB` D1 `transfer-servis52-core` (`c1d490e4-68f0-4f78-8f53-7d10df7c3395`), `DRIVERS` KV namespace `DRIVERS` (`a0b3ddaecec4476f983eb28cc3d8a1e5`) |
+| Production secret names/availability | PENDING; values not requested |
+| Active code provenance vs main | BLOCKED; active version source/complete bundle not obtained |
 | Full deployed-versus-main bundle audit | PENDING |
 | Approval to deploy | **NOT GIVEN** |
 | Live deployment | **NOT PERFORMED** |
