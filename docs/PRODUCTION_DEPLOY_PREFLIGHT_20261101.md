@@ -66,6 +66,11 @@ Write-Host "PRODUCTION_DEPLOYMENT=NOT_PERFORMED"
 
 ## Cloudflare dashboard verification — read only
 
+**01.11.2026 CLI read-only verification failure (NOT a production Worker failure):**
+The owner attempted `npx --no-install wrangler deployments list --name uber-v3` and `npx --no-install wrangler versions list --name uber-v3` from the isolated worktree with Wrangler 4.125.0. **Both commands failed** with `fetch failed` and Wrangler connectivity warning; neither produced authoritative deployment/version results. PowerShell subsequently printed `CLOUDFLARE_READ_ONLY=PASS` because the owner continued at the interactive prompt; **this must not be interpreted as an actual PASS**. No deploy or live POST was performed. Do not keep repeating the same commands. Instead use Cloudflare dashboard manually and record exact Active Deployment Version ID, traffic split, deployment date, and bindings. Any future automated scripts should print PASS only after all reads have verified success.
+
+
+
 In Workers & Pages → `uber-v3`:
 
 1. **Deployments → Active Deployment:** record active version *full ID*, traffic allocation, and rollback candidate. Do not confuse Ready preview with active deployment.
@@ -101,7 +106,7 @@ Workers & Pages → `uber-v3` → Deployments → identify the **then-confirmed*
 | D1 migration required | NO |
 | Local `npm test` after merge | **Owner reported tests passed**; detailed console output was not supplied |
 | Local Wrangler dry-run | **PASS, owner-reported 01.11.2026** (`DRY_RUN=PASS`) |
-| Current active version/bindings reconfirmed | PENDING |
+| Current active version/bindings reconfirmed | **BLOCKED: Wrangler read-only API fetch failed twice; use Cloudflare Dashboard** |
 | Full deployed-versus-main bundle audit | PENDING |
 | Approval to deploy | **NOT GIVEN** |
 | Live deployment | **NOT PERFORMED** |
