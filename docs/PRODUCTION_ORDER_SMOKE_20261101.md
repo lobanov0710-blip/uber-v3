@@ -94,6 +94,64 @@ For the next notification delivery smoke, first safely close/cancel prior test o
 - Handle any cancellation through existing authenticated staff workflow only, with owner authorization and audit; do not silently delete a production order or remove historic test data.
 - No release of PR #9/PR #10 or production Worker deployment is part of this protocol.
 
+## Authenticated admin cancellation (pending owner execution)
+
+**Owner confirmed they have backend admin credentials, 01.11.2026.** The first real order must be closed using the documented admin-only `POST /orders/{orderId}/status`, **not** by direct D1 update or by having a driver accept it. Exact order UUID: `68516805-d870-4bc9-ac4a-43995df5bc05`. Source reviewed: `src/router.js`, `src/core/orderRepository.js`, frozen `docs/API_CONTRACT_V1.md`. Driver `ApiClient.BASE_URL` is `https://uber-v3.lobanov0710.workers.dev/`. Cloudflare live version provenance is still not fully mapped to Git, so success and D1 status must be verified; failures are not grounds to bypass auth.
+
+Run locally in Windows PowerShell; it prompts for credentials, does not display JWT, confirms the exact order ID, and logs out in `finally`. Do not paste credentials or full command output containing API tokens to GitHub. The host is **production**, so the status change is real.
+
+~~~powershell
+$base = "https://uber-v3.lobanov0710.workers.dev"
+$orderId = "68516805-d870-4bc9-ac4a-43995df5bc05"
+$credential = Get-Credential -Message "Production staff ADMIN login"
+$auth = $null
+try {
+    $loginJson = @{
+        login = $credential.UserName
+        password = $credential.GetNetworkCredential().Password
+    } | ConvertTo-Json -Compress
+    $auth = Invoke-RestMethod -Method Post -Uri "$base/staff/login" -ContentType "application/json; charset=utf-8" -Body $loginJson -ErrorAction Stop
+    if ($auth.ok -ne $true -or $auth.staff.role -ne "admin" -or [string]::IsNullOrWhiteSpace($auth.accessToken)) {
+        throw "Authenticated staff is not an active admin"
+    }
+    $confirmation = Read-Host "Enter CANCEL to cancel order $orderId"
+    if ($confirmation -ne "CANCEL") {
+        Write-Host "CANCEL_ABORTED"
+    } else {
+        $response = Invoke-RestMethod -Method Post -Uri "$base/orders/$orderId/status" -Headers @{ Authorization = "Bearer $($auth.accessToken)" } -ContentType "application/json; charset=utf-8" -Body '{"status":"canceled"}' -ErrorAction Stop
+        if ($response.ok -eq $true -and $response.order.id -eq $orderId -and $response.order.status -eq "canceled") {
+            Write-Host "CANCEL_PASS order_id=$orderId status=canceled"
+        } else {
+            Write-Host "CANCEL_UNCONFIRMED; check production D1"
+        }
+    }
+} catch {
+    Write-Host ("CANCEL_ERROR: " + $_.Exception.GetType().Name)
+    Write-Host "Do not retry blindly; verify order status in production D1"
+} finally {
+    if ($auth -and $auth.refreshToken) {
+        try {
+            $logoutJson = @{ refreshToken = $auth.refreshToken } | ConvertTo-Json -Compress
+            $null = Invoke-RestMethod -Method Post -Uri "$base/staff/logout" -ContentType "application/json; charset=utf-8" -Body $logoutJson -ErrorAction Stop
+            Write-Host "STAFF_LOGOUT=PASS"
+        } catch {
+            Write-Host "STAFF_LOGOUT=UNCONFIRMED"
+        }
+    }
+    Remove-Variable -Name credential,loginJson,logoutJson,auth,response -ErrorAction SilentlyContinue
+}
+~~~
+
+After execution, independently verify in D1 Console using a SELECT-only query:
+
+~~~sql
+SELECT id, quote_id, status, driver_id IS NOT NULL AS assigned_to_driver, updated_at
+FROM orders
+WHERE id = '68516805-d870-4bc9-ac4a-43995df5bc05';
+~~~
+
+Expected `status=canceled`. No order must be silently deleted; prior `quoteId` and price history must remain intact. An absent or different status is a blocker. This closeout is **pending confirmation**, not yet done.
+
 ## Unit-test coverage
 
 `tests/orders.test.mjs` now covers a real-world failure **using only mock D1 and mocked Telegram**: the first quoted order persists even when Telegram returns HTTP 500; repeating the same quote and customer payload recovers the same order and does not create another D1 transaction or send a second Telegram message. This is a unit/regression test, **not proof of live delivery**.
