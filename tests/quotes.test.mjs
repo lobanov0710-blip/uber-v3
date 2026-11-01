@@ -232,6 +232,83 @@ await test(
 
 
 // ========================================
+// CANONICAL ADDRESS PERSISTENCE
+// ========================================
+// The live PROD-SMOKE quote displayed "Нижний Новгород"
+// while D1 stored a typo from the original query.
+// Quoted orders build their route from D1 place strings.
+// These tests only use fake D1; they never call Mapbox,
+// the live Worker, Telegram or Firebase.
+// ========================================
+
+await test(
+  "quote stores canonical geocoder display names instead of typo queries",
+  async () => {
+    const { db, calls } = createFakeDatabase();
+
+    const input = validQuoteInput();
+    input.from = {
+      query: "ниний новгород",
+      displayName: "Нижний Новгород, Нижегородская область, Россия"
+    };
+    input.to = {
+      query: "москва",
+      displayName: "Москва, Россия"
+    };
+
+    const quote = await createQuote({ DB: db }, input);
+
+    assert.equal(
+      quote.from,
+      "Нижний Новгород, Нижегородская область, Россия"
+    );
+    assert.equal(quote.to, "Москва, Россия");
+    assert.equal(
+      calls[0].args[1],
+      "Нижний Новгород, Нижегородская область, Россия"
+    );
+    assert.equal(calls[0].args[2], "Москва, Россия");
+  }
+);
+
+await test(
+  "quote keeps a full geocoded street address for the quoted order",
+  async () => {
+    const { db, calls } = createFakeDatabase();
+    const input = validQuoteInput();
+    input.from = {
+      query: "Красная площадь 1",
+      displayName: "Красная площадь 1с1, Москва, Россия"
+    };
+    const quote = await createQuote({ DB: db }, input);
+
+    assert.equal(
+      quote.from,
+      "Красная площадь 1с1, Москва, Россия"
+    );
+    assert.equal(calls[0].args[1], quote.from);
+  }
+);
+
+await test(
+  "quote falls back to query when geocoder display name is missing",
+  async () => {
+    const { db, calls } = createFakeDatabase();
+    const input = validQuoteInput();
+    input.from = {
+      query: "Нижний Новгород",
+      displayName: "   "
+    };
+
+    const quote = await createQuote({ DB: db }, input);
+
+    assert.equal(quote.from, "Нижний Новгород");
+    assert.equal(calls[0].args[1], "Нижний Новгород");
+  }
+);
+
+
+// ========================================
 // NO QUOTES KV REQUIRED
 // ========================================
 

@@ -91,11 +91,19 @@ function normalizePlace(
     typeof value === "object"
   ) {
 
-    return cleanText(
-      value.query ||
-      value.displayName ||
-      "",
-      200
+    // Preserve the validated geocoder's canonical name, not an
+    // uncorrected user query (which may contain a typo). This is
+    // also the text used when a quoted order builds its route.
+    // Fallback supports historical callers without displayName.
+    return (
+      cleanText(
+        value.displayName,
+        200
+      ) ||
+      cleanText(
+        value.query,
+        200
+      )
     );
   }
 
