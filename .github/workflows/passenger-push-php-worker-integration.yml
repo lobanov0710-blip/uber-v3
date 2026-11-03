@@ -54,6 +54,7 @@ jobs:
           python3 tests/passengerPushMigration.sqlite.py
           python3 tests/passengerPushSecurity.sqlite.py
           python3 tests/passengerPushLifecycle.sqlite.py
+          python3 tests/passengerPushNonce.sqlite.py
       - name: Confirm real production connectivity is not configured
         run: |
           test ! -f .dev.vars
