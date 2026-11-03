@@ -43,6 +43,8 @@ import {
   verifyProxyRequest
 } from "./core/proxyAuth.js";
 
+import { verifyPassengerPushProxyRequest } from "./core/passengerPushProxyAuth.js";
+
 import {
   requirePassengerOrderAccess,
   issuePassengerOrderAccess,
@@ -1222,7 +1224,7 @@ export default async function router(
         && (!/^\d+$/.test(lengthHeader) || Number(lengthHeader) > 8192)) {
       return safeError("request too large", 413);
     }
-    const proxyAuth = await verifyProxyRequest(req, env, "/passenger/push-grant");
+    const proxyAuth = await verifyPassengerPushProxyRequest(req, env, "/passenger/push-grant");
     if (proxyAuth.ok !== true) {
       return safeError(proxyAuth.error, proxyAuth.status);
     }
@@ -1252,7 +1254,7 @@ export default async function router(
       return safeError("request too large", 413);
     }
 
-    const proxyAuth = await verifyProxyRequest(req, env, "/passenger/push-device");
+    const proxyAuth = await verifyPassengerPushProxyRequest(req, env, "/passenger/push-device");
     if (proxyAuth.ok !== true) {
       return safeError(proxyAuth.error, proxyAuth.status);
     }
