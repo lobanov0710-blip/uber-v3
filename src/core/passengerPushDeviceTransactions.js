@@ -47,6 +47,7 @@ export async function registerPassengerPushOnce(
     throw new Error("Invalid passenger push registration");
   }
   const db = requireDb(env);
+  const grantClaim = claim(db, principal, now);
   const write = db.prepare(`
     INSERT INTO passenger_push_devices
       (installation_id, order_id, platform, fcm_token,
@@ -62,7 +63,7 @@ export async function registerPassengerPushOnce(
       AND passenger_push_devices.revoked_at IS NULL
       AND passenger_push_devices.updated_at <= excluded.updated_at
   `).bind(principal.installationId, principal.orderId, fcmToken, now, expiresAt);
-  return validateBatch(await db.batch([claim(db, principal, now), write]));
+  return validateBatch(await db.batch([grantClaim, write]));
 }
 
 export async function revokePassengerPushOnce(env, principal, now) {
@@ -70,6 +71,7 @@ export async function revokePassengerPushOnce(env, principal, now) {
     throw new Error("Invalid passenger push revoke");
   }
   const db = requireDb(env);
+  const grantClaim = claim(db, principal, now);
   const revoke = db.prepare(`
     UPDATE passenger_push_devices
        SET revoked_at = ?3
@@ -77,6 +79,6 @@ export async function revokePassengerPushOnce(env, principal, now) {
   `).bind(principal.installationId, principal.orderId, now);
   // No existing device is an acceptable idempotent revoke. But grant jti
   // must still be consumed exactly once even when no row matched.
-  await db.batch([claim(db, principal, now), revoke]).then(validateBatch);
+  await db.batch([grantClaim, revoke]).then(validateBatch);
   return true;
 }
