@@ -1,0 +1,60 @@
+name: PUSH-01E PHP signer to Worker D1 offline integration
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+    paths:
+      - ".github/workflows/passenger-push-php-worker-integration.yml"
+      - "tests/passengerPushPhpWorkerD1.integration.mjs"
+      - "docs/PUSH_01E_OFFLINE_INTEGRATION.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: push01e-offline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php-worker-sqlite:
+    name: PHP real HMAC -> Worker router -> SQLite in memory
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Worker feature code (not production)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact public_html PHP signer from gateway PR 7
+        uses: actions/checkout@v4
+        with:
+          repository: lobanov0710-blip/public_html
+          ref: 4d68b78e73261f9f3864dd270a9fdf4ab3d91610
+          path: _contract_php
+          persist-credentials: false
+      - name: Node.js SQLite integration runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verify PHP and Node versions
+        run: |
+          node --version
+          php --version
+          test -f _contract_php/api/_proxy_auth.php
+      - name: Actual PHP HMAC and Worker HTTP router with isolated D1 SQL
+        run: node tests/passengerPushPhpWorkerD1.integration.mjs
+      - name: Verify existing backend behavior remains intact
+        run: npm test
+      - name: Verify migration and replay invariants
+        run: |
+          python3 tests/passengerPushMigration.sqlite.py
+          python3 tests/passengerPushSecurity.sqlite.py
+          python3 tests/passengerPushLifecycle.sqlite.py
+      - name: Confirm real production connectivity is not configured
+        run: |
+          test ! -f .dev.vars
+          test ! -f _contract_php/transfer-private/proxy-hmac-secret.txt
+          echo "PRODUCTION_NETWORK_CALLS=NONE"
