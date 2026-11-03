@@ -27,3 +27,5 @@ jobs:
           node-version: '22'
       - name: Run backend unit and router tests
         run: npm test
+      - name: Verify passenger push migration on local SQLite
+        run: python3 tests/passengerPushMigration.sqlite.py
