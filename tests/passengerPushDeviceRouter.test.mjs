@@ -25,6 +25,7 @@ const envBase = {
 function database() {
   const calls = [];
   const used = new Set();
+  const nonces = new Set();
   const devices = new Map();
   const rateTimes = [];
   const DB = {
@@ -34,6 +35,12 @@ function database() {
       const stmt = {
         bind(...args) { entry.args = args; return stmt; },
         async run() {
+          if (/INSERT OR IGNORE INTO passenger_push_proxy_nonces/.test(sql)) {
+            if (nonces.has(entry.args[0])) {
+              return { success: true, meta: { changes: 0 } };
+            }
+            nonces.add(entry.args[0]);
+          }
           if (/INSERT INTO passenger_push_grant_events/.test(sql)) {
             const now = entry.args[2], cutoff = entry.args[3];
             const inWindow = rateTimes.filter(time => time > cutoff).length;
@@ -95,13 +102,16 @@ async function signedRequest(method, payload, options = {}) {
   const timestamp = String(options.timestamp ?? Math.floor(Date.now() / 1000));
   const headers = { "Content-Type": "application/json" };
   if (!options.missingHmac) {
-    const canonical = timestamp + "\n" + path + "\n" + body;
+    const nonce = options.nonce || crypto.randomUUID().replaceAll("-", "");
+    const canonical = ["PASSENGER-PUSH-V2", method,
+      timestamp, path, nonce, body].join("\n");
     const key = await crypto.subtle.importKey("raw",
       new TextEncoder().encode(PROXY_SECRET),
       { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
     const buffer = new Uint8Array(await crypto.subtle.sign(
       "HMAC", key, new TextEncoder().encode(canonical)));
     headers["X-Proxy-Timestamp"] = timestamp;
+    if (!options.noNonce) headers["X-Proxy-Nonce"] = nonce;
     headers["X-Proxy-Signature"] = Array.from(buffer, b =>
       b.toString(16).padStart(2, "0")).join("");
   }
@@ -181,7 +191,8 @@ await test("body cannot contain orderId, installationId or read-only token", asy
       { ...envBase, DB: db.DB });
     assert.equal(result.status, 400);
   }
-  assert.equal(db.calls.length, 0);
+  // Valid HMAC consumes a nonce, but must never attempt device writes.
+  assert.equal(db.calls.filter(x => /passenger_push_grant_uses|passenger_push_devices/.test(x.sql)).length, 0);
 });
 
 await test("GET rejected; DELETE rejects additional attacker fields", async () => {
@@ -191,7 +202,21 @@ await test("GET rejected; DELETE rejects additional attacker fields", async () =
   assert.equal((await router(await signedRequest("DELETE", {
     grantToken: token, orderId: ORDER
   }), { ...envBase, DB: db.DB })).status, 400);
-  assert.equal(db.calls.length, 0);
+  assert.equal(db.calls.filter(x => /passenger_push_grant_uses|passenger_push_devices/.test(x.sql)).length, 0);
+});
+
+await test("identical HMAC nonce replay is rejected before grant consumption", async () => {
+  const db = database(), token = await grant();
+  const data = { grantToken: token, platform: "android", token: "fcm" };
+  const nonce = "a".repeat(32);
+  const request1 = await signedRequest("POST", data, { nonce });
+  const request2 = await signedRequest("POST", data, { nonce });
+  const first = await router(request1, { ...envBase, DB: db.DB });
+  assert.equal(first.status, 200);
+  const second = await router(request2, { ...envBase, DB: db.DB });
+  assert.equal(second.status, 403);
+  assert.equal(db.used.size, 1);
+  assert.equal(db.devices.get(INSTALL).token, "fcm");
 });
 
 await test("atomic D1 rate limiter allows 5 grants per order per minute", async () => {
