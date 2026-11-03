@@ -1,0 +1,26 @@
+{
+  "status": "PROPOSAL_ONLY_DO_NOT_APPLY",
+  "hostname": "transfer-servis52.ru",
+  "description": "Candidate Cloudflare zone-level rate limiting, not a live rule, not approved",
+  "matchExpression": "(http.host eq \"transfer-servis52.ru\" and ((http.request.uri.path eq \"/api/passenger-push-grant.php\" and http.request.method eq \"POST\") or (http.request.uri.path eq \"/api/passenger-push-device.php\" and http.request.method in {\"POST\" \"DELETE\"})))",
+  "exactMethodsByPath": {
+    "/api/passenger-push-grant.php": [
+      "POST"
+    ],
+    "/api/passenger-push-device.php": [
+      "POST",
+      "DELETE"
+    ]
+  },
+  "countingCharacteristics": [
+    "IP"
+  ],
+  "proposedThreshold": {
+    "requests": 30,
+    "periodSeconds": 60
+  },
+  "proposedAction": "block",
+  "notes": "Preliminary example only. Validate Cloudflare plan, NAT/shared IP impact, real traffic and challenge support before any change.",
+  "applyAutomatically": false,
+  "verifiedPlanFeatures": false
+}
