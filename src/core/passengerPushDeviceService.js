@@ -1,4 +1,5 @@
 import { verifyPassengerPushGrant } from "./passengerPushGrant.js";
+import { PASSENGER_PUSH_REDACTED_TOKEN } from "./passengerPushLifecycle.js";
 import {
   registerPassengerPushOnce, revokePassengerPushOnce
 } from "./passengerPushDeviceTransactions.js";
@@ -28,6 +29,7 @@ export async function registerPassengerDevice(env, grantToken, input, now = Date
     || input.platform !== "android"
     || typeof input.token !== "string"
     || input.token.length < 1 || input.token.length > 4096
+    || input.token === PASSENGER_PUSH_REDACTED_TOKEN
     || /\s/.test(input.token)
     || !Number.isSafeInteger(now) || now <= 0) {
     return badRequest();
