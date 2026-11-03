@@ -1,0 +1,37 @@
+name: PUSH-01B backend auth and SQL checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+    paths:
+      - ".github/workflows/passenger-push-grant-tests.yml"
+      - "src/router.js"
+      - "src/core/passengerPush*.js"
+      - "tests/passengerPush*.mjs"
+      - "tests/passengerPushMigration.sqlite.py"
+      - "migrations/0005_passenger_push_devices.sql"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passenger-push-grant-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: All backend tests (including scoped grant and router HMAC)
+        run: npm test
+      - name: Local isolated SQLite migration and ownership tests
+        run: python3 tests/passengerPushMigration.sqlite.py
