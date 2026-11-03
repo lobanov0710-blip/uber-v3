@@ -31,3 +31,5 @@ jobs:
         run: python3 tests/passengerPushMigration.sqlite.py
       - name: Verify one-use push grant and rate limit SQL locally
         run: python3 tests/passengerPushSecurity.sqlite.py
+      - name: Verify FCM redaction and bounded replay retention
+        run: python3 tests/passengerPushLifecycle.sqlite.py

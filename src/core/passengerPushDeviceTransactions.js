@@ -1,3 +1,5 @@
+import { PASSENGER_PUSH_REDACTED_TOKEN } from "./passengerPushLifecycle.js";
+
 // PUSH-01C: authoritative one-use grant consumption + device change.
 // D1 batch() runs as a single transaction and rolls back on any SQL error.
 // In particular a duplicate grant_id fails the INSERT and prevents write.
@@ -43,6 +45,7 @@ export async function registerPassengerPushOnce(
   if (!validPrincipal(principal) || !Number.isSafeInteger(now) || now <= 0
       || !Number.isSafeInteger(expiresAt) || expiresAt <= now
       || typeof fcmToken !== "string" || !fcmToken || fcmToken.length > 4096
+      || fcmToken === PASSENGER_PUSH_REDACTED_TOKEN
       || /\s/.test(fcmToken)) {
     throw new Error("Invalid passenger push registration");
   }

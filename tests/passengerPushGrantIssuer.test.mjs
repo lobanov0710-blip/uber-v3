@@ -4,6 +4,7 @@ import { signJWT } from "../src/core/auth.js";
 import router from "../src/router.js";
 import { issuePassengerPushGrant } from "../src/core/passengerPushGrantIssuer.js";
 import { verifyPassengerPushGrant } from "../src/core/passengerPushGrant.js";
+import { allowPassengerPushGrant } from "../src/core/passengerPushRateLimit.js";
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
@@ -79,16 +80,24 @@ async function test(name, fn) {
   catch (error) { process.exitCode = 1; console.error("✘", name, error); }
 }
 
+await test("grant rate limiter accepts signed order in mock D1", async () => {
+  calls.length = 0;
+  const allowed = await allowPassengerPushGrant({ DB: database() }, ID_A);
+  assert.equal(allowed, true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].args[1], ID_A);
+});
+
 await test("authorized grant uses only order from verified passenger read token", async () => {
   calls.length = 0;
   const env = { ...baseEnv, DB: database() };
   const result = await issuePassengerPushGrant(env, {
     accessToken: await readToken(), installationId: INSTALL
   });
-  assert.equal(result.ok, true);
+  assert.equal(result.ok, true, `grant error=${result.error || "none"} status=${result.status || "none"}`);
   assert.equal(calls.length, 2);
   assert.equal(calls[0].args[0], ID_A);
-  assert.equal(calls[1].args[0], ID_A);
+  assert.equal(calls[1].args[1], ID_A);
   const verified = await verifyPassengerPushGrant(env, result.grantToken);
   assert.equal(verified.orderId, ID_A);
   assert.equal(verified.installationId, INSTALL);
@@ -165,7 +174,7 @@ await test("new POST endpoint requires HMAC and does not cache grant", async () 
   assert.ok((await verifyPassengerPushGrant(env, data.grantToken)) !== null);
   assert.equal(calls.length, 2);
   assert.equal(calls[0].args[0], ID_A);
-  assert.equal(calls[1].args[0], ID_A);
+  assert.equal(calls[1].args[1], ID_A);
 });
 
 await test("route rejects missing HMAC, invalid HMAC and expired timestamp", async () => {

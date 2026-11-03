@@ -37,3 +37,5 @@ jobs:
         run: python3 tests/passengerPushMigration.sqlite.py
       - name: Atomic one-use replay and rate limiter SQLite integration
         run: python3 tests/passengerPushSecurity.sqlite.py
+      - name: FCM token redaction and expiry retention SQLite integration
+        run: python3 tests/passengerPushLifecycle.sqlite.py

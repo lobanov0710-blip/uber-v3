@@ -26,7 +26,7 @@ function database() {
   const calls = [];
   const used = new Set();
   const devices = new Map();
-  const rate = { windowStart: 0, attempts: 0 };
+  const rateTimes = [];
   const DB = {
     prepare(sql) {
       const entry = { sql, args: [] };
@@ -34,13 +34,11 @@ function database() {
       const stmt = {
         bind(...args) { entry.args = args; return stmt; },
         async run() {
-          if (/INSERT INTO passenger_push_grant_limits/.test(sql)) {
-            const now = entry.args[1];
-            if (rate.windowStart <= entry.args[2]) {
-              rate.windowStart = now; rate.attempts = 0;
-            }
-            if (rate.attempts >= 5) return { success: true, meta: { changes: 0 } };
-            rate.attempts++;
+          if (/INSERT INTO passenger_push_grant_events/.test(sql)) {
+            const now = entry.args[2], cutoff = entry.args[3];
+            const inWindow = rateTimes.filter(time => time > cutoff).length;
+            if (inWindow >= 5) return { success: true, meta: { changes: 0 } };
+            rateTimes.push(now);
           }
           return { success: true, meta: { changes: 1 } };
         },
@@ -202,6 +200,9 @@ await test("atomic D1 rate limiter allows 5 grants per order per minute", async 
     assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700000000 + i), true);
   }
   assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700000006), false);
+  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700059999), false);
+  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700060000), true);
+  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700060000), false);
   assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700060100), true);
 });
 
