@@ -1,7 +1,7 @@
 import { verifyPassengerPushGrant } from "./passengerPushGrant.js";
 import {
-  upsertPassengerPushDevice, revokePassengerPushDevice
-} from "./passengerPushDeviceRepository.js";
+  registerPassengerPushOnce, revokePassengerPushOnce
+} from "./passengerPushDeviceTransactions.js";
 
 // Provisional renewal window, NOT final notification retention policy.
 // Can be changed only after contract review and mobile-registration design.
@@ -37,21 +37,25 @@ export async function registerPassengerDevice(env, grantToken, input, now = Date
     || principal.expiresAt + MAX_CLOCK_SKEW_MS < now) {
     return forbidden();
   }
-  const stored = await upsertPassengerPushDevice(env, {
-    orderId: principal.orderId,
-    installationId: principal.installationId,
-    fcmToken: input.token,
-    updatedAt: now,
-    expiresAt
-  });
-  return stored.ok ? { ok: true } : conflict();
+  try {
+    const stored = await registerPassengerPushOnce(
+      env, principal, input.token, now, expiresAt
+    );
+    return stored ? { ok: true } : conflict();
+  } catch {
+    // D1 transactional constraint failure (replayed jti) or unavailable DB:
+    // do not reveal token, order, install ID or row-existence information.
+    return conflict();
+  }
 }
 
 export async function unregisterPassengerDevice(env, grantToken, now = Date.now()) {
   const principal = await verifyPassengerPushGrant(env, grantToken, now);
   if (!principal) return forbidden();
-  await revokePassengerPushDevice(
-    env, principal.orderId, principal.installationId, now
-  );
-  return { ok: true };
+  try {
+    await revokePassengerPushOnce(env, principal, now);
+    return { ok: true };
+  } catch {
+    return conflict();
+  }
 }
