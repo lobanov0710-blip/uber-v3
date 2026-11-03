@@ -141,11 +141,7 @@ class LocalD1 {
   }
 
   addOrder(id, status = "new") {
-    this.sqlite.prepare(
-      "INSERT INTO orders(id,name,phone,route,trip_date,comment,status,created_at,updated_at)" +
-      " VALUES (?1, 'Test only', '+79990000000', 'A to B', '2026-12-15', '', ?2, 1000, 1000)"
-    );
-    // Node SQLite requires anonymous rather than ?1 placeholders.
+    // Node SQLite requires anonymous placeholders for this fixture INSERT.
     this.sqlite.prepare(
       "INSERT INTO orders(id,name,phone,route,trip_date,comment,status,created_at,updated_at)" +
       " VALUES (?, 'Test only', '+79990000000', 'A to B', '2026-12-15', '', ?, 1000, 1000)"
