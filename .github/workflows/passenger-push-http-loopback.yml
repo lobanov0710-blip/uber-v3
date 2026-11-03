@@ -1,0 +1,77 @@
+name: PUSH-01G loopback PHP HTTP to Worker SQLite
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+      - test/**
+    paths:
+      - ".github/workflows/passenger-push-http-loopback.yml"
+      - "tests/passengerPushHttpLoopback.e2e.mjs"
+      - "tests/passengerPushWafScope.test.mjs"
+      - "config/passenger-push-waf-proposal.json"
+      - "docs/PUSH_01G_WAF_AND_LOCAL_HTTP_E2E.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: push-01g-local-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-http:
+    name: Actual PHP HTTP/cURL -> local Worker Router -> SQLite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Worker feature code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout pinned, unmerged PHP gateway PR 8
+        uses: actions/checkout@v4
+        with:
+          repository: lobanov0710-blip/public_html
+          ref: 27e0a8a32a096fcb4b2268e45cac7dc74d3b0a6e
+          path: _contract_php
+          persist-credentials: false
+      - name: Configure Node 24 SQLite
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Ensure PHP cURL is installed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! php -m | grep -qi '^curl$'; then
+            sudo apt-get update -qq
+            sudo apt-get install -y php-curl
+          fi
+          php -r 'if (!extension_loaded("curl")) { exit(1); }'
+          php -l _contract_php/api/_passenger_push_proxy_auth.php
+          php -l _contract_php/api/passenger-push-grant.php
+          php -l _contract_php/api/passenger-push-device.php
+      - name: WAF proposed rule must match only two passenger endpoints
+        run: node tests/passengerPushWafScope.test.mjs
+      - name: Actual loopback HTTP PHP handlers and local Worker SQL
+        run: node tests/passengerPushHttpLoopback.e2e.mjs
+      - name: Re-run existing offline contract integration
+        run: node tests/passengerPushPhpWorkerD1.integration.mjs
+      - name: Validate backend regressions
+        run: npm test
+      - name: Validate all SQLite migrations offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/passengerPushMigration.sqlite.py
+          python3 tests/passengerPushSecurity.sqlite.py
+          python3 tests/passengerPushLifecycle.sqlite.py
+          python3 tests/passengerPushNonce.sqlite.py
+      - name: Verify no production credentials or deployment inputs were used
+        run: |
+          test ! -e .dev.vars
+          test ! -e _contract_php/transfer-private
+          echo "LOCAL_ONLY_NO_PRODUCTION_CONNECTIVITY=PASS"
