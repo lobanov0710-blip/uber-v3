@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: lobanov0710-blip/public_html
-          ref: 4d68b78e73261f9f3864dd270a9fdf4ab3d91610
+          ref: 27e0a8a32a096fcb4b2268e45cac7dc74d3b0a6e
           path: _contract_php
           persist-credentials: false
       - name: Node.js SQLite integration runtime
@@ -44,6 +44,7 @@ jobs:
           node --version
           php --version
           test -f _contract_php/api/_proxy_auth.php
+          test -f _contract_php/api/_passenger_push_proxy_auth.php
       - name: Actual PHP HMAC and Worker HTTP router with isolated D1 SQL
         run: node tests/passengerPushPhpWorkerD1.integration.mjs
       - name: Verify existing backend behavior remains intact
