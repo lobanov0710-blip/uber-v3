@@ -1216,7 +1216,7 @@ export default async function router(
     }
     const lengthHeader = req.headers.get("Content-Length");
     if (lengthHeader !== null
-        && (!/^\\d+$/.test(lengthHeader) || Number(lengthHeader) > 8192)) {
+        && (!/^\d+$/.test(lengthHeader) || Number(lengthHeader) > 8192)) {
       return safeError("request too large", 413);
     }
     const proxyAuth = await verifyProxyRequest(req, env, "/passenger/push-grant");
