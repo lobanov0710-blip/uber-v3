@@ -93,16 +93,20 @@ await test("authorized grant uses only order from verified passenger read token"
 });
 
 await test("wrong read token scope and another order fail without exposing information", async () => {
-  for (const tok of [
-    await readToken(ID_B), await readToken(ID_A, ORDER_SECRET, "staff"),
-    await readToken(ID_A, STAFF_SECRET), ""
-  ]) {
+  const cases = [
+    [await readToken(ID_B), 403, 1],
+    [await readToken(ID_A, ORDER_SECRET, "staff"), 403, 0],
+    [await readToken(ID_A, STAFF_SECRET), 403, 0],
+    ["", 400, 0]
+  ];
+  for (const [token, expected, dbCalls] of cases) {
     calls.length = 0;
-    const result = await issuePassengerPushGrant({ ...baseEnv, DB: database() },
-      { accessToken: tok, installationId: INSTALL });
-    assert.equal(result.status, 403);
-    if (tok === "") assert.equal(result.status, 400);
-    assert.equal(calls.length, tok && tok !== "" && tok !== (await readToken(ID_A, STAFF_SECRET)) ? calls.length : calls.length);
+    const result = await issuePassengerPushGrant(
+      { ...baseEnv, DB: database() },
+      { accessToken: token, installationId: INSTALL }
+    );
+    assert.equal(result.status, expected);
+    assert.equal(calls.length, dbCalls);
   }
 });
 
