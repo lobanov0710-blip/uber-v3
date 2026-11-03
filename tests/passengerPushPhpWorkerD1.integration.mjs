@@ -185,7 +185,7 @@ function fixture() {
   return { env, DB };
 }
 
-async function readToken(orderId) {
+async function readToken(orderId = ORDER_A) {
   return signJWT(ORDER_SECRET, {
     sub: orderId, scope: "passenger_order:read"
   }, 1800);
