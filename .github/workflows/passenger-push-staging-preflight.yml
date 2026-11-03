@@ -1,0 +1,68 @@
+name: PUSH-01H STAGING identity preflight and local workerd D1
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+      - test/**
+    paths:
+      - ".github/workflows/passenger-push-staging-preflight.yml"
+      - "scripts/push01h_staging_preflight.py"
+      - "scripts/push01h_local_workerd.sh"
+      - "tests/push01hStagingPreflight.test.py"
+      - "tests/push01hWorkerdD1.smoke.mjs"
+      - "docs/PUSH_01H_STAGING_PREFLIGHT.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-config-audit:
+    name: Fail-closed staging D1 identity guards (synthetic fixtures)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python read-only preflight unit tests
+        run: python3 -m unittest discover -s tests -p 'push01hStagingPreflight.test.py' -v
+      - name: Verify expected local-only configuration limitation
+        shell: bash
+        run: |
+          set -euo pipefail
+          # No staging TOML in Git. Do NOT substitute production wrangler.toml.
+          if test -f wrangler.staging.toml; then
+            echo 'Remote STAGING preflight requires independently confirmed D1 ID'
+            exit 2
+          fi
+          echo 'STAGING_CONFIG_IN_REPO=MISSING'
+          echo 'REMOTE_STAGING_PREFLIGHT=NOT_RUN'
+          echo 'REMOTE_WRITES=NONE'
+
+  workerd-local:
+    name: Real local workerd with isolated D1 migration and push endpoints
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install pinned npm lockfile dependencies
+        run: npm ci
+      - name: Run local-only Wrangler with fake D1 binding and no Cloudflare credentials
+        run: bash scripts/push01h_local_workerd.sh
+      - name: Check temporary Wrangler config was removed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(find . -maxdepth 1 -name '.push01h-ci-local-*' -print -quit)"
+          echo "LOCAL_TEMP_CONFIG_CLEANUP=PASS"
