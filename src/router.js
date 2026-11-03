@@ -71,6 +71,8 @@ import {
   notifyActiveDriversOfNewOrder
 } from "./core/staffPushNotificationService.js";
 
+import { issuePassengerPushGrant } from "./core/passengerPushGrantIssuer.js";
+
 
 // =========================
 // ROUTER
@@ -1197,6 +1199,36 @@ export default async function router(
       "not found",
       404
     );
+  }
+
+
+  // =========================
+  // PUSH-01B / PASSENGER GRANT
+  // Explicitly disabled unless enabled in Worker env.
+  // This endpoint cannot register a device or send any FCM.
+  // =========================
+  if (path === "/passenger/push-grant") {
+    if (req.method !== "POST") {
+      return safeError("method not allowed", 405);
+    }
+    if (env?.PASSENGER_PUSH_API_ENABLED !== "true") {
+      return safeError("passenger push unavailable", 503);
+    }
+    const lengthHeader = req.headers.get("Content-Length");
+    if (lengthHeader !== null
+        && (!/^\\d+$/.test(lengthHeader) || Number(lengthHeader) > 8192)) {
+      return safeError("request too large", 413);
+    }
+    const proxyAuth = await verifyProxyRequest(req, env, "/passenger/push-grant");
+    if (proxyAuth.ok !== true) {
+      return safeError(proxyAuth.error, proxyAuth.status);
+    }
+    const body = await safeJson(req);
+    const result = await issuePassengerPushGrant(env, body);
+    if (!result.ok) {
+      return safeError(result.error, result.status);
+    }
+    return json(result, 200, { ...cors, "Cache-Control": "no-store" });
   }
 
 
