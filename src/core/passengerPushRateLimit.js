@@ -6,7 +6,7 @@
 // Per-order quota is NOT an anonymous IP/WAF abuse safeguard.
 const WINDOW_MS = 60_000;
 const MAX_GRANTS = 5;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function allowPassengerPushGrant(env, orderId, now = Date.now()) {
   if (!env?.DB || typeof env.DB.prepare !== "function") {
