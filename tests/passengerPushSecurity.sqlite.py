@@ -45,6 +45,7 @@ for i in range(5):
     assert cursor.rowcount == 1
 assert DB.execute(rate_sql, (ID, now+6, now+6-60000, 5)).rowcount == 0
 assert DB.execute(rate_sql, (ID, now+60001, now+1, 5)).rowcount == 1
+DB.commit()  # Explicit BEGIN below must not nest within Python implicit txn.
 
 def transactional_register(grant, token, at):
     DB.execute("BEGIN")
