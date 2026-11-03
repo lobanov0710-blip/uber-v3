@@ -33,7 +33,7 @@ async function request(method, route, data, settings = {}) {
     "X-Proxy-Nonce": nonce,
     "X-Proxy-Signature": signature(method, route, raw, nonce, epoch)
   };
-  const result = await fetch(origin + route, {
+  const result = await fetch(origin.origin + route, {
     method, headers, body: raw, redirect: "error"
   });
   return { status: result.status, data: await result.json(), nonce };
