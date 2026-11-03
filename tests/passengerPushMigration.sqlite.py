@@ -8,7 +8,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 DATABASE = sqlite3.connect(":memory:")
 DATABASE.execute("PRAGMA foreign_keys = ON")
 
-for version in range(1, 8):
+for version in range(1, 9):
     matches = sorted((ROOT / "migrations").glob(f"{version:04d}_*.sql"))
     assert len(matches) == 1, f"migration {version} missing or ambiguous"
     DATABASE.executescript(matches[0].read_text(encoding="utf-8"))
