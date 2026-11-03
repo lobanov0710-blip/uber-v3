@@ -2,6 +2,7 @@ import { signJWT } from "./auth.js";
 import { verifyPassengerOrderAccess } from "./passengerOrderAccess.js";
 import { getOrderById } from "./orderRepository.js";
 import { PASSENGER_PUSH_SCOPE } from "./passengerPushGrant.js";
+import { allowPassengerPushGrant } from "./passengerPushRateLimit.js";
 
 // Only a time-limited, order-scoped grant is minted here. The existing
 // passenger_order:read token is NOT accepted by push-device write operations.
@@ -63,10 +64,22 @@ export async function issuePassengerPushGrant(env, input) {
     return forbidden();
   }
 
+  // Fail-closed issuance quota, atomically checked against D1.
+  let allowed;
+  try {
+    allowed = await allowPassengerPushGrant(env, order.id);
+  } catch {
+    return unavailable();
+  }
+  if (!allowed) {
+    return { ok: false, status: 429, error: "rate limited" };
+  }
+
   const signed = await signJWT(env.PASSENGER_PUSH_GRANT_SECRET, {
     sub: order.id.toLowerCase(),
     scope: PASSENGER_PUSH_SCOPE,
-    installationId: installationId.toLowerCase()
+    installationId: installationId.toLowerCase(),
+    jti: crypto.randomUUID()
   }, GRANT_TTL_SECONDS);
 
   return {
