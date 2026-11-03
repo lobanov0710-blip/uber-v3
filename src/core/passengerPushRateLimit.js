@@ -9,10 +9,14 @@ const MAX_GRANTS = 5;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function allowPassengerPushGrant(env, orderId, now = Date.now()) {
-  if (!env?.DB || typeof env.DB.prepare !== "function"
-      || typeof orderId !== "string" || !UUID.test(orderId)
-      || !Number.isSafeInteger(now) || now <= WINDOW_MS) {
-    throw new Error("Passenger push rate limiter unavailable");
+  if (!env?.DB || typeof env.DB.prepare !== "function") {
+    throw new Error("Passenger push limiter DB unavailable");
+  }
+  if (typeof orderId !== "string" || !UUID.test(orderId)) {
+    throw new Error("Passenger push limiter invalid order");
+  }
+  if (!Number.isSafeInteger(now) || now <= WINDOW_MS) {
+    throw new Error("Passenger push limiter invalid clock");
   }
   const eventId = crypto.randomUUID();
   const result = await env.DB.prepare(`
