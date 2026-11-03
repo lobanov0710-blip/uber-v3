@@ -7,7 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 DB = sqlite3.connect(":memory:")
 DB.execute("PRAGMA foreign_keys=ON")
 
-for v in range(1, 8):
+for v in range(1, 9):
     files = list((ROOT / "migrations").glob(f"{v:04d}_*.sql"))
     assert len(files) == 1, f"missing migration {v}"
     DB.executescript(files[0].read_text(encoding="utf-8"))
