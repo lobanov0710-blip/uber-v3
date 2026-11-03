@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/**
+      - test/**
     paths:
       - ".github/workflows/passenger-push-grant-tests.yml"
       - "src/router.js"
