@@ -56,16 +56,19 @@ export async function upsertPassengerPushDevice(env, data) {
   return { ok: changes === 1 };
 }
 
-// Revoke by BOTH authenticated order and authenticated installation.
-// Non-matching ownership is indistinguishable from an already absent row.
+// Keep an ownership-bound tombstone: an unexpired replayed grant cannot
+// re-register a revoked installation. The scheduled cleanup is future work.
+// Non-matching ownership is indistinguishable from an already revoked row.
 export async function revokePassengerPushDevice(env, orderId, installationId, now) {
   if (!validUuid(orderId) || !validUuid(installationId) || !validMillis(now)) {
     throw new Error("Invalid passenger push revoke");
   }
   const result = await requiredDatabase(env).prepare(`
-    DELETE FROM passenger_push_devices
-    WHERE installation_id = ?1 AND order_id = ?2
-  `).bind(installationId, orderId).run();
+    UPDATE passenger_push_devices
+       SET revoked_at = ?3
+     WHERE installation_id = ?1 AND order_id = ?2
+       AND revoked_at IS NULL
+  `).bind(installationId, orderId, now).run();
 
   if (result?.success !== true) throw new Error("Passenger push revoke failed");
   const changes = result?.meta?.changes;
