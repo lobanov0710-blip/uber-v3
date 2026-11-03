@@ -28,7 +28,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Python read-only preflight unit tests
-        run: python3 -m unittest discover -s tests -p 'push01hStagingPreflight.test.py' -v
+        run: python3 tests/push01hStagingPreflight.test.py
       - name: Verify expected local-only configuration limitation
         shell: bash
         run: |
