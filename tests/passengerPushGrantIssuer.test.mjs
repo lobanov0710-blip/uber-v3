@@ -54,8 +54,9 @@ function database(row = orderRow(ID_A)) {
 async function readToken(orderId = ID_A, secret = ORDER_SECRET, scope = "passenger_order:read") {
   return signJWT(secret, { sub: orderId, scope }, 1800);
 }
-async function signature(path, body, timestamp = Math.floor(Date.now()/1000)) {
-  const canonical = String(timestamp) + "\n" + path + "\n" + body;
+async function signature(path, body, timestamp, nonce, method = "POST") {
+  const canonical = ["PASSENGER-PUSH-V2", method, String(timestamp),
+    path, nonce, body].join("\n");
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(PROXY_SECRET),
     { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const digest = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(canonical)));
@@ -67,8 +68,10 @@ async function request(payload, options = {}) {
   const timestamp = options.timestamp ?? Math.floor(Date.now()/1000);
   const headers = { "Content-Type": "application/json" };
   if (options.signed !== false) {
+    const nonce = options.nonce || crypto.randomUUID().replaceAll("-", "");
     headers["X-Proxy-Timestamp"] = String(timestamp);
-    headers["X-Proxy-Signature"] = await signature(path, body, timestamp);
+    if (!options.noNonce) headers["X-Proxy-Nonce"] = nonce;
+    headers["X-Proxy-Signature"] = await signature(path, body, timestamp, nonce);
   }
   if (options.invalidSignature) headers["X-Proxy-Signature"] = "0".repeat(64);
   return new Request("https://worker.example" + path, {
@@ -172,14 +175,16 @@ await test("new POST endpoint requires HMAC and does not cache grant", async () 
   const data = await response.json();
   assert.equal(data.ok, true);
   assert.ok((await verifyPassengerPushGrant(env, data.grantToken)) !== null);
-  assert.equal(calls.length, 2);
-  assert.equal(calls[0].args[0], ID_A);
-  assert.equal(calls[1].args[1], ID_A);
+  assert.equal(calls.length, 3);
+  assert.match(calls[0].sql, /INSERT OR IGNORE INTO passenger_push_proxy_nonces/);
+  assert.equal(calls[1].args[0], ID_A);
+  assert.equal(calls[2].args[1], ID_A);
 });
 
 await test("route rejects missing HMAC, invalid HMAC and expired timestamp", async () => {
   for (const options of [
     { signed: false },
+    { noNonce: true },
     { invalidSignature: true },
     { timestamp: Math.floor(Date.now()/1000) - 700 }
   ]) {

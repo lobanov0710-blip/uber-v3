@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/**
+      - test/**
     paths:
       - ".github/workflows/passenger-push-grant-tests.yml"
       - "src/router.js"
@@ -39,3 +40,5 @@ jobs:
         run: python3 tests/passengerPushSecurity.sqlite.py
       - name: FCM token redaction and expiry retention SQLite integration
         run: python3 tests/passengerPushLifecycle.sqlite.py
+      - name: Nonce replay uniqueness and cleanup on SQLite
+        run: python3 tests/passengerPushNonce.sqlite.py

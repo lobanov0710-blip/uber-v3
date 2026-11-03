@@ -30,7 +30,8 @@ const ORDER_SECRET = "ci-order-signing-secret-not-used-anywhere-outside-tests-12
 const PUSH_SECRET = "ci-push-signing-secret-independent-from-order-and-staff";
 const PROXY_SECRET = "ci-php-worker-hmac-test-only-secret-with-adequate-length";
 const STAFF_SECRET = "ci-staff-secret-unused-by-this-test-and-distinct-from-other";
-const phpSource = path.join(process.cwd(), "_contract_php", "api", "_proxy_auth.php");
+const phpSource = path.join(process.cwd(), "_contract_php", "api", "_passenger_push_proxy_auth.php");
+const legacyPhpSource = path.join(process.cwd(), "_contract_php", "api", "_proxy_auth.php");
 
 if (!existsSync(phpSource)) {
   throw new Error("The real public_html/api/_proxy_auth.php checkout is required");
@@ -41,27 +42,29 @@ const apiFolder = path.join(tempRoot, "public_html", "api");
 const secretsFolder = path.join(tempRoot, "transfer-private");
 mkdirSync(apiFolder, { recursive: true });
 mkdirSync(secretsFolder, { recursive: true });
-const authFile = path.join(apiFolder, "_proxy_auth.php");
+const legacyAuthFile = path.join(apiFolder, "_proxy_auth.php");
+const authFile = path.join(apiFolder, "_passenger_push_proxy_auth.php");
+copyFileSync(legacyPhpSource, legacyAuthFile);
 copyFileSync(phpSource, authFile);
 writeFileSync(path.join(secretsFolder, "proxy-hmac-secret.txt"), PROXY_SECRET, { mode: 0o600 });
-assert.ok(readFileSync(authFile, "utf8").includes("function buildProxyAuthHeaders("));
+assert.ok(readFileSync(authFile, "utf8").includes("function buildPassengerPushAuthHeaders("));
 
-function phpHmacHeaders(endpoint, rawBody) {
+function phpHmacHeaders(endpoint, rawBody, method = "POST") {
   const phpCode = [
     '$p = $argv[1];',
     '$auth = $argv[2];',
     'require $auth;',
     '$body = stream_get_contents(STDIN);',
-    'echo json_encode(buildProxyAuthHeaders($p, $body), JSON_THROW_ON_ERROR);'
+    'echo json_encode(buildPassengerPushAuthHeaders($argv[3], $p, $body), JSON_THROW_ON_ERROR);'
   ].join(" ");
-  const child = spawnSync("php", ["-r", phpCode, endpoint, authFile], {
+  const child = spawnSync("php", ["-r", phpCode, endpoint, authFile, method], {
     input: rawBody, encoding: "utf8", timeout: 9000
   });
   if (child.error || child.status !== 0) {
     throw new Error("PHP HMAC signer failed in isolated test");
   }
   const headers = JSON.parse(child.stdout);
-  assert.equal(headers.length, 2);
+  assert.equal(headers.length, 3);
   const map = {};
   for (const h of headers) {
     const at = h.indexOf(": ");
@@ -89,13 +92,14 @@ class LocalD1 {
     this.sqlite = new DatabaseSync(":memory:");
     this.sqlite.exec("PRAGMA foreign_keys = ON");
     const migrations = path.join(process.cwd(), "migrations");
-    for (let version = 1; version <= 7; version++) {
+    for (let version = 1; version <= 8; version++) {
       const name = readFileSync(
         path.join(migrations, [
           "0001_transactional_core.sql", "0002_staff_auth.sql",
           "0003_staff_admin_audit.sql", "0004_staff_push_devices.sql",
           "0005_passenger_push_devices.sql", "0006_passenger_push_security.sql",
-          "0007_passenger_push_grant_events.sql"
+          "0007_passenger_push_grant_events.sql",
+          "0008_passenger_push_proxy_nonces.sql"
         ][version - 1]), "utf8"
       );
       this.sqlite.exec(name);
@@ -161,7 +165,8 @@ class LocalD1 {
   count(table) {
     // Literal test-owned table names only, never user input.
     const valid = ["staff_push_devices", "passenger_push_devices",
-      "passenger_push_grant_uses", "passenger_push_grant_events"];
+      "passenger_push_grant_uses", "passenger_push_grant_events",
+      "passenger_push_proxy_nonces"];
     if (!valid.includes(table)) throw new Error("Unsupported table");
     return this.sqlite.prepare("SELECT COUNT(*) AS n FROM " + table).get().n;
   }
@@ -196,7 +201,7 @@ function requestWithPhpSignature(endpoint, method, body, opts = {}) {
   const headers = { "Content-Type": "application/json" };
   if (!opts.noSignature) {
     Object.assign(headers, phpHmacHeaders(
-      opts.signedPath ?? endpoint, signedBody
+      opts.signedPath ?? endpoint, signedBody, opts.signedMethod ?? method
     ));
   }
   if (opts.changeSignature) headers["X-Proxy-Signature"] = "0".repeat(64);
@@ -305,6 +310,52 @@ try {
     assert.equal(DB.count("passenger_push_devices"), 0);
   });
 
+  await run("signed HMAC replay denied before issuing another grant", async ({ env, DB }) => {
+    const raw = JSON.stringify({
+      accessToken: await readToken(), installationId: INSTALL_A
+    });
+    const headers = {
+      "Content-Type": "application/json",
+      ...phpHmacHeaders("/passenger/push-grant", raw)
+    };
+    const signed = () => new Request(
+      "https://local-worker.invalid/passenger/push-grant",
+      { method: "POST", headers, body: raw }
+    );
+    const first = await router(signed(), env);
+    assert.equal(first.status, 200);
+    const second = await router(signed(), env);
+    assert.equal(second.status, 403);
+    assert.equal(DB.count("passenger_push_grant_events"), 1);
+    assert.equal(DB.count("passenger_push_proxy_nonces"), 1);
+  });
+
+  await run("passenger proxy method and nonce are authenticated", async ({ env, DB }) => {
+    const grant = await createGrant(env);
+    const body = JSON.stringify({ grantToken: grant });
+    const valid = phpHmacHeaders("/passenger/push-device", body, "POST");
+    // A POST signature cannot be replayed as DELETE.
+    const wrongMethod = await router(new Request(
+      "https://local-worker.invalid/passenger/push-device",
+      { method: "DELETE", headers: valid, body }
+    ), env);
+    assert.equal(wrongMethod.status, 403);
+    const missingNonce = { ...valid };
+    delete missingNonce["X-Proxy-Nonce"];
+    const noNonce = await router(new Request(
+      "https://local-worker.invalid/passenger/push-device",
+      { method: "POST", headers: missingNonce, body }
+    ), env);
+    assert.equal(noNonce.status, 403);
+    const alteredNonce = { ...valid, "X-Proxy-Nonce": "f".repeat(32) };
+    const changed = await router(new Request(
+      "https://local-worker.invalid/passenger/push-device",
+      { method: "POST", headers: alteredNonce, body }
+    ), env);
+    assert.equal(changed.status, 403);
+    assert.equal(DB.count("passenger_push_devices"), 0);
+  });
+
   await run("disabled features do not touch D1", async ({ env, DB }) => {
     const payload = { accessToken: await readToken(), installationId: INSTALL_A };
     const disabled = await dispatch(
@@ -356,11 +407,12 @@ try {
   await run("rolling quota limits 6th grant within 60 seconds", async ({ env, DB }) => {
     const read = await readToken();
     const raw = JSON.stringify({ accessToken: read, installationId: INSTALL_A });
-    const headers = {
-      "Content-Type": "application/json",
-      ...phpHmacHeaders("/passenger/push-grant", raw)
-    };
     for (let i = 0; i < 6; i++) {
+      // Fresh PHP server-generated nonce on every independent request.
+      const headers = {
+        "Content-Type": "application/json",
+        ...phpHmacHeaders("/passenger/push-grant", raw)
+      };
       const request = new Request(
         "https://local-worker.invalid/passenger/push-grant",
         { method: "POST", body: raw, headers }
@@ -371,9 +423,7 @@ try {
         "iteration=" + i + " error=" + (body.error || "none"));
     }
     assert.equal(DB.count("passenger_push_grant_events"), 5);
-    // Current HMAC replay limitation: the same signed grant request can
-    // still mint multiple grant tokens before the per-order cap. A nonce/
-    // replay cache in the gateway/Worker remains a release blocker.
+    // All 5 accepted requests had unique nonces; rate limiter rejects #6.
   });
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
