@@ -30,6 +30,14 @@ function createDb(changes = 1) {
       };
       return stmt;
     }
+    ,
+    async batch(statements) {
+      assert.equal(statements.length, 2);
+      return [
+        { success: true, meta: { changes: 1 } },
+        { success: true, meta: { changes } }
+      ];
+    }
   };
   return { DB, calls };
 }
@@ -39,6 +47,7 @@ async function grant(extra = {}, secret = SECRET) {
     sub: ORDER_A,
     scope: PASSENGER_PUSH_SCOPE,
     installationId: INSTALL_A,
+    jti: crypto.randomUUID(),
     ...extra
   }, 120);
 }
@@ -125,16 +134,17 @@ await test("registration SQL is scoped to D1 order and protects against hijackin
     { platform: "android", token: "fcm.test_2" }
   );
   assert.deepEqual(result, { ok: true });
-  assert.equal(calls.length, 1);
-  assert.match(calls[0].sql, /INSERT INTO passenger_push_devices/i);
-  assert.match(calls[0].sql, /FROM orders AS o/i);
-  assert.match(calls[0].sql, /o\.status IN \('new', 'taken', 'in_progress'\)/i);
-  assert.match(calls[0].sql, /passenger_push_devices\.order_id = excluded\.order_id/i);
-  assert.match(calls[0].sql, /revoked_at IS NULL/i);
-  assert.equal(calls[0].args[0], INSTALL_A);
-  assert.equal(calls[0].args[1], ORDER_A);
-  assert.equal(calls[0].args[2], "fcm.test_2");
-  assert.ok(calls[0].args[4] > calls[0].args[3]);
+  assert.equal(calls.length, 2);
+  assert.match(calls[0].sql, /INSERT INTO passenger_push_grant_uses/i);
+  assert.match(calls[1].sql, /INSERT INTO passenger_push_devices/i);
+  assert.match(calls[1].sql, /FROM orders AS o/i);
+  assert.match(calls[1].sql, /o\.status IN \('new', 'taken', 'in_progress'\)/i);
+  assert.match(calls[1].sql, /passenger_push_devices\.order_id = excluded\.order_id/i);
+  assert.match(calls[1].sql, /revoked_at IS NULL/i);
+  assert.equal(calls[1].args[0], INSTALL_A);
+  assert.equal(calls[1].args[1], ORDER_A);
+  assert.equal(calls[1].args[2], "fcm.test_2");
+  assert.ok(calls[1].args[4] > calls[1].args[3]);
 });
 
 await test("terminal, missing or hijacked order produces a generic conflict", async () => {
@@ -143,19 +153,19 @@ await test("terminal, missing or hijacked order produces a generic conflict", as
     { ...env, DB }, await grant(),
     { platform: "android", token: "fcm.test_2" }
   ), { ok: false, status: 409, error: "registration not available" });
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
 });
 
 await test("revoke SQL retains tombstone and scopes by order + installation", async () => {
   const { DB, calls } = createDb();
   const result = await unregisterPassengerDevice({ ...env, DB }, await grant());
   assert.deepEqual(result, { ok: true });
-  assert.match(calls[0].sql, /UPDATE passenger_push_devices/i);
-  assert.match(calls[0].sql, /SET revoked_at = \?3/i);
-  assert.match(calls[0].sql, /installation_id = \?1 AND order_id = \?2/i);
-  assert.match(calls[0].sql, /revoked_at IS NULL/i);
-  assert.equal(calls[0].args[0], INSTALL_A);
-  assert.equal(calls[0].args[1], ORDER_A);
+  assert.match(calls[1].sql, /UPDATE passenger_push_devices/i);
+  assert.match(calls[1].sql, /SET revoked_at = \?3/i);
+  assert.match(calls[1].sql, /installation_id = \?1 AND order_id = \?2/i);
+  assert.match(calls[1].sql, /revoked_at IS NULL/i);
+  assert.equal(calls[1].args[0], INSTALL_A);
+  assert.equal(calls[1].args[1], ORDER_A);
 });
 
 await test("revoke is idempotent if no matching row", async () => {

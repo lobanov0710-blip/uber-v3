@@ -72,6 +72,9 @@ import {
 } from "./core/staffPushNotificationService.js";
 
 import { issuePassengerPushGrant } from "./core/passengerPushGrantIssuer.js";
+import {
+  registerPassengerDevice, unregisterPassengerDevice
+} from "./core/passengerPushDeviceService.js";
 
 
 // =========================
@@ -1231,6 +1234,55 @@ export default async function router(
     return json(result, 200, { ...cors, "Cache-Control": "no-store" });
   }
 
+
+  // PUSH-01C: isolated passenger device registration and revocation.
+  // Both flags remain absent/false on current deployed Worker. Never a
+  // public endpoint without exact-path gateway HMAC and one-use signed grant.
+  if (path === "/passenger/push-device") {
+    if (req.method !== "POST" && req.method !== "DELETE") {
+      return safeError("method not allowed", 405);
+    }
+    if (env?.PASSENGER_PUSH_API_ENABLED !== "true"
+        || env?.PASSENGER_PUSH_DEVICES_ENABLED !== "true") {
+      return safeError("passenger push unavailable", 503);
+    }
+    const lengthHeader = req.headers.get("Content-Length");
+    if (lengthHeader !== null
+        && (!/^\d+$/.test(lengthHeader) || Number(lengthHeader) > 8192)) {
+      return safeError("request too large", 413);
+    }
+
+    const proxyAuth = await verifyProxyRequest(req, env, "/passenger/push-device");
+    if (proxyAuth.ok !== true) {
+      return safeError(proxyAuth.error, proxyAuth.status);
+    }
+    const body = await safeJson(req);
+    let result;
+    if (req.method === "POST") {
+      if (!body || typeof body !== "object" || Array.isArray(body)
+          || Object.keys(body).length !== 3
+          || !Object.hasOwn(body, "grantToken")
+          || !Object.hasOwn(body, "platform")
+          || !Object.hasOwn(body, "token")) {
+        return safeError("invalid push device", 400);
+      }
+      result = await registerPassengerDevice(env, body.grantToken, {
+        platform: body.platform, token: body.token
+      });
+    } else {
+      if (!body || typeof body !== "object" || Array.isArray(body)
+          || Object.keys(body).length !== 1
+          || !Object.hasOwn(body, "grantToken")) {
+        return safeError("invalid push device", 400);
+      }
+      result = await unregisterPassengerDevice(env, body.grantToken);
+    }
+    if (!result?.ok) {
+      return safeError(result?.error || "registration not available",
+        result?.status || 503);
+    }
+    return json({ ok: true }, 200, { ...cors, "Cache-Control": "no-store" });
+  }
 
   // =========================
   // CALCULATE

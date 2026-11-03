@@ -22,6 +22,7 @@ export async function verifyPassengerPushGrant(env, token, now = Date.now()) {
     || typeof payload.sub !== "string"
     || typeof payload.installationId !== "string"
     || !UUID.test(payload.sub) || !UUID.test(payload.installationId)
+    || typeof payload.jti !== "string" || !UUID.test(payload.jti)
     || !Number.isSafeInteger(payload.exp)
     || !Number.isSafeInteger(payload.iat)
     || payload.exp <= payload.iat
@@ -34,6 +35,7 @@ export async function verifyPassengerPushGrant(env, token, now = Date.now()) {
   return {
     orderId: payload.sub.toLowerCase(),
     installationId: payload.installationId.toLowerCase(),
+    grantId: payload.jti.toLowerCase(),
     expiresAt: payload.exp * 1000
   };
 }

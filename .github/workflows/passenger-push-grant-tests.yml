@@ -35,3 +35,5 @@ jobs:
         run: npm test
       - name: Local isolated SQLite migration and ownership tests
         run: python3 tests/passengerPushMigration.sqlite.py
+      - name: Atomic one-use replay and rate limiter SQLite integration
+        run: python3 tests/passengerPushSecurity.sqlite.py

@@ -42,6 +42,9 @@ function database(row = orderRow(ID_A)) {
         bind(...values) { state.args = values; return this; },
         async first() {
           return /FROM orders/i.test(sql) && state.args[0] === row?.id ? row : null;
+        },
+        async run() {
+          return { success: true, meta: { changes: 1 } };
         }
       };
     }
@@ -83,8 +86,9 @@ await test("authorized grant uses only order from verified passenger read token"
     accessToken: await readToken(), installationId: INSTALL
   });
   assert.equal(result.ok, true);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
   assert.equal(calls[0].args[0], ID_A);
+  assert.equal(calls[1].args[0], ID_A);
   const verified = await verifyPassengerPushGrant(env, result.grantToken);
   assert.equal(verified.orderId, ID_A);
   assert.equal(verified.installationId, INSTALL);
@@ -159,8 +163,9 @@ await test("new POST endpoint requires HMAC and does not cache grant", async () 
   const data = await response.json();
   assert.equal(data.ok, true);
   assert.ok((await verifyPassengerPushGrant(env, data.grantToken)) !== null);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
   assert.equal(calls[0].args[0], ID_A);
+  assert.equal(calls[1].args[0], ID_A);
 });
 
 await test("route rejects missing HMAC, invalid HMAC and expired timestamp", async () => {
