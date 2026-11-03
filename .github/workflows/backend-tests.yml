@@ -29,3 +29,5 @@ jobs:
         run: npm test
       - name: Verify passenger push migration on local SQLite
         run: python3 tests/passengerPushMigration.sqlite.py
+      - name: Verify one-use push grant and rate limit SQL locally
+        run: python3 tests/passengerPushSecurity.sqlite.py
