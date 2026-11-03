@@ -363,7 +363,9 @@ try {
         { method: "POST", body: raw, headers }
       );
       const response = await router(request, env);
-      assert.equal(response.status, i < 5 ? 200 : 429);
+      const body = await response.json();
+      assert.equal(response.status, i < 5 ? 200 : 429,
+        "iteration=" + i + " error=" + (body.error || "none"));
     }
     assert.equal(DB.count("passenger_push_grant_events"), 5);
     // Current HMAC replay limitation: the same signed grant request can
