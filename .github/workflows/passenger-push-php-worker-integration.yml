@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/**
+      - test/**
     paths:
       - ".github/workflows/passenger-push-php-worker-integration.yml"
       - "tests/passengerPushPhpWorkerD1.integration.mjs"
