@@ -356,7 +356,10 @@ try {
   await run("rolling quota limits 6th grant within 60 seconds", async ({ env, DB }) => {
     const read = await readToken();
     const raw = JSON.stringify({ accessToken: read, installationId: INSTALL_A });
-    const headers = phpHmacHeaders("/passenger/push-grant", raw);
+    const headers = {
+      "Content-Type": "application/json",
+      ...phpHmacHeaders("/passenger/push-grant", raw)
+    };
     for (let i = 0; i < 6; i++) {
       const request = new Request(
         "https://local-worker.invalid/passenger/push-grant",
