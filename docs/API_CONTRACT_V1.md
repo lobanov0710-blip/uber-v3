@@ -440,6 +440,8 @@ Route geometry returned by `/calculate` is not persisted as part of the quote.
 
 When a quoted order is created, its textual route is reconstructed from the authoritative `from` and `to` values stored in D1.
 
+For new quotes, `from` and `to` in D1 use the validated geocoder `displayName` when available, rather than the raw query text. A nonempty query remains a fallback for legacy callers without a display name. The `/calculate` response continues to expose the original `query` and the normalized `displayName` separately; price and route geometry are unchanged. Historical quote/order records are **not** rewritten.
+
 The current quote TTL is:
 
 ```text
