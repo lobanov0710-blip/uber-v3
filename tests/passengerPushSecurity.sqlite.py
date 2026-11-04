@@ -39,22 +39,27 @@ write = re.search(r"const write = db\.prepare\(`([\s\S]*?)`\)\.bind", text).grou
 revoke = re.search(r"const revoke = db\.prepare\(`([\s\S]*?)`\)\.bind", text).group(1)
 
 now = 1793700000000
-def rate_attempt(timestamp):
+def rate_attempt(timestamp, purpose="manage"):
     from uuid import uuid4
+    maximum = {"manage": 4, "revoke": 5}[purpose]
     return DB.execute(
         rate_sql,
-        (str(uuid4()), ID, timestamp, timestamp - 60000, 5)
+        (str(uuid4()), ID, timestamp, timestamp - 60000, maximum)
     ).rowcount
 
-for i in range(5):
+for i in range(4):
     assert rate_attempt(now+i) == 1
 
-# A true rolling window denies a sixth attempt even at t=59.999s,
-# and permits only one new attempt after the first event expires.
-assert rate_attempt(now+59999) == 0
-assert rate_attempt(now+60000) == 1
-assert rate_attempt(now+60000) == 0
-assert rate_attempt(now+60001) == 1
+# Four manage grants cannot consume the reserved fifth revoke slot.
+assert rate_attempt(now+4) == 0
+assert rate_attempt(now+5, "revoke") == 1
+assert rate_attempt(now+6, "revoke") == 0
+assert rate_attempt(now+59999, "manage") == 0
+
+# At exactly 60 s the first event expires, allowing a revoke but not manage.
+assert rate_attempt(now+60000, "manage") == 0
+assert rate_attempt(now+60000, "revoke") == 1
+assert rate_attempt(now+60001, "manage") == 0
 
 DB.commit()  # Explicit BEGIN below must not nest within Python implicit txn.
 

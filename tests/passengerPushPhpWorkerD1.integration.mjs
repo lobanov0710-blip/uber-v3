@@ -404,26 +404,23 @@ try {
     assert.equal(DB.count("staff_push_devices"), 0);
   });
 
-  await run("rolling quota limits 6th grant within 60 seconds", async ({ env, DB }) => {
+  await run("revoke reserve remains inside five-total shared quota", async ({ env, DB }) => {
     const read = await readToken();
-    const raw = JSON.stringify({ accessToken: read, installationId: INSTALL_A });
-    for (let i = 0; i < 6; i++) {
-      // Fresh PHP server-generated nonce on every independent request.
-      const headers = {
-        "Content-Type": "application/json",
-        ...phpHmacHeaders("/passenger/push-grant", raw)
-      };
-      const request = new Request(
-        "https://local-worker.invalid/passenger/push-grant",
-        { method: "POST", body: raw, headers }
-      );
-      const response = await router(request, env);
-      const body = await response.json();
-      assert.equal(response.status, i < 5 ? 200 : 429,
-        "iteration=" + i + " error=" + (body.error || "none"));
+    async function issue(operation) {
+      const payload = { accessToken: read, installationId: INSTALL_A };
+      if (operation) payload.operation = operation;
+      return dispatch(env, "/passenger/push-grant", "POST", payload);
     }
+    for (let i = 0; i < 4; i++) {
+      assert.equal((await issue(null)).status, 200);
+    }
+    assert.equal((await issue(null)).status, 429);
+    const response = await issue("revoke");
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).ok, true);
+    assert.equal((await issue(null)).status, 429);
+    assert.equal((await issue("revoke")).status, 429);
     assert.equal(DB.count("passenger_push_grant_events"), 5);
-    // All 5 accepted requests had unique nonces; rate limiter rejects #6.
   });
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
