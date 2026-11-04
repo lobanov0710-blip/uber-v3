@@ -55,7 +55,12 @@ export async function issuePassengerPushGrant(env, input) {
   } catch {
     return unavailable();
   }
-  if (access?.ok !== true || !UUID.test(access.orderId)) {
+  // A grant may never confer registration rights beyond the verified
+  // passenger-order read capability from which it was issued.
+  if (access?.ok !== true || !UUID.test(access.orderId)
+      || !Number.isSafeInteger(access.expiresAt)
+      || access.expiresAt % 1000 !== 0
+      || access.expiresAt <= Date.now()) {
     return forbidden();
   }
 
@@ -89,6 +94,9 @@ export async function issuePassengerPushGrant(env, input) {
     sub: order.id.toLowerCase(),
     scope: revokeOnly ? PASSENGER_PUSH_REVOKE_SCOPE : PASSENGER_PUSH_SCOPE,
     installationId: installationId.toLowerCase(),
+    // Signed private claim, not user input. Registration must expire no
+    // later than the verified passenger session, even near its end.
+    readExpiresAt: access.expiresAt,
     jti: crypto.randomUUID()
   }, GRANT_TTL_SECONDS);
 

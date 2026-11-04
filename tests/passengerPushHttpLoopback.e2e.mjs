@@ -238,6 +238,11 @@ async function run() {
       grantToken: first, platform: "android", token: "test-only-fcm-not-real"
     })).status, 200);
     assert.equal(DB.device().fcm_token, "test-only-fcm-not-real");
+    // E2E: accepted registration cannot outlive the read capability used
+    // to issue the HMAC-authenticated manage grant.
+    const readClaims = JSON.parse(Buffer.from(
+      readToken.split(".")[1], "base64url").toString("utf8"));
+    assert.equal(DB.device().expires_at, readClaims.exp * 1000);
 
     // New PHP nonce cannot make an already-consumed grant usable again.
     assert.equal((await post(deviceUrl, "POST", {

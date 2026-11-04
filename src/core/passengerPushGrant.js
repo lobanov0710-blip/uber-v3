@@ -27,6 +27,12 @@ export async function verifyPassengerPushGrant(env, token, now = Date.now(), all
     || typeof payload.jti !== "string" || !UUID.test(payload.jti)
     || !Number.isSafeInteger(payload.exp)
     || !Number.isSafeInteger(payload.iat)
+    // Mandatory signed binding to the passenger read capability: legacy
+    // or forged grants without it must NOT register or revoke devices.
+    || !Number.isSafeInteger(payload.readExpiresAt)
+    || payload.readExpiresAt % 1000 !== 0
+    || payload.readExpiresAt <= now
+    || payload.readExpiresAt <= payload.iat * 1000
     || payload.exp <= payload.iat
     || payload.exp - payload.iat > MAX_GRANT_SECONDS
     || payload.iat * 1000 > now + 60_000
@@ -38,6 +44,7 @@ export async function verifyPassengerPushGrant(env, token, now = Date.now(), all
     orderId: payload.sub.toLowerCase(),
     installationId: payload.installationId.toLowerCase(),
     grantId: payload.jti.toLowerCase(),
-    expiresAt: payload.exp * 1000
+    expiresAt: payload.exp * 1000,
+    readExpiresAt: payload.readExpiresAt
   };
 }

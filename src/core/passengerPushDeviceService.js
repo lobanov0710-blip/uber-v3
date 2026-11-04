@@ -34,8 +34,10 @@ export async function registerPassengerDevice(env, grantToken, input, now = Date
     || !Number.isSafeInteger(now) || now <= 0) {
     return badRequest();
   }
-  const expiresAt = now + REGISTRATION_TTL_MS;
-  if (!Number.isSafeInteger(expiresAt)
+  // Never allow an FCM registration to outlive the signed passenger
+  // read capability, even when a short-lived manage grant remains valid.
+  const expiresAt = Math.min(now + REGISTRATION_TTL_MS, principal.readExpiresAt);
+  if (!Number.isSafeInteger(expiresAt) || expiresAt <= now
     || principal.expiresAt + MAX_CLOCK_SKEW_MS < now) {
     return forbidden();
   }

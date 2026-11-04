@@ -3,6 +3,7 @@ import { webcrypto } from "node:crypto";
 import { signJWT } from "../src/core/auth.js";
 import router from "../src/router.js";
 import { issuePassengerPushGrant } from "../src/core/passengerPushGrantIssuer.js";
+import { verifyPassengerOrderAccess } from "../src/core/passengerOrderAccess.js";
 import { verifyPassengerPushGrant } from "../src/core/passengerPushGrant.js";
 import { allowPassengerPushGrant } from "../src/core/passengerPushRateLimit.js";
 
@@ -51,8 +52,9 @@ function database(row = orderRow(ID_A)) {
     }
   };
 }
-async function readToken(orderId = ID_A, secret = ORDER_SECRET, scope = "passenger_order:read") {
-  return signJWT(secret, { sub: orderId, scope }, 1800);
+async function readToken(orderId = ID_A, secret = ORDER_SECRET,
+  scope = "passenger_order:read", ttlSeconds = 1800) {
+  return signJWT(secret, { sub: orderId, scope }, ttlSeconds);
 }
 async function signature(path, body, timestamp, nonce, method = "POST") {
   const canonical = ["PASSENGER-PUSH-V2", method, String(timestamp),
@@ -94,8 +96,10 @@ await test("grant rate limiter accepts signed order in mock D1", async () => {
 await test("authorized grant uses only order from verified passenger read token", async () => {
   calls.length = 0;
   const env = { ...baseEnv, DB: database() };
+  const read = await readToken();
+  const access = await verifyPassengerOrderAccess(env, read);
   const result = await issuePassengerPushGrant(env, {
-    accessToken: await readToken(), installationId: INSTALL
+    accessToken: read, installationId: INSTALL
   });
   assert.equal(result.ok, true, `grant error=${result.error || "none"} status=${result.status || "none"}`);
   assert.equal(calls.length, 2);
@@ -105,8 +109,33 @@ await test("authorized grant uses only order from verified passenger read token"
   const verified = await verifyPassengerPushGrant(env, result.grantToken);
   assert.equal(verified.orderId, ID_A);
   assert.equal(verified.installationId, INSTALL);
+  assert.equal(verified.readExpiresAt, access.expiresAt);
   assert.ok(verified.expiresAt > Date.now());
   assert.ok(verified.expiresAt <= Date.now() + 122_000);
+});
+
+await test("short-lived read token binds the new grant without changing HTTP shape", async () => {
+  const env = { ...baseEnv, DB: database() };
+  const read = await readToken(ID_A, ORDER_SECRET, "passenger_order:read", 90);
+  const access = await verifyPassengerOrderAccess(env, read);
+  assert.equal(access.ok, true);
+  const issued = await issuePassengerPushGrant(env, {
+    accessToken: read, installationId: INSTALL
+  });
+  assert.equal(issued.ok, true);
+  const grant = await verifyPassengerPushGrant(env, issued.grantToken);
+  assert.equal(grant.readExpiresAt, access.expiresAt);
+  assert.equal(grant.orderId, ID_A);
+});
+
+await test("already expired read token cannot mint a scoped grant", async () => {
+  calls.length = 0;
+  const env = { ...baseEnv, DB: database() };
+  const expired = await readToken(ID_A, ORDER_SECRET, "passenger_order:read", 0.5);
+  assert.equal((await issuePassengerPushGrant(env, {
+    accessToken: expired, installationId: INSTALL
+  })).status, 403);
+  assert.equal(calls.length, 0);
 });
 
 await test("revoke-only grants are distinct and possible after a terminal order", async () => {

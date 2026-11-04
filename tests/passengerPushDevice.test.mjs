@@ -5,6 +5,8 @@ import { PASSENGER_PUSH_SCOPE, verifyPassengerPushGrant }
   from "../src/core/passengerPushGrant.js";
 import { registerPassengerDevice, unregisterPassengerDevice }
   from "../src/core/passengerPushDeviceService.js";
+import { registerPassengerPushOnce }
+  from "../src/core/passengerPushDeviceTransactions.js";
 import { upsertPassengerPushDevice, revokePassengerPushDevice }
   from "../src/core/passengerPushDeviceRepository.js";
 
@@ -48,6 +50,7 @@ async function grant(extra = {}, secret = SECRET) {
     scope: PASSENGER_PUSH_SCOPE,
     installationId: INSTALL_A,
     jti: crypto.randomUUID(),
+    readExpiresAt: (Math.floor(Date.now() / 1000) + 1800) * 1000,
     ...extra
   }, 120);
 }
@@ -63,6 +66,7 @@ await test("valid dedicated signed grant binds exact order and installation", as
   assert.equal(authorized.orderId, ORDER_A);
   assert.equal(authorized.installationId, INSTALL_A);
   assert.equal(typeof authorized.expiresAt, "number");
+  assert.ok(authorized.readExpiresAt > Date.now());
 });
 
 await test("read-only scope cannot be used for passenger push writes", async () => {
@@ -124,6 +128,70 @@ await test("token whitespace, oversize and wrong platform fail without writing",
   ]) {
     assert.equal((await registerPassengerDevice({ ...env, DB }, g, input)).status, 400);
   }
+  assert.equal(calls.length, 0);
+});
+
+await test("registration stops at read-session expiry, not at 7-day TTL", async () => {
+  const { DB, calls } = createDb();
+  const shortReadExpiry = (Math.floor(Date.now() / 1000) + 90) * 1000;
+  const signed = await grant({ readExpiresAt: shortReadExpiry });
+  const result = await registerPassengerDevice(
+    { ...env, DB }, signed, { platform: "android", token: "fcm.short" }
+  );
+  assert.deepEqual(result, { ok: true });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].args[4], shortReadExpiry);
+  assert.ok(calls[1].args[3] < shortReadExpiry);
+});
+
+await test("long read capability still limits device registration to seven days", async () => {
+  const { DB, calls } = createDb();
+  const signed = await grant({
+    readExpiresAt: (Math.floor(Date.now() / 1000) + 30 * 24 * 3600) * 1000
+  });
+  const result = await registerPassengerDevice(
+    { ...env, DB }, signed, { platform: "android", token: "fcm.long" }
+  );
+  assert.deepEqual(result, { ok: true });
+  assert.equal(calls[1].args[4] - calls[1].args[3], 7 * 24 * 3600 * 1000);
+});
+
+await test("expired read-session or missing signed claim fail before D1", async () => {
+  for (const extra of [
+    { readExpiresAt: undefined },
+    { readExpiresAt: null },
+    { readExpiresAt: "2099-01-01" },
+    { readExpiresAt: Math.floor(Date.now() / 1000) * 1000 }
+  ]) {
+    const { DB, calls } = createDb();
+    const result = await registerPassengerDevice(
+      { ...env, DB }, await grant(extra),
+      { platform: "android", token: "fcm.must-not-write" }
+    );
+    assert.equal(result.status, 403);
+    assert.equal(calls.length, 0);
+  }
+  const { DB, calls } = createDb();
+  const validFor30s = await grant({
+    readExpiresAt: (Math.floor(Date.now() / 1000) + 30) * 1000
+  });
+  const late = await registerPassengerDevice(
+    { ...env, DB }, validFor30s,
+    { platform: "android", token: "fcm.late" }, Date.now() + 31_000
+  );
+  assert.equal(late.status, 403);
+  assert.equal(calls.length, 0);
+});
+
+await test("transactional layer refuses overshooting the read expiry", async () => {
+  const { DB, calls } = createDb();
+  const time = Date.now();
+  await assert.rejects(() => registerPassengerPushOnce(
+    { DB }, {
+      orderId: ORDER_A, installationId: INSTALL_A,
+      grantId: crypto.randomUUID(), readExpiresAt: time + 60_000
+    }, "fcm.bypass", time, time + 60_001
+  ), /Invalid passenger push registration/);
   assert.equal(calls.length, 0);
 });
 

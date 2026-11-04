@@ -280,6 +280,33 @@ try {
     assert.equal(DB.order(ORDER_A).price_rub, before.price_rub);
   });
 
+  await run("PHP HMAC -> Worker caps device registration at read-token expiry", async ({ env, DB }) => {
+    const read = await signJWT(ORDER_SECRET, {
+      sub: ORDER_A, scope: "passenger_order:read"
+    }, 90);
+    // The underlying read JWT is issued on second boundaries.
+    const expiry = (Math.floor(Date.now() / 1000) + 90) * 1000;
+    const granted = await dispatch(env, "/passenger/push-grant", "POST", {
+      accessToken: read, installationId: INSTALL_A
+    });
+    assert.equal(granted.status, 200);
+    const grantBody = await granted.json();
+    assert.equal(grantBody.ok, true);
+    const registered = await dispatch(env, "/passenger/push-device", "POST", {
+      grantToken: grantBody.grantToken, platform: "android", token: "test-expiry-fcm"
+    });
+    assert.equal(registered.status, 200);
+    const expiresAt = DB.device(INSTALL_A).expires_at;
+    // Compare the exact signed read JWT rather than a second Date.now().
+    const jwtPayload = JSON.parse(
+      Buffer.from(read.split(".")[1], "base64url").toString("utf8")
+    );
+    assert.equal(expiresAt, jwtPayload.exp * 1000);
+    assert.ok(expiresAt <= expiry + 1000);
+    assert.ok(expiresAt > Date.now());
+    assert.equal(DB.count("staff_push_devices"), 0);
+  });
+
   await run("foreign installation cannot be rebound to another order", async ({ env, DB }) => {
     const grantA = await createGrant(env);
     assert.equal((await dispatch(env, "/passenger/push-device", "POST", {
