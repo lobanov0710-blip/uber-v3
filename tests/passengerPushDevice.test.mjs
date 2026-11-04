@@ -177,9 +177,9 @@ await test("standalone repository revoke redacts token and preserves ownership",
     { DB }, ORDER_A, INSTALL_A, now
   ), { ok: true });
   assert.equal(calls.length, 1);
-  assert.match(calls[0].sql, /fcm_token = \\?4/i);
-  assert.match(calls[0].sql, /COALESCE\\(revoked_at, \\?3\\)/i);
-  assert.match(calls[0].sql, /installation_id = \\?1 AND order_id = \\?2/i);
+  assert.match(calls[0].sql, /fcm_token = \?4/i);
+  assert.match(calls[0].sql, /COALESCE\(revoked_at, \?3\)/i);
+  assert.match(calls[0].sql, /installation_id = \?1 AND order_id = \?2/i);
   assert.deepEqual(calls[0].args, [INSTALL_A, ORDER_A, now, "__REDACTED__"]);
 });
 
