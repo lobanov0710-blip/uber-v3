@@ -44,6 +44,9 @@ export async function registerPassengerPushOnce(
 ) {
   if (!validPrincipal(principal) || !Number.isSafeInteger(now) || now <= 0
       || !Number.isSafeInteger(expiresAt) || expiresAt <= now
+      || !Number.isSafeInteger(principal.readExpiresAt)
+      || principal.readExpiresAt <= now
+      || expiresAt > principal.readExpiresAt
       || typeof fcmToken !== "string" || !fcmToken || fcmToken.length > 4096
       || fcmToken === PASSENGER_PUSH_REDACTED_TOKEN
       || /\s/.test(fcmToken)) {
