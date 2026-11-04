@@ -77,7 +77,9 @@ class LocalD1 {
   }
   scalar(table) {
     if (!new Set(["orders", "staff_push_devices", "passenger_push_grant_uses",
-      "passenger_push_proxy_nonces"]).has(table)) throw new Error("Invalid table");
+      "passenger_push_proxy_nonces", "passenger_push_grant_events"]).has(table)) {
+      throw new Error("Invalid table");
+    }
     return this.db.prepare("SELECT COUNT(*) AS n FROM " + table).get().n;
   }
   device() {
