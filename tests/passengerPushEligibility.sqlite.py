@@ -6,7 +6,7 @@ from uuid import uuid4
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SOURCE = (ROOT / "src/core/passengerPushDeliveryEligibility.js").read_text(encoding="utf-8")
-match = re.search(r"env\\.DB\\.prepare\\(\\x60([\\s\\S]*?)\\x60\\)\\.bind", SOURCE)
+match = re.search(r"env\.DB\.prepare\(\x60([\s\S]*?)\x60\)\.bind", SOURCE)
 assert match, "Actual Worker SQL eligibility query missing"
 SQL = match.group(1)
 
@@ -76,7 +76,7 @@ assert eligible(ORDERS["new"], active["new"]) is None
 # Maintenance does not create false eligibility: revoked/terminal/expired
 # registrations can be redacted and will remain ineligible.
 life = (ROOT / "src/core/passengerPushLifecycle.js").read_text(encoding="utf-8")
-mutations = re.findall(r"db\\.prepare\\(\\x60([\\s\\S]*?)\\x60\\)\\.bind", life)
+mutations = re.findall(r"db\.prepare\(\x60([\s\S]*?)\x60\)\.bind", life)
 assert len(mutations) == 4
 DB.execute(mutations[1], ("__REDACTED__", NOW))
 assert eligible(ORDERS["new"], expired) is None
