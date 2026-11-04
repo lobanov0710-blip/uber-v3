@@ -1,3 +1,5 @@
+import { PASSENGER_PUSH_REDACTED_TOKEN } from "./passengerPushLifecycle.js";
+
 // Storage only. Caller MUST authenticate a dedicated passenger_push:manage
 // grant. No public endpoints, no FCM sending, no staff session access.
 // No token/PII is emitted to logs or returned through public APIs.
@@ -63,12 +65,16 @@ export async function revokePassengerPushDevice(env, orderId, installationId, no
   if (!validUuid(orderId) || !validUuid(installationId) || !validMillis(now)) {
     throw new Error("Invalid passenger push revoke");
   }
+  // Keep the standalone internal helper consistent with the transactional API:
+  // never leave an already-revoked plaintext FCM token behind.
   const result = await requiredDatabase(env).prepare(`
     UPDATE passenger_push_devices
-       SET revoked_at = ?3
+       SET revoked_at = COALESCE(revoked_at, ?3),
+           fcm_token = ?4,
+           updated_at = MAX(updated_at, ?3)
      WHERE installation_id = ?1 AND order_id = ?2
-       AND revoked_at IS NULL
-  `).bind(installationId, orderId, now).run();
+       AND (revoked_at IS NULL OR fcm_token <> ?4)
+  `).bind(installationId, orderId, now, PASSENGER_PUSH_REDACTED_TOKEN).run();
 
   if (result?.success !== true) throw new Error("Passenger push revoke failed");
   const changes = result?.meta?.changes;

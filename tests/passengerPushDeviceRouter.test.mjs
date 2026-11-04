@@ -75,8 +75,12 @@ function database() {
         }
       } else {
         assert.match(write.sql, /UPDATE passenger_push_devices/);
-        if (previous && previous.order === order && !previous.revoked) {
-          previous.revoked = true; changes = 1;
+        assert.equal(write.args[3], "__REDACTED__");
+        if (previous && previous.order === order
+            && (!previous.revoked || previous.token !== "__REDACTED__")) {
+          previous.revoked = true;
+          previous.token = write.args[3];
+          changes = 1;
         }
       }
       used.add(id);
@@ -153,6 +157,7 @@ await test("new grant revokes only own installation and prevents reinsertion", a
   }), { ...envBase, DB: db.DB });
   assert.equal(revoked.status, 200);
   assert.equal(db.devices.get(INSTALL).revoked, true);
+  assert.equal(db.devices.get(INSTALL).token, "__REDACTED__");
   assert.equal((await router(await signedRequest("POST", {
     grantToken: await grant(), platform: "android", token: "fcm-replay"
   }), { ...envBase, DB: db.DB })).status, 409);

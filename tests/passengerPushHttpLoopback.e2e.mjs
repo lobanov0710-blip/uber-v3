@@ -258,6 +258,7 @@ async function run() {
       grantToken: narrowRevoke
     })).status, 200);
     assert.notEqual(DB.device().revoked_at, null);
+    assert.equal(DB.device().fcm_token, "__REDACTED__");
 
     assert.equal((await post(deviceUrl, "POST", {
       grantToken: await grant(), platform: "android", token: "must-fail"

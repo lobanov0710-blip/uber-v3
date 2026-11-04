@@ -161,11 +161,26 @@ await test("revoke SQL retains tombstone and scopes by order + installation", as
   const result = await unregisterPassengerDevice({ ...env, DB }, await grant());
   assert.deepEqual(result, { ok: true });
   assert.match(calls[1].sql, /UPDATE passenger_push_devices/i);
-  assert.match(calls[1].sql, /SET revoked_at = \?3/i);
+  assert.match(calls[1].sql, /SET revoked_at = COALESCE\(revoked_at, \?3\)/i);
+  assert.match(calls[1].sql, /fcm_token = \?4/i);
   assert.match(calls[1].sql, /installation_id = \?1 AND order_id = \?2/i);
-  assert.match(calls[1].sql, /revoked_at IS NULL/i);
+  assert.match(calls[1].sql, /revoked_at IS NULL OR fcm_token <> \?4/i);
   assert.equal(calls[1].args[0], INSTALL_A);
   assert.equal(calls[1].args[1], ORDER_A);
+  assert.equal(calls[1].args[3], "__REDACTED__");
+  assert.equal(calls[0].args[0] !== calls[1].args[0], true);
+});
+
+await test("standalone repository revoke redacts token and preserves ownership", async () => {
+  const { DB, calls } = createDb(1);
+  assert.deepEqual(await revokePassengerPushDevice(
+    { DB }, ORDER_A, INSTALL_A, now
+  ), { ok: true });
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].sql, /fcm_token = \?4/i);
+  assert.match(calls[0].sql, /COALESCE\(revoked_at, \?3\)/i);
+  assert.match(calls[0].sql, /installation_id = \?1 AND order_id = \?2/i);
+  assert.deepEqual(calls[0].args, [INSTALL_A, ORDER_A, now, "__REDACTED__"]);
 });
 
 await test("revoke is idempotent if no matching row", async () => {

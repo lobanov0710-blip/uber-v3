@@ -77,11 +77,17 @@ export async function revokePassengerPushOnce(env, principal, now) {
   const grantClaim = claim(db, principal, now);
   const revoke = db.prepare(`
     UPDATE passenger_push_devices
-       SET revoked_at = ?3
-     WHERE installation_id = ?1 AND order_id = ?2 AND revoked_at IS NULL
-  `).bind(principal.installationId, principal.orderId, now);
-  // No existing device is an acceptable idempotent revoke. But grant jti
-  // must still be consumed exactly once even when no row matched.
+       SET revoked_at = COALESCE(revoked_at, ?3),
+           fcm_token = ?4,
+           updated_at = MAX(updated_at, ?3)
+     WHERE installation_id = ?1 AND order_id = ?2
+       AND (revoked_at IS NULL OR fcm_token <> ?4)
+  `).bind(principal.installationId, principal.orderId, now,
+    PASSENGER_PUSH_REDACTED_TOKEN);
+  // Revoke and redact in the SAME transaction as the one-use grant claim.
+  // An old, already revoked plaintext token is also redacted by a fresh
+  // valid grant; the previous tombstone timestamp is preserved.
+  // No matching row remains an idempotent revoke, but still consumes jti.
   await db.batch([grantClaim, revoke]).then(validateBatch);
   return true;
 }
