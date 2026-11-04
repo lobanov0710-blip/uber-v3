@@ -31,11 +31,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Checkout pinned, unmerged PHP gateway PR 8
+      - name: Checkout pinned, unmerged PHP revoke-only gateway PR 9
         uses: actions/checkout@v4
         with:
           repository: lobanov0710-blip/public_html
-          ref: 27e0a8a32a096fcb4b2268e45cac7dc74d3b0a6e
+          ref: 4d67bfe981bd31a0c942b58fb37ba7284415167b
           path: _contract_php
           persist-credentials: false
       - name: Configure Node 24 SQLite
@@ -52,8 +52,12 @@ jobs:
           fi
           php -r 'if (!extension_loaded("curl")) { exit(1); }'
           php -l _contract_php/api/_passenger_push_proxy_auth.php
+          php -l _contract_php/api/_passenger_push_grant_validation.php
+          php -l _contract_php/tests/passengerPushGrantValidation.test.php
           php -l _contract_php/api/passenger-push-grant.php
           php -l _contract_php/api/passenger-push-device.php
+      - name: Validate PHP revoke-only request contract offline
+        run: php _contract_php/tests/passengerPushGrantValidation.test.php
       - name: WAF proposed rule must match only two passenger endpoints
         run: node tests/passengerPushWafScope.test.mjs
       - name: Actual loopback HTTP PHP handlers and local Worker SQL
