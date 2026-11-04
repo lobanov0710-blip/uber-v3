@@ -1,7 +1,7 @@
 import { signJWT } from "./auth.js";
 import { verifyPassengerOrderAccess } from "./passengerOrderAccess.js";
 import { getOrderById } from "./orderRepository.js";
-import { PASSENGER_PUSH_SCOPE } from "./passengerPushGrant.js";
+import { PASSENGER_PUSH_SCOPE, PASSENGER_PUSH_REVOKE_SCOPE } from "./passengerPushGrant.js";
 import { allowPassengerPushGrant } from "./passengerPushRateLimit.js";
 
 // Only a time-limited, order-scoped grant is minted here. The existing
@@ -10,6 +10,7 @@ import { allowPassengerPushGrant } from "./passengerPushRateLimit.js";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GRANT_TTL_SECONDS = 120;
 const ACTIVE_STATUSES = new Set(["new", "taken", "in_progress"]);
+const TERMINAL_STATUSES = new Set(["done", "canceled"]);
 
 const forbidden = () => ({ ok: false, status: 403, error: "forbidden" });
 const unavailable = () => ({ ok: false, status: 503, error: "passenger push unavailable" });
@@ -29,12 +30,18 @@ export async function issuePassengerPushGrant(env, input) {
     return unavailable();
   }
   if (!input || typeof input !== "object" || Array.isArray(input)
-      || Object.keys(input).length !== 2
       || !Object.hasOwn(input, "accessToken")
-      || !Object.hasOwn(input, "installationId")) {
+      || !Object.hasOwn(input, "installationId")
+      || !(Object.keys(input).length === 2
+        || (Object.keys(input).length === 3
+          && Object.hasOwn(input, "operation")
+          && input.operation === "revoke"))) {
     return badRequest();
   }
 
+  // Backwards-compatible 2-field form remains manage-only.
+  // The explicit 3-field revoke request can NEVER mint a manage grant.
+  const revokeOnly = input.operation === "revoke";
   const { accessToken, installationId } = input;
   if (typeof accessToken !== "string"
       || accessToken.length < 1 || accessToken.length > 8192
@@ -60,7 +67,8 @@ export async function issuePassengerPushGrant(env, input) {
   }
 
   if (!order || order.id.toLowerCase() !== access.orderId.toLowerCase()
-      || !ACTIVE_STATUSES.has(order.status)) {
+      || !(ACTIVE_STATUSES.has(order.status)
+        || (revokeOnly && TERMINAL_STATUSES.has(order.status)))) {
     return forbidden();
   }
 
@@ -77,7 +85,7 @@ export async function issuePassengerPushGrant(env, input) {
 
   const signed = await signJWT(env.PASSENGER_PUSH_GRANT_SECRET, {
     sub: order.id.toLowerCase(),
-    scope: PASSENGER_PUSH_SCOPE,
+    scope: revokeOnly ? PASSENGER_PUSH_REVOKE_SCOPE : PASSENGER_PUSH_SCOPE,
     installationId: installationId.toLowerCase(),
     jti: crypto.randomUUID()
   }, GRANT_TTL_SECONDS);
