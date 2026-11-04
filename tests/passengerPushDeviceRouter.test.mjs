@@ -96,6 +96,7 @@ async function grant(jti = crypto.randomUUID(), extra = {}) {
     scope: PASSENGER_PUSH_SCOPE,
     sub: ORDER,
     installationId: INSTALL,
+    readExpiresAt: (Math.floor(Date.now() / 1000) + 1800) * 1000,
     jti, ...extra
   }, 120);
 }
