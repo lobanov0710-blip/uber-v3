@@ -52,7 +52,9 @@ export async function registerPassengerDevice(env, grantToken, input, now = Date
 }
 
 export async function unregisterPassengerDevice(env, grantToken, now = Date.now()) {
-  const principal = await verifyPassengerPushGrant(env, grantToken, now);
+  // DELETE accepts the narrow revoke-only scope, but POST remains manage-only.
+  // Legacy manage-grant DELETE is accepted for backwards compatibility.
+  const principal = await verifyPassengerPushGrant(env, grantToken, now, true);
   if (!principal) return forbidden();
   try {
     await revokePassengerPushOnce(env, principal, now);
