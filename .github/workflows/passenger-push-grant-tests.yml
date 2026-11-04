@@ -42,5 +42,7 @@ jobs:
         run: python3 tests/passengerPushLifecycle.sqlite.py
       - name: Passenger FCM delivery eligibility SQLite integration (no sending)
         run: python3 tests/passengerPushEligibility.sqlite.py
+      - name: Bounded manual FCM redaction SQLite regression (no remote DB)
+        run: python3 tests/passengerPushMaintenanceBatch.sqlite.py
       - name: Nonce replay uniqueness and cleanup on SQLite
         run: python3 tests/passengerPushNonce.sqlite.py
