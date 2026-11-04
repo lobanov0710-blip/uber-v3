@@ -101,6 +101,7 @@ await test("authorized grant uses only order from verified passenger read token"
   assert.equal(calls.length, 2);
   assert.equal(calls[0].args[0], ID_A);
   assert.equal(calls[1].args[1], ID_A);
+  assert.equal(calls[1].args[4], 4);
   const verified = await verifyPassengerPushGrant(env, result.grantToken);
   assert.equal(verified.orderId, ID_A);
   assert.equal(verified.installationId, INSTALL);
@@ -115,6 +116,7 @@ await test("revoke-only grants are distinct and possible after a terminal order"
       accessToken: await readToken(), installationId: INSTALL, operation: "revoke"
     });
     assert.equal(issued.ok, true, "status=" + status + " reason=" + issued.error);
+    assert.equal(calls[calls.length - 1].args[4], 5);
     assert.equal(await verifyPassengerPushGrant(env, issued.grantToken), null);
     const principal = await verifyPassengerPushGrant(
       env, issued.grantToken, Date.now(), true
