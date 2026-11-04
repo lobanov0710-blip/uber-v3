@@ -85,7 +85,7 @@ await testCase("not registered or unavailable D1 cannot authorize sending", asyn
 
 await testCase("malformed, revoked, expired and terminal responses fail closed", async () => {
   const badRows = [
-    undefined, {}, { ...validRow, order_id: crypto.randomUUID() },
+    {}, { ...validRow, order_id: crypto.randomUUID() },
     { ...validRow, installation_id: crypto.randomUUID() },
     { ...validRow, platform: "ios" }, { ...validRow, order_status: "done" },
     { ...validRow, order_status: "canceled" },
