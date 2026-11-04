@@ -75,7 +75,9 @@ export async function issuePassengerPushGrant(env, input) {
   // Fail-closed issuance quota, atomically checked against D1.
   let allowed;
   try {
-    allowed = await allowPassengerPushGrant(env, order.id);
+    allowed = await allowPassengerPushGrant(
+      env, order.id, Date.now(), revokeOnly ? "revoke" : "manage"
+    );
   } catch {
     return unavailable();
   }
