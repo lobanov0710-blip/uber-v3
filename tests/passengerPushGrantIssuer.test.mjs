@@ -108,6 +108,52 @@ await test("authorized grant uses only order from verified passenger read token"
   assert.ok(verified.expiresAt <= Date.now() + 122_000);
 });
 
+await test("revoke-only grants are distinct and possible after a terminal order", async () => {
+  for (const status of ["new", "done", "canceled"]) {
+    const env = { ...baseEnv, DB: database(orderRow(ID_A, status)) };
+    const issued = await issuePassengerPushGrant(env, {
+      accessToken: await readToken(), installationId: INSTALL, operation: "revoke"
+    });
+    assert.equal(issued.ok, true, "status=" + status + " reason=" + issued.error);
+    assert.equal(await verifyPassengerPushGrant(env, issued.grantToken), null);
+    const principal = await verifyPassengerPushGrant(
+      env, issued.grantToken, Date.now(), true
+    );
+    assert.equal(principal.orderId, ID_A);
+    assert.equal(principal.installationId, INSTALL);
+  }
+  const terminalEnv = { ...baseEnv, DB: database(orderRow(ID_A, "done")) };
+  assert.equal((await issuePassengerPushGrant(terminalEnv, {
+    accessToken: await readToken(), installationId: INSTALL
+  })).status, 403);
+});
+
+await test("revoke-only request rejects extra and forged operation values", async () => {
+  const token = await readToken();
+  const env = { ...baseEnv, DB: database() };
+  for (const invalid of [
+    { accessToken: token, installationId: INSTALL, operation: "manage" },
+    { accessToken: token, installationId: INSTALL, operation: "register" },
+    { accessToken: token, installationId: INSTALL, operation: "" },
+    { accessToken: token, installationId: INSTALL, operation: null },
+    { accessToken: token, installationId: INSTALL, operation: "revoke", orderId: ID_A }
+  ]) {
+    assert.equal((await issuePassengerPushGrant(env, invalid)).status, 400);
+  }
+});
+
+await test("HMAC signed revoke-only request returns only narrow scope", async () => {
+  const env = { ...baseEnv, DB: database(orderRow(ID_A, "canceled")) };
+  const response = await router(await request({
+    accessToken: await readToken(), installationId: INSTALL, operation: "revoke"
+  }), env);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  const grant = (await response.json()).grantToken;
+  assert.equal(await verifyPassengerPushGrant(env, grant), null);
+  assert.equal((await verifyPassengerPushGrant(env, grant, Date.now(), true)).orderId, ID_A);
+});
+
 await test("wrong read token scope and another order fail without exposing information", async () => {
   const cases = [
     [await readToken(ID_B), 403, 1],
