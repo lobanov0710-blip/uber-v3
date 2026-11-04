@@ -158,6 +158,32 @@ await test("new grant revokes only own installation and prevents reinsertion", a
   }), { ...envBase, DB: db.DB })).status, 409);
 });
 
+await test("revoke-only scope can DELETE but is strictly forbidden for POST", async () => {
+  const db = database();
+  const revokeOnly = await grant(crypto.randomUUID(), {
+    scope: "passenger_push:revoke"
+  });
+  const attemptedRegistration = await router(await signedRequest("POST", {
+    grantToken: revokeOnly, platform: "android", token: "do-not-store"
+  }), { ...envBase, DB: db.DB });
+  assert.equal(attemptedRegistration.status, 403);
+  assert.equal(db.used.size, 0);
+  assert.equal(db.devices.size, 0);
+
+  const deleted = await router(await signedRequest("DELETE", {
+    grantToken: revokeOnly
+  }), { ...envBase, DB: db.DB });
+  assert.equal(deleted.status, 200);
+  assert.equal(db.used.size, 1);
+  assert.equal(db.devices.size, 0);
+
+  const duplicate = await router(await signedRequest("DELETE", {
+    grantToken: revokeOnly
+  }), { ...envBase, DB: db.DB });
+  assert.equal(duplicate.status, 409);
+  assert.equal(db.used.size, 1);
+});
+
 await test("missing flags and missing HMAC fail before any D1 operation", async () => {
   const db = database(), data = {
     grantToken: await grant(), platform: "android", token: "fcm"
