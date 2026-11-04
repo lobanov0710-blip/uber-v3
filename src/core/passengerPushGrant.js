@@ -4,10 +4,11 @@ import { verifyJWT } from "./auth.js";
 // separate credential issuer must first verify passenger_order:read ownership.
 // NEVER treat a read-only passenger order capability as a write grant.
 export const PASSENGER_PUSH_SCOPE = "passenger_push:manage";
+export const PASSENGER_PUSH_REVOKE_SCOPE = "passenger_push:revoke";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_GRANT_SECONDS = 300;
 
-export async function verifyPassengerPushGrant(env, token, now = Date.now()) {
+export async function verifyPassengerPushGrant(env, token, now = Date.now(), allowRevokeOnly = false) {
   const secret = env?.PASSENGER_PUSH_GRANT_SECRET;
   const isDistinct = typeof secret === "string" && secret.length >= 32
     && [env?.PASSENGER_ORDER_SECRET, env?.JWT_SECRET, env?.PROXY_HMAC_SECRET]
@@ -18,7 +19,8 @@ export async function verifyPassengerPushGrant(env, token, now = Date.now()) {
   }
 
   const payload = await verifyJWT(secret, token);
-  if (!payload || payload.scope !== PASSENGER_PUSH_SCOPE
+  if (!payload || (payload.scope !== PASSENGER_PUSH_SCOPE
+    && !(allowRevokeOnly && payload.scope === PASSENGER_PUSH_REVOKE_SCOPE))
     || typeof payload.sub !== "string"
     || typeof payload.installationId !== "string"
     || !UUID.test(payload.sub) || !UUID.test(payload.installationId)

@@ -108,6 +108,7 @@ function temporaryPhp(temp, port) {
   mkdirSync(api, { recursive: true });
   mkdirSync(privateDir, { recursive: true });
   const files = ["_proxy_auth.php", "_passenger_push_proxy_auth.php",
+    "_passenger_push_grant_validation.php",
     "passenger-push-grant.php", "passenger-push-device.php"];
   for (const file of files) {
     let src = readFileSync(path.join("_contract_php", "api", file), "utf8");
@@ -212,10 +213,10 @@ async function run() {
 
     const readToken = await signJWT(READ_KEY,
       { sub: ORDER, scope: "passenger_order:read" }, 1800);
-    async function grant() {
-      const response = await post(grantUrl, "POST", {
-        accessToken: readToken, installationId: INSTALL
-      });
+    async function grant(operation = null) {
+      const body = { accessToken: readToken, installationId: INSTALL };
+      if (operation !== null) body.operation = operation;
+      const response = await post(grantUrl, "POST", body);
       assert.equal(response.status, 200, "Expected new grant");
       assert.equal(typeof response.body.grantToken, "string");
       return response.body.grantToken;
@@ -233,8 +234,17 @@ async function run() {
     })).status, 409);
     assert.equal(DB.device().fcm_token, "test-only-fcm-not-real");
 
+    // A narrow revoke-only JWT must fail POST without consuming its jti.
+    assert.equal((await post(grantUrl, "POST", {
+      accessToken: readToken, installationId: INSTALL, operation: "manage"
+    })).status, 400);
+    const narrowRevoke = await grant("revoke");
+    assert.equal((await post(deviceUrl, "POST", {
+      grantToken: narrowRevoke, platform: "android", token: "cannot-enroll"
+    })).status, 403);
+    assert.equal(DB.device().fcm_token, "test-only-fcm-not-real");
     assert.equal((await post(deviceUrl, "DELETE", {
-      grantToken: await grant()
+      grantToken: narrowRevoke
     })).status, 200);
     assert.notEqual(DB.device().revoked_at, null);
 
