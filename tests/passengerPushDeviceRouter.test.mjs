@@ -44,7 +44,7 @@ function database() {
           if (/INSERT INTO passenger_push_grant_events/.test(sql)) {
             const now = entry.args[2], cutoff = entry.args[3];
             const inWindow = rateTimes.filter(time => time > cutoff).length;
-            if (inWindow >= 5) return { success: true, meta: { changes: 0 } };
+            if (inWindow >= entry.args[4]) return { success: true, meta: { changes: 0 } };
             rateTimes.push(now);
           }
           return { success: true, meta: { changes: 1 } };
@@ -245,16 +245,22 @@ await test("identical HMAC nonce replay is rejected before grant consumption", a
   assert.equal(db.devices.get(INSTALL).token, "fcm");
 });
 
-await test("atomic D1 rate limiter allows 5 grants per order per minute", async () => {
+await test("atomic five-total quota reserves one revoke slot after four manage", async () => {
   const db = database();
-  for (let i = 0; i < 5; i++) {
-    assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700000000 + i), true);
+  const t = 1793700000000;
+  for (let i = 0; i < 4; i++) {
+    assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, t + i), true);
   }
-  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700000006), false);
-  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700059999), false);
-  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700060000), true);
-  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700060000), false);
-  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, 1793700060100), true);
+  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, t + 4), false);
+  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, t + 5, "revoke"), true);
+  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, t + 6, "revoke"), false);
+  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, t + 7, "manage"), false);
+  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, t + 60000, "manage"), false);
+  assert.equal(await allowPassengerPushGrant({ DB: db.DB }, ORDER, t + 60000, "revoke"), true);
+  await assert.rejects(
+    () => allowPassengerPushGrant({ DB: db.DB }, ORDER, t + 60001, "invalid"),
+    /invalid purpose/
+  );
 });
 
 if (!process.exitCode) console.log("✓ PASSENGER PUSH DEVICE ROUTER AND RATE TESTS PASSED");
