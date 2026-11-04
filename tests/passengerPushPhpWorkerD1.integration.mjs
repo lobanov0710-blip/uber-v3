@@ -267,6 +267,8 @@ try {
     });
     assert.equal(revoke.status, 200);
     assert.notEqual(DB.device(INSTALL_A).revoked_at, null);
+    // FCM credential is destroyed in the SAME D1 transaction as revoke.
+    assert.equal(DB.device(INSTALL_A).fcm_token, PASSENGER_PUSH_REDACTED_TOKEN);
     const newGrant = await createGrant(env);
     const refused = await dispatch(env, "/passenger/push-device", "POST", {
       grantToken: newGrant, platform: "android", token: "should-never-register"
