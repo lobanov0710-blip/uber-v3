@@ -97,7 +97,7 @@ assert DB.execute(
 # Revoke is transactionally tied to another fresh grant, retaining tombstone.
 DB.execute("BEGIN")
 DB.execute(claim, (G3, ID, INSTALL, now+3))
-assert DB.execute(revoke, (INSTALL, ID, now+3)).rowcount == 1
+assert DB.execute(revoke, (INSTALL, ID, now+3, "__REDACTED__")).rowcount == 1
 DB.execute("COMMIT")
 assert transactional_register(G3, "replay-after-revoke", now+4) is None
 
@@ -107,7 +107,26 @@ assert transactional_register("540ab589-6489-4331-a5d8-804becdfb271",
 assert DB.execute(
     "SELECT fcm_token, revoked_at FROM passenger_push_devices "
     "WHERE installation_id=?", (INSTALL,)
-).fetchone() == ("fcm-rotated", now+3)
+).fetchone() == ("__REDACTED__", now+3)
+
+# A previously revoked plaintext token from before this change must also
+# be redacted on a fresh authorized revoke, keeping the original tombstone.
+DB.execute("UPDATE passenger_push_devices SET fcm_token='legacy-plaintext' "
+           "WHERE installation_id=?", (INSTALL,))
+DB.commit()
+DB.execute("BEGIN")
+DB.execute(claim, ("9bcb0bb4-ac7a-4dc6-a4c0-10f888e0fae2", ID, INSTALL, now+6))
+assert DB.execute(revoke, (INSTALL, ID, now+6, "__REDACTED__")).rowcount == 1
+DB.execute("COMMIT")
+assert DB.execute(
+    "SELECT fcm_token, revoked_at FROM passenger_push_devices "
+    "WHERE installation_id=?", (INSTALL,)
+).fetchone() == ("__REDACTED__", now+3)
+# A further idempotent revoke cannot resurrect or duplicate the tombstone.
+DB.execute("BEGIN")
+DB.execute(claim, ("bdc11db6-6943-425c-8bdd-0349083f472c", ID, INSTALL, now+7))
+assert DB.execute(revoke, (INSTALL, ID, now+7, "__REDACTED__")).rowcount == 0
+DB.execute("COMMIT")
 
 assert DB.execute("SELECT COUNT(*) FROM staff_push_devices").fetchone() == (0,)
 assert DB.execute("PRAGMA foreign_key_check").fetchall() == []
