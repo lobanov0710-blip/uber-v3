@@ -211,6 +211,15 @@ async function run() {
       accessToken: "invalid", installationId: INSTALL
     })).status, 403);
 
+    // Signed-but-expired read capability may not obtain a revoke grant.
+    // A fractional TTL rounds down to an already-expired JWT.
+    const expired = await signJWT(READ_KEY,
+      { sub: ORDER, scope: "passenger_order:read" }, 0.5);
+    assert.equal((await post(grantUrl, "POST", {
+      accessToken: expired, installationId: INSTALL, operation: "revoke"
+    })).status, 403);
+    assert.equal(DB.scalar("passenger_push_grant_events"), 0);
+
     const readToken = await signJWT(READ_KEY,
       { sub: ORDER, scope: "passenger_order:read" }, 1800);
     async function grant(operation = null) {
@@ -255,9 +264,21 @@ async function run() {
     assert.equal(DB.scalar("orders"), 1);
     assert.equal(DB.scalar("staff_push_devices"), 0);
     assert.equal(DB.scalar("passenger_push_grant_uses"), 3);
+    // Three existing grants (manage, revoke, manage) + one more manage = four.
+    assert.equal(typeof (await grant()), "string");
+    assert.equal((await post(grantUrl, "POST", {
+      accessToken: readToken, installationId: INSTALL
+    })).status, 429);
+    // The fifth grant remains reserved exclusively for a narrow revoke.
+    assert.equal(typeof (await grant("revoke")), "string");
+    assert.equal((await post(grantUrl, "POST", {
+      accessToken: readToken, installationId: INSTALL, operation: "revoke"
+    })).status, 429);
+    assert.equal(DB.scalar("passenger_push_grant_events"), 5);
+    assert.equal(DB.scalar("passenger_push_grant_uses"), 3);
     assert.equal(DB.db.prepare("SELECT status FROM orders WHERE id=?")
       .get(ORDER).status, "new");
-    console.log("PUSH_01G_ACTUAL_PHP_HTTP_WORKER_SQLITE=PASS");
+    console.log("PUSH_01J_LOCAL_HTTP_QUOTA_AND_EXPIRED_READ=PASS");
   } finally {
     if (php && php.exitCode === null) php.kill("SIGTERM");
     if (worker.listening) await new Promise(done => worker.close(done));
