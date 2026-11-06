@@ -71,6 +71,9 @@ import {
   notifyActiveDriversOfNewOrder
 } from "./core/staffPushNotificationService.js";
 
+import {
+  notifyDriversOfOrderStatusChange
+} from "./core/staffOrderStatusNotificationService.js";
 
 // =========================
 // ROUTER
@@ -185,7 +188,7 @@ export default async function router(
   }
 
 
-    // =========================
+  // =========================
   // STAFF LOGIN
   // =========================
   //
@@ -1969,6 +1972,57 @@ export default async function router(
 
 
     // =========================
+    // ORDER STATUS PUSH
+    // =========================
+    //
+    // Only successful authoritative D1
+    // transitions can schedule an event.
+    //
+    // taken:
+    //   invalidate stale new-order alerts.
+    //
+    // canceled:
+    //   notify assigned driver, or invalidate
+    //   an unassigned new order for everyone.
+    //
+    // Delivery is best effort and must never
+    // turn a successful transition into an
+    // HTTP failure.
+    // =========================
+
+    if (
+      (
+        transitionedOrder.status ===
+          "taken"
+        ||
+        transitionedOrder.status ===
+          "canceled"
+      )
+      &&
+      executionContext
+      &&
+      typeof executionContext.waitUntil ===
+        "function"
+    ) {
+
+      executionContext.waitUntil(
+        notifyDriversOfOrderStatusChange(
+          env,
+          transitionedOrder
+        )
+          .catch(
+            () => {
+
+              console.error(
+                "ORDER STATUS PUSH DELIVERY ERROR"
+              );
+            }
+          )
+      );
+    }
+
+
+    // =========================
     // RESPONSE
     // =========================
     //
@@ -2167,7 +2221,8 @@ export default async function router(
           executionContext.waitUntil(
             notifyActiveDriversOfNewOrder(
               env,
-              result.order.id
+              result.order.id,
+              result.order.updatedAt
             )
               .catch(
                 () => {

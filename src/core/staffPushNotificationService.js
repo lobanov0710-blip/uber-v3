@@ -11,8 +11,9 @@ import { isStagingEnvironment } from "./deploymentEnvironment.js";
 // - Repository selects only active driver
 //   accounts with an active session in the
 //   registered session family.
-// - FCM payload contains only event type
-//   and order UUID. No passenger PII.
+// - FCM payload contains only routing
+//   metadata: event type, order UUID and
+//   authoritative updatedAt. No passenger PII.
 // - FCM tokens are never logged.
 // =========================================
 
@@ -56,7 +57,8 @@ function cleanOrderId(
 
 export async function notifyActiveDriversOfNewOrder(
   env,
-  orderId
+  orderId,
+  updatedAt
 ) {
 
   const normalizedOrderId =
@@ -69,6 +71,26 @@ export async function notifyActiveDriversOfNewOrder(
 
     throw new Error(
       "Invalid order id for push delivery"
+    );
+  }
+
+
+  const timestamp =
+    Number(
+      updatedAt
+    );
+
+
+  if (
+    !Number.isSafeInteger(
+      timestamp
+    )
+    ||
+    timestamp <= 0
+  ) {
+
+    throw new Error(
+      "Invalid order updatedAt for push delivery"
     );
   }
 
@@ -126,7 +148,12 @@ export async function notifyActiveDriversOfNewOrder(
                     "new_order",
 
                   orderId:
-                    normalizedOrderId
+                    normalizedOrderId,
+
+                  updatedAt:
+                    String(
+                      timestamp
+                    )
                 }
               );
 
