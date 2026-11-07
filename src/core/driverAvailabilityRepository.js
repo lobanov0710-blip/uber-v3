@@ -7,6 +7,10 @@ import {
   prepareMutationIdempotencyComplete
 } from "./mutationIdempotencyRepository.js";
 
+import {
+  PHOTO_CONTROL_GRACE_MS
+} from "./photoControlSchedule.js";
+
 
 function requireDatabase(env) {
   if (!env?.DB) {
@@ -197,8 +201,14 @@ export async function getOwnedVehicleEligibility(
           v.id,
           v.driver_id,
           v.status,
+          v.next_photo_check_due_at,
 
-          EXISTS (
+          (
+            (
+              v.next_photo_check_due_at IS NOT NULL
+              AND v.next_photo_check_due_at + ?4 < ?3
+            )
+            OR EXISTS (
             SELECT 1
             FROM vehicle_photo_checks pc
             WHERE pc.vehicle_id = v.id
@@ -222,6 +232,7 @@ export async function getOwnedVehicleEligibility(
                   )
                 )
               )
+          )
           ) AS photo_control_blocked,
 
           EXISTS (
@@ -251,7 +262,8 @@ export async function getOwnedVehicleEligibility(
           driverId,
           "driverId"
         ),
-        timestamp
+        timestamp,
+        PHOTO_CONTROL_GRACE_MS
       )
       .first();
 
@@ -457,30 +469,40 @@ export async function updateDriverAvailability(
 
           AND (
             ?4 = 'off_line'
-            OR NOT EXISTS (
-              SELECT 1
-              FROM vehicle_photo_checks pc
-              WHERE pc.vehicle_id = ?3
-                AND (
-                  pc.result IN (
-                    'failed',
-                    'manual_review'
-                  )
-                  OR (
-                    pc.result = 'pending'
-                    AND (
-                      pc.restriction_mode IN (
-                        'after_current_trip',
-                        'immediate'
-                      )
-                      OR (
-                        pc.restriction_mode =
-                          'grace_period'
-                        AND pc.grace_until < ?5
+            OR (
+              NOT EXISTS (
+                SELECT 1
+                FROM vehicle_photo_checks pc
+                WHERE pc.vehicle_id = ?3
+                  AND (
+                    pc.result IN (
+                      'failed',
+                      'manual_review'
+                    )
+                    OR (
+                      pc.result = 'pending'
+                      AND (
+                        pc.restriction_mode IN (
+                          'after_current_trip',
+                          'immediate'
+                        )
+                        OR (
+                          pc.restriction_mode =
+                            'grace_period'
+                          AND pc.grace_until < ?5
+                        )
                       )
                     )
                   )
-                )
+              )
+
+              AND NOT EXISTS (
+                SELECT 1
+                FROM vehicles v
+                WHERE v.id = ?3
+                  AND v.next_photo_check_due_at IS NOT NULL
+                  AND v.next_photo_check_due_at + ?10 < ?5
+              )
             )
           )
 
@@ -534,7 +556,8 @@ export async function updateDriverAvailability(
         requireText(
           idempotency.claimId,
           "claimId"
-        )
+        ),
+        PHOTO_CONTROL_GRACE_MS
       );
 
 
