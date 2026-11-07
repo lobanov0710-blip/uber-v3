@@ -469,18 +469,24 @@ test(
         "order_done_123"
       );
 
-    assert.deepEqual(
-      audit,
-      {
-        actor_account_id:
-          DRIVER.id,
-        action:
-          "driver.order_completed",
-        outcome:
-          "success",
-        request_id:
-          "req_done_1"
-      }
+    assert.equal(
+      audit.actor_account_id,
+      DRIVER.id
+    );
+
+    assert.equal(
+      audit.action,
+      "driver.order_completed"
+    );
+
+    assert.equal(
+      audit.outcome,
+      "success"
+    );
+
+    assert.equal(
+      audit.request_id,
+      "req_done_1"
     );
 
     const replay =
