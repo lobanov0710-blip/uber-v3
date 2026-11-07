@@ -617,6 +617,33 @@ function createTransitionDatabase(
         async first() {
 
           // =========================
+          // OWNER BINDING
+          // =========================
+
+          if (
+            /FROM staff_owner_binding/i.test(
+              sql
+            )
+          ) {
+
+            return (
+              role === "admin"
+              &&
+              String(
+                call.args[0] ??
+                ""
+              ) ===
+                staffId
+            )
+              ? {
+                  account_id:
+                    staffId
+                }
+              : null;
+          }
+
+
+          // =========================
           // STAFF ACCOUNT
           // =========================
 
