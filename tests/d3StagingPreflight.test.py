@@ -79,6 +79,9 @@ def staging_config() -> dict:
         "vars": {
             "APP_ENV": "staging",
             "DRIVER_UPLOAD_MAX_BYTES": "10485760",
+            "FIREBASE_PROJECT_ID": "transfer-driver-staging",
+            "FIREBASE_PROJECT_NUMBER": "123456789012",
+            "FIREBASE_DRIVER_APP_ID": "1:123456789012:android:0123456789abcdef",
         },
     }
 
@@ -183,6 +186,27 @@ class D3StagingPreflightTest(
                 production_config(),
                 ROOT / "migrations",
             )
+
+
+    def test_missing_firebase_identity_bindings_are_blocked(
+        self
+    ):
+        for key in (
+            "FIREBASE_PROJECT_ID",
+            "FIREBASE_PROJECT_NUMBER",
+            "FIREBASE_DRIVER_APP_ID",
+        ):
+            config = staging_config()
+            del config["vars"][key]
+
+            with self.assertRaises(
+                MODULE.PreflightError
+            ):
+                MODULE.verify(
+                    config,
+                    production_config(),
+                    ROOT / "migrations",
+                )
 
 
     def test_secret_like_vars_and_custom_routes_are_blocked(
