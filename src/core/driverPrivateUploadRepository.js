@@ -83,6 +83,10 @@ function mapUpload(row) {
       row.vehicle_id == null
         ? null
         : clean(row.vehicle_id),
+    photoCheckId:
+      row.photo_check_id == null
+        ? null
+        : clean(row.photo_check_id),
     resourceType: clean(row.resource_type),
     kind: clean(row.kind),
     privateObjectKey: clean(row.private_object_key),
@@ -132,6 +136,7 @@ export async function getDriverUploadSession(
           id,
           driver_id,
           vehicle_id,
+          photo_check_id,
           resource_type,
           kind,
           private_object_key,
@@ -173,6 +178,7 @@ export async function insertDriverUploadSession(
           id,
           driver_id,
           vehicle_id,
+          photo_check_id,
           resource_type,
           kind,
           private_object_key,
@@ -195,6 +201,7 @@ export async function insertDriverUploadSession(
           ?8,
           ?9,
           ?10,
+          ?11,
           NULL,
           NULL,
           NULL
@@ -214,6 +221,12 @@ export async function insertDriverUploadSession(
           : requireText(
               upload.vehicleId,
               "vehicleId"
+            ),
+        upload.photoCheckId == null
+          ? null
+          : requireText(
+              upload.photoCheckId,
+              "photoCheckId"
             ),
         requireText(
           upload.resourceType,
@@ -498,7 +511,8 @@ export async function finalizeDriverUploadResource(
             private_object_key,
             status,
             created_at,
-            updated_at
+            updated_at,
+            photo_check_id
           )
 
           SELECT
@@ -508,7 +522,8 @@ export async function finalizeDriverUploadResource(
             private_object_key,
             'pending',
             ?5,
-            ?5
+            ?5,
+            photo_check_id
 
           FROM driver_upload_sessions
 
