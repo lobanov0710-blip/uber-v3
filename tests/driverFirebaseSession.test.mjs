@@ -281,6 +281,15 @@ const allowRateLimit =
       null
   });
 
+const verifyFirebaseAppCheckToken =
+  async () => ({
+    projectNumber:
+      "1234567890",
+
+    appId:
+      "1:1234567890:android:test"
+  });
+
 
 const env = {
   JWT_SECRET:
@@ -321,7 +330,12 @@ const created =
       verifyFirebaseIdToken,
 
       consumeRateLimit:
-        allowRateLimit
+        allowRateLimit,
+
+      appCheckToken:
+        "fake.app.check",
+
+      verifyFirebaseAppCheckToken
     }
   );
 
@@ -392,7 +406,12 @@ const replay =
       verifyFirebaseIdToken,
 
       consumeRateLimit:
-        allowRateLimit
+        allowRateLimit,
+
+      appCheckToken:
+        "fake.app.check",
+
+      verifyFirebaseAppCheckToken
     }
   );
 
@@ -501,7 +520,12 @@ const blocked =
       verifyFirebaseIdToken,
 
       consumeRateLimit:
-        allowRateLimit
+        allowRateLimit,
+
+      appCheckToken:
+        "fake.app.check",
+
+      verifyFirebaseAppCheckToken
     }
   );
 
@@ -543,7 +567,12 @@ const identityConflict =
       verifyFirebaseIdToken,
 
       consumeRateLimit:
-        allowRateLimit
+        allowRateLimit,
+
+      appCheckToken:
+        "fake.app.check",
+
+      verifyFirebaseAppCheckToken
     }
   );
 
@@ -556,6 +585,48 @@ assert.equal(
 assert.equal(
   identityConflict.code,
   "firebase_identity_conflict"
+);
+
+
+const missingAppCheck =
+  await exchangeDriverFirebaseSession(
+    {
+      ...env,
+      DB:
+        createFakeDb(
+          "new"
+        )
+    },
+    {
+      firebaseIdToken:
+        "missing.appcheck.firebase.token",
+
+      installationId:
+        INSTALLATION_ID
+    },
+    {
+      nowMs:
+        NOW_MS,
+
+      requestId:
+        "req_test_missing_app_check",
+
+      verifyFirebaseIdToken,
+
+      consumeRateLimit:
+        allowRateLimit
+    }
+  );
+
+
+assert.equal(
+  missingAppCheck.status,
+  401
+);
+
+assert.equal(
+  missingAppCheck.code,
+  "firebase_app_check_required"
 );
 
 
@@ -590,7 +661,12 @@ const invalidIdentity =
         },
 
       consumeRateLimit:
-        allowRateLimit
+        allowRateLimit,
+
+      appCheckToken:
+        "fake.app.check",
+
+      verifyFirebaseAppCheckToken
     }
   );
 
