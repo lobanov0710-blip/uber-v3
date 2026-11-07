@@ -888,6 +888,27 @@ test(
       1
     );
 
+    assert.equal(
+      cleanup.idempotencyDeleted,
+      1
+    );
+
+
+    assert.equal(
+      Number(
+        DB.sqlite.prepare(`
+          SELECT COUNT(*) AS n
+          FROM mutation_idempotency
+          WHERE actor_account_id = ?
+            AND operation =
+              'driver.support.message.create'
+        `).get(
+          driver.id
+        ).n
+      ),
+      0
+    );
+
 
     assert.equal(
       Number(
