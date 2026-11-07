@@ -1,0 +1,57 @@
+name: Approved D3 staging private R2 create
+
+on:
+  push:
+    branches:
+      - 'ops/d3-staging-approved-20261107'
+
+permissions:
+  contents: read
+
+jobs:
+  r2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      WRANGLER_SEND_METRICS: "false"
+
+    steps:
+      - name: Attempt approved private staging bucket creation
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          BUCKET='transfer-servis52-driver-private-staging'
+
+          set +e
+          OUTPUT="$(
+            npx --yes wrangler@4.156.0 r2 bucket create "$BUCKET" 2>&1
+          )"
+          STATUS=$?
+          set -e
+
+          printf '%s\n' "$OUTPUT"
+
+          if [[ "$STATUS" -ne 0 ]]; then
+            echo "STAGING_R2_CREATE=BLOCKED"
+            exit "$STATUS"
+          fi
+
+          echo "STAGING_R2_CREATE=PASS"
+          echo "STAGING_R2_BUCKET=$BUCKET"
+
+      - name: Verify bucket visibility
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npx --yes wrangler@4.156.0 r2 bucket list > /tmp/r2-list.txt
+
+          if ! grep -Fq 'transfer-servis52-driver-private-staging' /tmp/r2-list.txt; then
+            echo 'STAGING_R2_VERIFY=FAIL'
+            exit 20
+          fi
+
+          echo 'STAGING_R2_VERIFY=PASS'
