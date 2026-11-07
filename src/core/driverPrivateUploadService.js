@@ -9,10 +9,12 @@ import {
 } from "./driverRegistrationRepository.js";
 
 import {
-  commitDriverUploadResource,
+  claimDriverUploadSession,
+  finalizeDriverUploadResource,
   getDriverRegistrationMaterials,
   getDriverUploadSession,
   insertDriverUploadSession,
+  releaseDriverUploadClaim,
   submitDriverRegistration
 } from "./driverPrivateUploadRepository.js";
 
@@ -601,66 +603,145 @@ export async function completeDriverPrivateUpload(
     );
   }
 
+  const claimId =
+    createId(
+      "upload-claim"
+    );
+
+  const claim =
+    await claimDriverUploadSession(
+      env,
+      driver.id,
+      upload.id,
+      {
+        claimId,
+        claimedAt:
+          now
+      }
+    );
+
+  if (!claim.claimed) {
+
+    if (
+      claim.upload?.consumedAt !==
+        null
+      &&
+      claim.upload?.consumedAt !==
+        undefined
+    ) {
+      return conflict(
+        "upload_already_consumed"
+      );
+    }
+
+    if (
+      claim.upload?.expiresAt <
+        now
+    ) {
+      return conflict(
+        "upload_expired"
+      );
+    }
+
+    return conflict(
+      "upload_in_progress"
+    );
+  }
+
+  const claimedUpload =
+    claim.upload;
+
   const resourceId =
     createId(
-      upload.resourceType ===
+      claimedUpload.resourceType ===
         "document"
         ? "document"
         : "vehicle-photo"
     );
 
-  await bucket.put(
-    upload.privateObjectKey,
-    bodyBytes,
-    {
-      httpMetadata: {
-        contentType:
-          upload.contentType
-      },
-
-      customMetadata: {
-        owner:
-          driver.id,
-
-        upload:
-          upload.id,
-
-        resource:
-          resourceId,
-
-        kind:
-          upload.kind
-      }
-    }
-  );
+  let objectWritten =
+    false;
 
   try {
 
-    await commitDriverUploadResource(
-      env,
-      upload,
+    await bucket.put(
+      claimedUpload.privateObjectKey,
+      bodyBytes,
       {
-        resourceId,
-        consumedAt:
-          now,
-        requestId:
-          clean(requestId)
+        httpMetadata: {
+          contentType:
+            claimedUpload.contentType
+        },
+
+        customMetadata: {
+          owner:
+            driver.id,
+
+          upload:
+            claimedUpload.id,
+
+          resource:
+            resourceId,
+
+          kind:
+            claimedUpload.kind
+        }
       }
     );
+
+    objectWritten =
+      true;
+
+    const finalized =
+      await finalizeDriverUploadResource(
+        env,
+        claimedUpload,
+        {
+          claimId,
+          resourceId,
+          consumedAt:
+            now,
+          requestId:
+            clean(
+              requestId
+            )
+        }
+      );
+
+    if (
+      finalized.finalized !==
+        true
+    ) {
+      throw new Error(
+        "private upload finalization conflict"
+      );
+    }
 
   } catch (error) {
 
     if (
+      objectWritten &&
       typeof bucket.delete ===
         "function"
     ) {
       try {
         await bucket.delete(
-          upload.privateObjectKey
+          claimedUpload.privateObjectKey
         );
       } catch {
-        // Best-effort compensation only.
+        // Best-effort object compensation.
       }
+    }
+
+    try {
+      await releaseDriverUploadClaim(
+        env,
+        driver.id,
+        claimedUpload.id,
+        claimId
+      );
+    } catch {
+      // Best-effort claim compensation.
     }
 
     throw error;
@@ -674,20 +755,19 @@ export async function completeDriverPrivateUpload(
         resourceId,
 
       type:
-        upload.resourceType,
+        claimedUpload.resourceType,
 
       kind:
-        upload.kind,
+        claimedUpload.kind,
 
       vehicleId:
-        upload.vehicleId,
+        claimedUpload.vehicleId,
 
       status:
         "pending"
     }
   };
 }
-
 
 export async function submitDriverRegistrationForReview(
   env,
