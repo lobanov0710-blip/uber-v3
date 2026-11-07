@@ -468,6 +468,12 @@ test(
       7
     );
 
+    assert.deepEqual(
+      driverOpen.photoChecks[0]
+        .uploadedKinds,
+      PHOTO_KINDS
+    );
+
 
     const adminRead =
       await getAdminVehiclePhotoCheck(
