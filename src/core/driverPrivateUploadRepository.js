@@ -37,18 +37,37 @@ function requirePositiveInteger(value, field) {
   return requireTimestamp(value, field);
 }
 
-function requireRun(result, expectedChanges = 1) {
+function resultChanges(result) {
   if (result?.success !== true) {
-    throw new Error("private upload D1 operation failed");
+    throw new Error(
+      "private upload D1 operation failed"
+    );
   }
 
-  const count = Number(result?.meta?.changes ?? 0);
+  const count =
+    Number(
+      result?.meta?.changes ??
+      0
+    );
 
   if (
     !Number.isSafeInteger(count) ||
-    count !== expectedChanges
+    count < 0 ||
+    count > 1
   ) {
-    throw new Error("private upload D1 change count mismatch");
+    throw new Error(
+      "private upload D1 change count mismatch"
+    );
+  }
+
+  return count;
+}
+
+function requireOneChange(result) {
+  if (resultChanges(result) !== 1) {
+    throw new Error(
+      "private upload D1 expected one change"
+    );
   }
 }
 
@@ -71,6 +90,14 @@ function mapUpload(row) {
     expectedBytes: Number(row.expected_bytes),
     createdAt: Number(row.created_at),
     expiresAt: Number(row.expires_at),
+    claimId:
+      row.claim_id == null
+        ? null
+        : clean(row.claim_id),
+    claimedAt:
+      row.claimed_at == null
+        ? null
+        : Number(row.claimed_at),
     consumedAt:
       row.consumed_at == null
         ? null
@@ -83,9 +110,20 @@ export async function getDriverUploadSession(
   driverId,
   uploadId
 ) {
-  const driver = requireText(driverId, "driverId");
-  const id = requireText(uploadId, "uploadId");
-  const db = requireDatabase(env);
+  const driver =
+    requireText(
+      driverId,
+      "driverId"
+    );
+
+  const id =
+    requireText(
+      uploadId,
+      "uploadId"
+    );
+
+  const db =
+    requireDatabase(env);
 
   const row =
     await db
@@ -101,6 +139,8 @@ export async function getDriverUploadSession(
           expected_bytes,
           created_at,
           expires_at,
+          claim_id,
+          claimed_at,
           consumed_at
 
         FROM driver_upload_sessions
@@ -123,7 +163,8 @@ export async function insertDriverUploadSession(
   env,
   upload
 ) {
-  const db = requireDatabase(env);
+  const db =
+    requireDatabase(env);
 
   const result =
     await db
@@ -139,6 +180,8 @@ export async function insertDriverUploadSession(
           expected_bytes,
           created_at,
           expires_at,
+          claim_id,
+          claimed_at,
           consumed_at
         )
         VALUES (
@@ -152,26 +195,60 @@ export async function insertDriverUploadSession(
           ?8,
           ?9,
           ?10,
+          NULL,
+          NULL,
           NULL
         )
       `)
       .bind(
-        requireText(upload.id, "uploadId"),
-        requireText(upload.driverId, "driverId"),
+        requireText(
+          upload.id,
+          "uploadId"
+        ),
+        requireText(
+          upload.driverId,
+          "driverId"
+        ),
         upload.vehicleId == null
           ? null
-          : requireText(upload.vehicleId, "vehicleId"),
-        requireText(upload.resourceType, "resourceType"),
-        requireText(upload.kind, "kind"),
-        requireText(upload.privateObjectKey, "privateObjectKey"),
-        requireText(upload.contentType, "contentType"),
-        requirePositiveInteger(upload.expectedBytes, "expectedBytes"),
-        requireTimestamp(upload.createdAt, "createdAt"),
-        requireTimestamp(upload.expiresAt, "expiresAt")
+          : requireText(
+              upload.vehicleId,
+              "vehicleId"
+            ),
+        requireText(
+          upload.resourceType,
+          "resourceType"
+        ),
+        requireText(
+          upload.kind,
+          "kind"
+        ),
+        requireText(
+          upload.privateObjectKey,
+          "privateObjectKey"
+        ),
+        requireText(
+          upload.contentType,
+          "contentType"
+        ),
+        requirePositiveInteger(
+          upload.expectedBytes,
+          "expectedBytes"
+        ),
+        requireTimestamp(
+          upload.createdAt,
+          "createdAt"
+        ),
+        requireTimestamp(
+          upload.expiresAt,
+          "expiresAt"
+        )
       )
       .run();
 
-  requireRun(result);
+  requireOneChange(
+    result
+  );
 
   const persisted =
     await getDriverUploadSession(
@@ -181,21 +258,154 @@ export async function insertDriverUploadSession(
     );
 
   if (!persisted) {
-    throw new Error("private upload readback failed");
+    throw new Error(
+      "private upload readback failed"
+    );
   }
 
   return persisted;
 }
 
-export async function commitDriverUploadResource(
+
+export async function claimDriverUploadSession(
+  env,
+  driverId,
+  uploadId,
+  {
+    claimId,
+    claimedAt
+  }
+) {
+  const driver =
+    requireText(
+      driverId,
+      "driverId"
+    );
+
+  const id =
+    requireText(
+      uploadId,
+      "uploadId"
+    );
+
+  const claim =
+    requireText(
+      claimId,
+      "claimId"
+    );
+
+  const timestamp =
+    requireTimestamp(
+      claimedAt,
+      "claimedAt"
+    );
+
+  const db =
+    requireDatabase(env);
+
+  const result =
+    await db
+      .prepare(`
+        UPDATE driver_upload_sessions
+
+        SET
+          claim_id = ?3,
+          claimed_at = ?4
+
+        WHERE id = ?1
+          AND driver_id = ?2
+          AND claim_id IS NULL
+          AND claimed_at IS NULL
+          AND consumed_at IS NULL
+          AND expires_at >= ?4
+      `)
+      .bind(
+        id,
+        driver,
+        claim,
+        timestamp
+      )
+      .run();
+
+  const changed =
+    resultChanges(
+      result
+    );
+
+  return {
+    claimed:
+      changed === 1,
+
+    upload:
+      await getDriverUploadSession(
+        env,
+        driver,
+        id
+      )
+  };
+}
+
+
+export async function releaseDriverUploadClaim(
+  env,
+  driverId,
+  uploadId,
+  claimId
+) {
+  const db =
+    requireDatabase(env);
+
+  const result =
+    await db
+      .prepare(`
+        UPDATE driver_upload_sessions
+
+        SET
+          claim_id = NULL,
+          claimed_at = NULL
+
+        WHERE id = ?1
+          AND driver_id = ?2
+          AND claim_id = ?3
+          AND consumed_at IS NULL
+      `)
+      .bind(
+        requireText(
+          uploadId,
+          "uploadId"
+        ),
+        requireText(
+          driverId,
+          "driverId"
+        ),
+        requireText(
+          claimId,
+          "claimId"
+        )
+      )
+      .run();
+
+  return {
+    released:
+      resultChanges(
+        result
+      ) === 1
+  };
+}
+
+
+export async function finalizeDriverUploadResource(
   env,
   upload,
   {
+    claimId,
     resourceId,
-    consumedAt
+    consumedAt,
+    requestId
   }
 ) {
-  const db = requireDatabase(env);
+  const db =
+    requireDatabase(env);
 
   const timestamp =
     requireTimestamp(
@@ -203,9 +413,24 @@ export async function commitDriverUploadResource(
       "consumedAt"
     );
 
+  const claim =
+    requireText(
+      claimId,
+      "claimId"
+    );
+
+  const resource =
+    requireText(
+      resourceId,
+      "resourceId"
+    );
+
   const statements = [];
 
-  if (upload.resourceType === "document") {
+  if (
+    upload.resourceType ===
+      "document"
+  ) {
 
     statements.push(
       db
@@ -222,25 +447,38 @@ export async function commitDriverUploadResource(
             created_at,
             updated_at
           )
-          VALUES (
+
+          SELECT
             ?1,
-            ?2,
-            ?3,
-            ?4,
-            ?5,
+            driver_id,
+            vehicle_id,
+            kind,
+            private_object_key,
             'pending',
             NULL,
             NULL,
-            ?6,
-            ?6
-          )
+            ?5,
+            ?5
+
+          FROM driver_upload_sessions
+
+          WHERE id = ?2
+            AND driver_id = ?3
+            AND claim_id = ?4
+            AND consumed_at IS NULL
+            AND expires_at >= ?5
         `)
         .bind(
-          requireText(resourceId, "resourceId"),
-          requireText(upload.driverId, "driverId"),
-          upload.vehicleId,
-          requireText(upload.kind, "kind"),
-          requireText(upload.privateObjectKey, "privateObjectKey"),
+          resource,
+          requireText(
+            upload.id,
+            "uploadId"
+          ),
+          requireText(
+            upload.driverId,
+            "driverId"
+          ),
+          claim,
           timestamp
         )
     );
@@ -262,21 +500,35 @@ export async function commitDriverUploadResource(
             created_at,
             updated_at
           )
-          VALUES (
+
+          SELECT
             ?1,
-            ?2,
-            ?3,
-            ?4,
+            vehicle_id,
+            kind,
+            private_object_key,
             'pending',
             ?5,
             ?5
-          )
+
+          FROM driver_upload_sessions
+
+          WHERE id = ?2
+            AND driver_id = ?3
+            AND claim_id = ?4
+            AND consumed_at IS NULL
+            AND expires_at >= ?5
         `)
         .bind(
-          requireText(resourceId, "resourceId"),
-          requireText(upload.vehicleId, "vehicleId"),
-          requireText(upload.kind, "kind"),
-          requireText(upload.privateObjectKey, "privateObjectKey"),
+          resource,
+          requireText(
+            upload.id,
+            "uploadId"
+          ),
+          requireText(
+            upload.driverId,
+            "driverId"
+          ),
+          claim,
           timestamp
         )
     );
@@ -302,24 +554,42 @@ export async function commitDriverUploadResource(
           request_id,
           created_at
         )
-        VALUES (
+
+        SELECT
           ?1,
-          ?2,
+          driver_id,
           'driver.private_resource_uploaded',
-          ?3,
-          ?4,
+          resource_type,
+          ?2,
           'success',
-          ?5,
-          ?6
-        )
+          ?6,
+          ?5
+
+        FROM driver_upload_sessions
+
+        WHERE id = ?3
+          AND driver_id = ?4
+          AND claim_id = ?7
+          AND consumed_at IS NULL
+          AND expires_at >= ?5
       `)
       .bind(
-        "audit_" + crypto.randomUUID(),
-        requireText(upload.driverId, "driverId"),
-        upload.resourceType,
-        requireText(resourceId, "resourceId"),
-        clean(arguments[2]?.requestId) || null,
-        timestamp
+        "audit_" +
+          crypto.randomUUID(),
+        resource,
+        requireText(
+          upload.id,
+          "uploadId"
+        ),
+        requireText(
+          upload.driverId,
+          "driverId"
+        ),
+        timestamp,
+        clean(
+          requestId
+        ) || null,
+        claim
       )
   );
 
@@ -329,16 +599,24 @@ export async function commitDriverUploadResource(
       .prepare(`
         UPDATE driver_upload_sessions
 
-        SET consumed_at = ?3
+        SET consumed_at = ?4
 
         WHERE id = ?1
           AND driver_id = ?2
+          AND claim_id = ?3
           AND consumed_at IS NULL
-          AND expires_at >= ?3
+          AND expires_at >= ?4
       `)
       .bind(
-        requireText(upload.id, "uploadId"),
-        requireText(upload.driverId, "driverId"),
+        requireText(
+          upload.id,
+          "uploadId"
+        ),
+        requireText(
+          upload.driverId,
+          "driverId"
+        ),
+        claim,
         timestamp
       )
   );
@@ -352,7 +630,8 @@ export async function commitDriverUploadResource(
 
   if (
     !Array.isArray(results) ||
-    results.length !== statements.length
+    results.length !==
+      statements.length
   ) {
     throw new Error(
       "private upload transaction failed"
@@ -360,13 +639,31 @@ export async function commitDriverUploadResource(
   }
 
 
-  for (const result of results) {
-    requireRun(result);
+  const counts =
+    results.map(
+      result =>
+        resultChanges(
+          result
+        )
+    );
+
+
+  if (
+    counts.some(
+      count =>
+        count !== 1
+    )
+  ) {
+    return {
+      finalized:
+        false
+    };
   }
 
 
   return {
-    ok: true
+    finalized:
+      true
   };
 }
 
@@ -375,8 +672,14 @@ export async function getDriverRegistrationMaterials(
   env,
   driverId
 ) {
-  const driver = requireText(driverId, "driverId");
-  const db = requireDatabase(env);
+  const driver =
+    requireText(
+      driverId,
+      "driverId"
+    );
+
+  const db =
+    requireDatabase(env);
 
   const documents =
     await db
@@ -393,7 +696,9 @@ export async function getDriverRegistrationMaterials(
 
         ORDER BY created_at DESC
       `)
-      .bind(driver)
+      .bind(
+        driver
+      )
       .all();
 
   const photos =
@@ -414,14 +719,20 @@ export async function getDriverRegistrationMaterials(
 
         ORDER BY vp.created_at DESC
       `)
-      .bind(driver)
+      .bind(
+        driver
+      )
       .all();
 
   if (
     documents?.success !== true ||
     photos?.success !== true ||
-    !Array.isArray(documents?.results) ||
-    !Array.isArray(photos?.results)
+    !Array.isArray(
+      documents?.results
+    ) ||
+    !Array.isArray(
+      photos?.results
+    )
   ) {
     throw new Error(
       "registration materials query failed"
@@ -432,23 +743,52 @@ export async function getDriverRegistrationMaterials(
     documents:
       documents.results.map(
         row => ({
-          id: clean(row.id),
+          id:
+            clean(
+              row.id
+            ),
+
           vehicleId:
             row.vehicle_id == null
               ? null
-              : clean(row.vehicle_id),
-          kind: clean(row.kind),
-          status: clean(row.status)
+              : clean(
+                  row.vehicle_id
+                ),
+
+          kind:
+            clean(
+              row.kind
+            ),
+
+          status:
+            clean(
+              row.status
+            )
         })
       ),
 
     photos:
       photos.results.map(
         row => ({
-          id: clean(row.id),
-          vehicleId: clean(row.vehicle_id),
-          kind: clean(row.kind),
-          status: clean(row.status)
+          id:
+            clean(
+              row.id
+            ),
+
+          vehicleId:
+            clean(
+              row.vehicle_id
+            ),
+
+          kind:
+            clean(
+              row.kind
+            ),
+
+          status:
+            clean(
+              row.status
+            )
         })
       )
   };
@@ -465,12 +805,18 @@ export async function submitDriverRegistration(
     requestId
   }
 ) {
-  const driver = requireText(driverId, "driverId");
+  const driver =
+    requireText(
+      driverId,
+      "driverId"
+    );
+
   const revision =
     requirePositiveInteger(
       expectedRevision,
       "expectedRevision"
     );
+
   const timestamp =
     requireTimestamp(
       submittedAt,
@@ -478,7 +824,9 @@ export async function submitDriverRegistration(
     );
 
   if (
-    !Array.isArray(vehicleIds) ||
+    !Array.isArray(
+      vehicleIds
+    ) ||
     vehicleIds.length === 0
   ) {
     throw new Error(
@@ -527,7 +875,12 @@ export async function submitDriverRegistration(
       )
   ];
 
-  for (const vehicleId of uniqueVehicleIds) {
+
+  for (
+    const vehicleId of
+      uniqueVehicleIds
+  ) {
+
     statements.push(
       db
         .prepare(`
@@ -544,6 +897,13 @@ export async function submitDriverRegistration(
               'draft',
               'pending_review'
             )
+            AND EXISTS (
+              SELECT 1
+              FROM driver_profiles p
+              WHERE p.staff_account_id = ?2
+                AND p.registration_status = 'submitted'
+                AND p.submitted_at = ?3
+            )
         `)
         .bind(
           vehicleId,
@@ -552,6 +912,7 @@ export async function submitDriverRegistration(
         )
     );
   }
+
 
   statements.push(
     db
@@ -566,7 +927,8 @@ export async function submitDriverRegistration(
           request_id,
           created_at
         )
-        VALUES (
+
+        SELECT
           ?1,
           ?2,
           'driver.registration_submitted',
@@ -575,75 +937,82 @@ export async function submitDriverRegistration(
           'success',
           ?3,
           ?4
+
+        WHERE EXISTS (
+          SELECT 1
+          FROM driver_profiles p
+          WHERE p.staff_account_id = ?2
+            AND p.registration_status = 'submitted'
+            AND p.submitted_at = ?4
         )
       `)
       .bind(
-        "audit_" + crypto.randomUUID(),
+        "audit_" +
+          crypto.randomUUID(),
         driver,
-        clean(requestId) || null,
+        clean(
+          requestId
+        ) || null,
         timestamp
       )
   );
+
 
   const results =
     await db.batch(
       statements
     );
 
+
   if (
     !Array.isArray(results) ||
-    results.length !== statements.length
+    results.length !==
+      statements.length
   ) {
     throw new Error(
       "registration submit transaction failed"
     );
   }
 
+
   const profileChanges =
-    Number(
-      results[0]?.meta?.changes ??
-      0
+    resultChanges(
+      results[0]
     );
+
 
   if (
-    results[0]?.success !== true ||
-    !Number.isSafeInteger(
-      profileChanges
-    ) ||
-    profileChanges < 0 ||
-    profileChanges > 1
+    profileChanges !== 1
   ) {
-    throw new Error(
-      "registration submit failed"
-    );
-  }
-
-  if (profileChanges !== 1) {
     return {
       submitted:
         false
     };
   }
 
+
   for (
     let index = 1;
-    index <= uniqueVehicleIds.length;
+    index <=
+      uniqueVehicleIds.length;
     index++
   ) {
-    requireRun(
+
+    requireOneChange(
       results[index]
     );
   }
 
-  requireRun(
+
+  requireOneChange(
     results[
       results.length - 1
     ]
   );
+
 
   return {
     submitted:
       true
   };
 }
-
