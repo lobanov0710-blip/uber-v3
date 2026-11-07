@@ -386,10 +386,17 @@ export async function getOrderAssignmentState(
 export async function getAssignmentCandidateEligibility(
   env,
   driverId,
-  vehicleId
+  vehicleId,
+  nowMs
 ) {
   const db =
     requireDatabase(env);
+
+  const timestamp =
+    requirePositiveInteger(
+      nowMs,
+      "nowMs"
+    );
 
   const row =
     await db
@@ -401,6 +408,43 @@ export async function getAssignmentCandidateEligibility(
 
           v.id AS vehicle_id,
           v.status AS vehicle_status,
+
+          EXISTS (
+            SELECT 1
+            FROM vehicle_photo_checks pc
+            WHERE pc.vehicle_id = v.id
+              AND (
+                pc.result IN (
+                  'failed',
+                  'manual_review'
+                )
+                OR (
+                  pc.result = 'pending'
+                  AND (
+                    pc.restriction_mode IN (
+                      'after_current_trip',
+                      'immediate'
+                    )
+                    OR (
+                      pc.restriction_mode =
+                        'grace_period'
+                      AND pc.grace_until < ?3
+                    )
+                  )
+                )
+              )
+          ) AS photo_control_blocked,
+
+          EXISTS (
+            SELECT 1
+            FROM vehicle_photo_checks pc
+            WHERE pc.vehicle_id = v.id
+              AND pc.result = 'pending'
+              AND pc.restriction_mode =
+                'grace_period'
+              AND pc.due_at <= ?3
+              AND pc.grace_until >= ?3
+          ) AS photo_control_grace,
 
           a.state AS availability_state,
           a.active_vehicle_id
@@ -426,7 +470,8 @@ export async function getAssignmentCandidateEligibility(
         requireText(
           vehicleId,
           "vehicleId"
-        )
+        ),
+        timestamp
       )
       .first();
 
@@ -465,6 +510,16 @@ export async function getAssignmentCandidateEligibility(
         : clean(
             row.vehicle_status
           ),
+
+    photoControlBlocked:
+      Number(
+        row.photo_control_blocked
+      ) === 1,
+
+    photoControlGrace:
+      Number(
+        row.photo_control_grace
+      ) === 1,
 
     availabilityState:
       row.availability_state == null
@@ -956,6 +1011,32 @@ export async function assignOrderToDriverVehicle(
 
           AND NOT EXISTS (
             SELECT 1
+            FROM vehicle_photo_checks pc
+            WHERE pc.vehicle_id = ?6
+              AND (
+                pc.result IN (
+                  'failed',
+                  'manual_review'
+                )
+                OR (
+                  pc.result = 'pending'
+                  AND (
+                    pc.restriction_mode IN (
+                      'after_current_trip',
+                      'immediate'
+                    )
+                    OR (
+                      pc.restriction_mode =
+                        'grace_period'
+                      AND pc.grace_until < ?4
+                    )
+                  )
+                )
+              )
+          )
+
+          AND NOT EXISTS (
+            SELECT 1
             FROM driver_availability da
             WHERE da.driver_id = ?2
               AND da.state = 'on_line'
@@ -1222,6 +1303,32 @@ export async function reassignOrderToDriverVehicle(
             WHERE v.id = ?6
               AND v.driver_id = ?2
               AND v.status = 'approved'
+          )
+
+          AND NOT EXISTS (
+            SELECT 1
+            FROM vehicle_photo_checks pc
+            WHERE pc.vehicle_id = ?6
+              AND (
+                pc.result IN (
+                  'failed',
+                  'manual_review'
+                )
+                OR (
+                  pc.result = 'pending'
+                  AND (
+                    pc.restriction_mode IN (
+                      'after_current_trip',
+                      'immediate'
+                    )
+                    OR (
+                      pc.restriction_mode =
+                        'grace_period'
+                      AND pc.grace_until < ?4
+                    )
+                  )
+                )
+              )
           )
 
           AND NOT EXISTS (
