@@ -132,6 +132,16 @@ import {
   postDriverSupportCase
 } from "./core/driverSupportCaseService.js";
 
+import {
+  getAdminSupportCase,
+  getAdminSupportCases,
+  getDriverSupportCase,
+  getDriverSupportCases,
+  postAdminSupportCaseStatus,
+  postAdminSupportMessage,
+  postDriverSupportMessage
+} from "./core/supportCaseLifecycleService.js";
+
 
 // =========================
 // ROUTER
@@ -2374,12 +2384,17 @@ export default async function router(
 
 
   // =========================
-  // DRIVER SUPPORT CASES V1
+  // SUPPORT CASES V1
   // =========================
 
+  const adminSupportMessageMatch =
+    path.match(
+      /^\/v1\/admin\/support-cases\/([^/]+)\/messages$/
+    );
+
+
   if (
-    path ===
-      "/v1/driver/support-cases"
+    adminSupportMessageMatch
   ) {
 
     if (
@@ -2421,6 +2436,19 @@ export default async function router(
     }
 
 
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          adminSupportMessageMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
     const body =
       await safeJson(
         req
@@ -2428,6 +2456,693 @@ export default async function router(
 
 
     try {
+
+      const result =
+        await postAdminSupportMessage(
+          env,
+          auth.user,
+          caseId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN SUPPORT MESSAGE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support message failed",
+          code:
+            "support_message_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminSupportStatusMatch =
+    path.match(
+      /^\/v1\/admin\/support-cases\/([^/]+)\/status$/
+    );
+
+
+  if (
+    adminSupportStatusMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          adminSupportStatusMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await postAdminSupportCaseStatus(
+          env,
+          auth.user,
+          caseId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN SUPPORT STATUS ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support status failed",
+          code:
+            "support_status_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminSupportDetailMatch =
+    path.match(
+      /^\/v1\/admin\/support-cases\/([^/]+)$/
+    );
+
+
+  if (
+    adminSupportDetailMatch
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          adminSupportDetailMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
+    try {
+
+      const result =
+        await getAdminSupportCase(
+          env,
+          auth.user,
+          caseId
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN SUPPORT CASE READ ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support case read failed",
+          code:
+            "support_case_read_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path ===
+      "/v1/admin/support-cases"
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getAdminSupportCases(
+          env,
+          auth.user,
+          {
+            status:
+              url.searchParams.get(
+                "status"
+              ),
+            limit:
+              Number(
+                url.searchParams.get(
+                  "limit"
+                ) ||
+                100
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN SUPPORT CASES ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support cases failed",
+          code:
+            "support_cases_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverSupportMessageMatch =
+    path.match(
+      /^\/v1\/driver\/support-cases\/([^/]+)\/messages$/
+    );
+
+
+  if (
+    driverSupportMessageMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          driverSupportMessageMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await postDriverSupportMessage(
+          env,
+          auth.user,
+          caseId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "DRIVER SUPPORT MESSAGE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support message failed",
+          code:
+            "support_message_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverSupportDetailMatch =
+    path.match(
+      /^\/v1\/driver\/support-cases\/([^/]+)$/
+    );
+
+
+  if (
+    driverSupportDetailMatch
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          driverSupportDetailMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
+    try {
+
+      const result =
+        await getDriverSupportCase(
+          env,
+          auth.user,
+          caseId
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "DRIVER SUPPORT CASE READ ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support case read failed",
+          code:
+            "support_case_read_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path ===
+      "/v1/driver/support-cases"
+  ) {
+
+    if (
+      req.method !== "GET" &&
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    try {
+
+      if (
+        req.method === "GET"
+      ) {
+        const result =
+          await getDriverSupportCases(
+            env,
+            auth.user,
+            {
+              limit:
+                Number(
+                  url.searchParams.get(
+                    "limit"
+                  ) ||
+                  100
+                )
+            }
+          );
+
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.ok === true
+            ? 200
+            : result?.status || 500,
+          cors
+        );
+      }
+
+
+      const body =
+        await safeJson(
+          req
+        );
+
 
       const result =
         await postDriverSupportCase(
