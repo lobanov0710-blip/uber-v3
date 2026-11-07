@@ -731,6 +731,7 @@ export async function getDriverRegistrationMaterials(
           ON v.id = vp.vehicle_id
 
         WHERE v.driver_id = ?1
+          AND vp.photo_check_id IS NULL
 
         ORDER BY vp.created_at DESC
       `)
