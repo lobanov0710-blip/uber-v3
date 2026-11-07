@@ -1894,3 +1894,190 @@ export async function finalizeDriverRegistrationModeration(
     }
   );
 }
+
+
+export async function startRegistrationReviewIdempotent(
+  env,
+  {
+    actorAccountId,
+    driverId,
+    expectedRevision,
+    reviewedAt,
+    requestId,
+    reviewId,
+    auditId,
+    idempotency
+  }
+) {
+  const db =
+    requireDatabase(env);
+
+  const revision =
+    requirePositiveInteger(
+      expectedRevision,
+      "expectedRevision"
+    );
+
+  const timestamp =
+    requirePositiveInteger(
+      reviewedAt,
+      "reviewedAt"
+    );
+
+  const update =
+    db
+      .prepare(`
+        UPDATE driver_profiles
+
+        SET
+          registration_status =
+            'under_review',
+          revision =
+            revision + 1,
+          last_review_id =
+            ?4,
+          updated_at =
+            ?5
+
+        WHERE staff_account_id = ?1
+          AND revision = ?2
+          AND registration_status = ?3
+
+          AND EXISTS (
+            SELECT 1
+            FROM mutation_idempotency
+            WHERE actor_account_id = ?6
+              AND operation = ?7
+              AND key_digest = ?8
+              AND request_digest = ?9
+              AND claim_id = ?10
+              AND state = 'in_progress'
+          )
+      `)
+      .bind(
+        requireText(
+          driverId,
+          "driverId"
+        ),
+        revision,
+        "submitted",
+        requireText(
+          reviewId,
+          "reviewId"
+        ),
+        timestamp,
+        requireText(
+          actorAccountId,
+          "actorAccountId"
+        ),
+        requireText(
+          idempotency.operation,
+          "operation"
+        ),
+        requireText(
+          idempotency.keyDigest,
+          "keyDigest"
+        ),
+        requireText(
+          idempotency.requestDigest,
+          "requestDigest"
+        ),
+        requireText(
+          idempotency.claimId,
+          "claimId"
+        )
+      );
+
+  const review =
+    moderationReviewStatement(
+      db,
+      {
+        reviewId,
+        actorAccountId,
+        targetType:
+          "driver_registration",
+        targetId:
+          driverId,
+        decision:
+          "under_review",
+        note:
+          null,
+        createdAt:
+          timestamp,
+        targetExistsSql: `
+          SELECT 1
+          FROM driver_profiles
+          WHERE staff_account_id = ?8
+            AND revision = ?9
+            AND last_review_id = ?10
+            AND registration_status =
+              'under_review'
+        `,
+        targetExistsArgs: [
+          driverId,
+          revision + 1,
+          reviewId
+        ]
+      }
+    );
+
+  const successResult = {
+    ok:
+      true,
+    registration: {
+      driverId,
+      status:
+        "under_review",
+      revision:
+        revision + 1,
+      reviewedAt:
+        timestamp
+    }
+  };
+
+  const conflictResult = {
+    ok:
+      false,
+    status:
+      409,
+    error:
+      "conflict",
+    code:
+      "registration_review_conflict"
+  };
+
+  return executeModerationBatch(
+    env,
+    {
+      actorAccountId,
+      idempotency,
+      updateStatement:
+        update,
+      reviewStatement:
+        review,
+      audit:
+        auditStatement(
+          db,
+          {
+            auditId,
+            actorAccountId,
+            action:
+              "admin.registration_review_started",
+            targetType:
+              "driver_profile",
+            targetId:
+              driverId,
+            requestId,
+            createdAt:
+              timestamp,
+            reviewId
+          }
+        ),
+      successResult,
+      conflictResult,
+      completedAt:
+        timestamp,
+      reviewId
+    }
+  );
+}
