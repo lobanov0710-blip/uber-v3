@@ -168,7 +168,13 @@ function mapOrderRow(row) {
       Number(row.created_at),
 
     updatedAt:
-      Number(row.updated_at)
+      Number(row.updated_at),
+
+    revision:
+      Number(
+        row.revision ??
+        1
+      )
   };
 }
 
@@ -195,7 +201,8 @@ const ORDER_SELECT = `
     status,
     driver_id,
     created_at,
-    updated_at
+    updated_at,
+    revision
   FROM orders
 `;
 
@@ -411,6 +418,7 @@ export async function takeOrderForDriver(
         SET
           status = 'taken',
           driver_id = ?2,
+          revision = revision + 1,
           updated_at =
             CASE
               WHEN updated_at >= ?3
@@ -516,6 +524,7 @@ export async function advanceDriverOrder(
 
         SET
           status = ?4,
+          revision = revision + 1,
           updated_at =
             CASE
               WHEN updated_at >= ?5
@@ -594,6 +603,7 @@ export async function cancelOrder(
 
         SET
           status = 'canceled',
+          revision = revision + 1,
           updated_at =
             CASE
               WHEN updated_at >= ?2
