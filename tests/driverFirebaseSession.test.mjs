@@ -272,6 +272,15 @@ const verifyFirebaseIdToken =
     ...VERIFIED
   });
 
+const allowRateLimit =
+  async () => ({
+    allowed:
+      true,
+
+    blockedUntil:
+      null
+  });
+
 
 const env = {
   JWT_SECRET:
@@ -309,7 +318,10 @@ const created =
       requestId:
         "req_test_create",
 
-      verifyFirebaseIdToken
+      verifyFirebaseIdToken,
+
+      consumeRateLimit:
+        allowRateLimit
     }
   );
 
@@ -377,7 +389,10 @@ const replay =
       requestId:
         "req_test_replay",
 
-      verifyFirebaseIdToken
+      verifyFirebaseIdToken,
+
+      consumeRateLimit:
+        allowRateLimit
     }
   );
 
@@ -483,7 +498,10 @@ const blocked =
       requestId:
         "req_test_blocked",
 
-      verifyFirebaseIdToken
+      verifyFirebaseIdToken,
+
+      consumeRateLimit:
+        allowRateLimit
     }
   );
 
@@ -522,7 +540,10 @@ const identityConflict =
       requestId:
         "req_test_identity_conflict",
 
-      verifyFirebaseIdToken
+      verifyFirebaseIdToken,
+
+      consumeRateLimit:
+        allowRateLimit
     }
   );
 
@@ -566,7 +587,10 @@ const invalidIdentity =
           throw new Error(
             "invalid signature"
           );
-        }
+        },
+
+      consumeRateLimit:
+        allowRateLimit
     }
   );
 
