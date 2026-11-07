@@ -122,7 +122,10 @@ import {
 } from "./core/orderTerminalMutationService.js";
 
 import {
-  requestVehiclePhotoCheck
+  getAdminVehiclePhotoCheck,
+  getDriverPhotoChecks,
+  requestVehiclePhotoCheck,
+  reviewAdminVehiclePhotoCheck
 } from "./core/vehiclePhotoControlService.js";
 
 import {
@@ -1798,6 +1801,252 @@ export default async function router(
   // ADMIN VEHICLE PHOTO CONTROL V1
   // =========================
 
+  const adminVehiclePhotoCheckReviewMatch =
+    path.match(
+      /^\/v1\/admin\/vehicles\/([^/]+)\/photo-checks\/([^/]+)\/review$/
+    );
+
+
+  if (
+    adminVehiclePhotoCheckReviewMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let vehicleId;
+    let photoCheckId;
+
+    try {
+      vehicleId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckReviewMatch[1]
+        )
+          .trim();
+
+      photoCheckId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckReviewMatch[2]
+        )
+          .trim();
+
+    } catch {
+      vehicleId = "";
+      photoCheckId = "";
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await reviewAdminVehiclePhotoCheck(
+          env,
+          auth.user,
+          vehicleId,
+          photoCheckId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN VEHICLE PHOTO CHECK REVIEW ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle photo check review failed",
+          code:
+            "vehicle_photo_check_review_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminVehiclePhotoCheckReadMatch =
+    path.match(
+      /^\/v1\/admin\/vehicles\/([^/]+)\/photo-checks\/([^/]+)$/
+    );
+
+
+  if (
+    adminVehiclePhotoCheckReadMatch
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let vehicleId;
+    let photoCheckId;
+
+    try {
+      vehicleId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckReadMatch[1]
+        )
+          .trim();
+
+      photoCheckId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckReadMatch[2]
+        )
+          .trim();
+
+    } catch {
+      vehicleId = "";
+      photoCheckId = "";
+    }
+
+
+    try {
+
+      const result =
+        await getAdminVehiclePhotoCheck(
+          env,
+          auth.user,
+          vehicleId,
+          photoCheckId
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN VEHICLE PHOTO CHECK READ ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle photo check read failed",
+          code:
+            "vehicle_photo_check_read_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
   const adminVehiclePhotoCheckMatch =
     path.match(
       /^\/v1\/admin\/vehicles\/([^/]+)\/photo-checks$/
@@ -1909,6 +2158,97 @@ export default async function router(
             "vehicle photo check failed",
           code:
             "vehicle_photo_check_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER PHOTO CONTROLS V1
+  // =========================
+
+  if (
+    path ===
+      "/v1/driver/photo-checks"
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getDriverPhotoChecks(
+          env,
+          auth.user
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "DRIVER PHOTO CONTROLS ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "driver photo controls failed",
+          code:
+            "driver_photo_controls_failed",
           requestId
         },
         500,
