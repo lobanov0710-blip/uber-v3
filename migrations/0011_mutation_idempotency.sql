@@ -15,6 +15,8 @@ CREATE TABLE mutation_idempotency (
         CHECK (length(key_digest) = 43),
     request_digest TEXT NOT NULL
         CHECK (length(request_digest) = 43),
+    claim_id TEXT NOT NULL
+        CHECK (length(claim_id) BETWEEN 8 AND 100),
     state TEXT NOT NULL
         CHECK (state IN ('in_progress','completed')),
     http_status INTEGER DEFAULT NULL
