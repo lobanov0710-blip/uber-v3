@@ -110,6 +110,10 @@ import {
   reassignOrderByAdmin
 } from "./core/orderAssignmentService.js";
 
+import {
+  putDriverAvailability
+} from "./core/driverAvailabilityService.js";
+
 
 // =========================
 // ROUTER
@@ -1880,6 +1884,130 @@ export default async function router(
 
           code:
             "driver_assignments_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER AVAILABILITY V1
+  // =========================
+
+  if (
+    path ===
+      "/v1/driver/availability"
+  ) {
+
+    if (
+      req.method !==
+        "PUT"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await putDriverAvailability(
+          env,
+          auth.user,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER AVAILABILITY ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "driver availability failed",
+
+          code:
+            "driver_availability_failed",
 
           requestId
         },
