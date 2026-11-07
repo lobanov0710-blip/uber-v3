@@ -18,6 +18,10 @@ import {
   submitDriverRegistration
 } from "./driverPrivateUploadRepository.js";
 
+import {
+  getDriverPhotoCheckUploadState
+} from "./vehiclePhotoControlRepository.js";
+
 
 const DRIVER_DOCUMENT_KINDS =
   new Set([
@@ -82,6 +86,7 @@ const UPLOAD_INPUT_KEYS =
     "resourceType",
     "kind",
     "vehicleId",
+    "photoCheckId",
     "contentType",
     "contentLength"
   ]);
@@ -284,6 +289,12 @@ export async function issueDriverPrivateUpload(
       ? null
       : clean(input.vehicleId);
 
+  const photoCheckId =
+    input.photoCheckId == null ||
+    clean(input.photoCheckId) === ""
+      ? null
+      : clean(input.photoCheckId);
+
   const contentType =
     normalizeContentType(
       input.contentType
@@ -333,6 +344,14 @@ export async function issueDriverPrivateUpload(
   if (
     resourceType === "document"
   ) {
+    if (
+      photoCheckId !== null
+    ) {
+      return invalid(
+        "photo_check_not_allowed"
+      );
+    }
+
     if (
       !DRIVER_DOCUMENT_KINDS.has(kind) &&
       !VEHICLE_DOCUMENT_KINDS.has(kind)
@@ -425,9 +444,57 @@ export async function issueDriverPrivateUpload(
       );
     }
 
+
     if (
-      vehicle.status === "rejected" ||
-      vehicle.status === "suspended"
+      photoCheckId !== null
+    ) {
+      const photoCheck =
+        await getDriverPhotoCheckUploadState(
+          env,
+          {
+            driverId:
+              driver.id,
+            vehicleId,
+            photoCheckId
+          }
+        );
+
+      if (!photoCheck) {
+        return notFound(
+          "photo_check_not_found"
+        );
+      }
+
+      if (
+        photoCheck.result ===
+          "passed"
+      ) {
+        return conflict(
+          "photo_check_already_passed"
+        );
+      }
+
+    } else if (
+      resourceType ===
+        "vehicle_photo"
+      &&
+      (
+        vehicle.status ===
+          "rejected"
+        ||
+        vehicle.status ===
+          "suspended"
+      )
+    ) {
+      return conflict(
+        "vehicle_not_editable"
+      );
+    }
+
+
+    if (
+      vehicle.status ===
+        "rejected"
     ) {
       return conflict(
         "vehicle_not_editable"
@@ -454,6 +521,14 @@ export async function issueDriverPrivateUpload(
       "uploads",
       uploadId,
       resourceType,
+      ...(
+        photoCheckId
+          ? [
+              "photo-check",
+              photoCheckId
+            ]
+          : []
+      ),
       kind
     ].join("/");
 
@@ -468,6 +543,8 @@ export async function issueDriverPrivateUpload(
           driver.id,
 
         vehicleId,
+
+        photoCheckId,
 
         resourceType,
 
@@ -697,7 +774,16 @@ export async function completeDriverPrivateUpload(
             resourceId,
 
           kind:
-            claimedUpload.kind
+            claimedUpload.kind,
+
+          ...(
+            claimedUpload.photoCheckId
+              ? {
+                  photoCheck:
+                    claimedUpload.photoCheckId
+                }
+              : {}
+          )
         }
       }
     );
@@ -775,6 +861,9 @@ export async function completeDriverPrivateUpload(
 
       vehicleId:
         claimedUpload.vehicleId,
+
+      photoCheckId:
+        claimedUpload.photoCheckId,
 
       status:
         "pending"
