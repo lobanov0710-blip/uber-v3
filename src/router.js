@@ -71,6 +71,10 @@ import {
   notifyActiveDriversOfNewOrder
 } from "./core/staffPushNotificationService.js";
 
+import {
+  exchangeDriverFirebaseSession
+} from "./core/driverFirebaseSessionService.js";
+
 
 // =========================
 // ROUTER
@@ -182,6 +186,152 @@ export default async function router(
       200,
       cors
     );
+  }
+
+
+  // =========================
+  // DRIVER FIREBASE SESSION EXCHANGE
+  // =========================
+  //
+  // Public identity exchange endpoint.
+  //
+  // Trust boundary:
+  // - Firebase ID token is verified server-side.
+  // - phone/role/driverId from client are rejected.
+  // - successful exchange returns the existing
+  //   staff access + rotating refresh session.
+  // =========================
+
+  if (
+    path ===
+      "/v1/driver/session/exchange"
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      (
+        "req_" +
+        crypto.randomUUID()
+      );
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await exchangeDriverFirebaseSession(
+          env,
+          body,
+          {
+            requestId
+          }
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ok:
+              false,
+
+            error:
+              result?.error ||
+              "authentication failed",
+
+            code:
+              result?.code ||
+              "driver_session_exchange_failed",
+
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result.created
+          ? 201
+          : 200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER FIREBASE SESSION EXCHANGE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "authentication failed",
+
+          code:
+            "driver_session_exchange_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+
+    } finally {
+
+      // Reduce the lifetime of the raw
+      // Firebase ID token in request scope.
+      if (
+        body
+        &&
+        typeof body ===
+          "object"
+        &&
+        !Array.isArray(
+          body
+        )
+        &&
+        Object.hasOwn(
+          body,
+          "firebaseIdToken"
+        )
+      ) {
+
+        body.firebaseIdToken =
+          null;
+      }
+    }
   }
 
 
