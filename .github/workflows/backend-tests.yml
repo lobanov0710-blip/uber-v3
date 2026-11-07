@@ -35,6 +35,8 @@ jobs:
         run: npm audit --audit-level=high
       - name: Validate D1 migrations offline
         run: python3 tools/test_migrations.py
+      - name: Validate fail-closed D3 staging preflight
+        run: python3 tests/d3StagingPreflight.test.py
       - name: Run backend unit and router tests
         run: npm test
       - name: Verify audit transaction with local workerd and D1
