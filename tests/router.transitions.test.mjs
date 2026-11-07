@@ -1268,11 +1268,11 @@ await test(
 
 
 // ========================================
-// DRIVER START
+// DRIVER START REQUIRES OPERATIONAL PHASE
 // ========================================
 
 await test(
-  "assigned driver starts own trip",
+  "assigned driver cannot bypass trip verification with legacy in_progress",
   async () => {
 
     const token =
@@ -1280,7 +1280,8 @@ await test(
 
 
     const {
-      db
+      db,
+      getRow
     } =
       createTransitionDatabase(
         orderRow({
@@ -1317,13 +1318,19 @@ await test(
 
     assert.equal(
       response.status,
-      200
+      403
     );
 
 
     assert.equal(
-      body.order.status,
-      "in_progress"
+      body.error,
+      "forbidden transition"
+    );
+
+
+    assert.equal(
+      getRow().status,
+      "taken"
     );
   }
 );
@@ -1396,7 +1403,7 @@ await test(
 // ========================================
 
 await test(
-  "other driver cannot advance assigned order",
+  "other driver cannot use legacy trip-start transition",
   async () => {
 
     const token =
@@ -1448,7 +1455,7 @@ await test(
 
     assert.equal(
       response.status,
-      409
+      403
     );
   }
 );
