@@ -649,7 +649,10 @@ export async function assignOrderByAdmin(
 
     scheduleBestEffortPush(
       options,
-      notifyDriverAssignmentEvent(
+      (
+        options.notifyDriverAssignmentEvent ??
+        notifyDriverAssignmentEvent
+      )(
         env,
         {
           type:
@@ -846,7 +849,10 @@ export async function reassignOrderByAdmin(
 
     scheduleBestEffortPush(
       options,
-      notifyDriverAssignmentEvent(
+      (
+        options.notifyDriverAssignmentEvent ??
+        notifyDriverAssignmentEvent
+      )(
         env,
         {
           type:
@@ -866,7 +872,10 @@ export async function reassignOrderByAdmin(
 
     scheduleBestEffortPush(
       options,
-      notifyDriverAssignmentEvent(
+      (
+        options.notifyDriverAssignmentEvent ??
+        notifyDriverAssignmentEvent
+      )(
         env,
         {
           type:
