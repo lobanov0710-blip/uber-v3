@@ -258,9 +258,6 @@ export async function getOrderById(
 // =========================================
 
 const DRIVER_NEXT_STATUS = {
-  in_progress:
-    "taken",
-
   done:
     "in_progress"
 };
@@ -361,92 +358,6 @@ async function completeOrderTransition(
 
 
 // =========================================
-// TAKE ORDER
-// new -> taken
-// =========================================
-//
-// Driver assignment and status change
-// happen in ONE atomic SQL statement.
-//
-// WHERE:
-//
-// status = new
-// driver_id IS NULL
-//
-// Therefore only one competing driver
-// can successfully claim the order.
-// =========================================
-
-export async function takeOrderForDriver(
-  env,
-  orderId,
-  driverId,
-  updatedAt = Date.now()
-) {
-
-  const id =
-    requiredText(
-      orderId,
-      "id"
-    );
-
-
-  const driver =
-    requiredText(
-      driverId,
-      "driverId"
-    );
-
-
-  const timestamp =
-    transitionTimestamp(
-      updatedAt
-    );
-
-
-  const db =
-    requireDatabase(
-      env
-    );
-
-
-  const result =
-    await db
-      .prepare(`
-        UPDATE orders
-
-        SET
-          status = 'taken',
-          driver_id = ?2,
-          revision = revision + 1,
-          updated_at =
-            CASE
-              WHEN updated_at >= ?3
-                THEN updated_at + 1
-              ELSE ?3
-            END
-
-        WHERE id = ?1
-          AND status = 'new'
-          AND driver_id IS NULL
-      `)
-      .bind(
-        id,
-        driver,
-        timestamp
-      )
-      .run();
-
-
-  return completeOrderTransition(
-    env,
-    id,
-    result
-  );
-}
-
-
-// =========================================
 // DRIVER ADVANCE
 //
 // taken       -> in_progress
@@ -517,8 +428,8 @@ export async function advanceDriverOrder(
     );
 
 
-  const result =
-    await db
+  const orderUpdate =
+    db
       .prepare(`
         UPDATE orders
 
@@ -535,6 +446,26 @@ export async function advanceDriverOrder(
         WHERE id = ?1
           AND driver_id = ?2
           AND status = ?3
+
+          AND (
+            NOT EXISTS (
+              SELECT 1
+              FROM order_assignments a
+              WHERE a.order_id = ?1
+                AND a.state = 'active'
+                AND a.revoked_at IS NULL
+            )
+
+            OR EXISTS (
+              SELECT 1
+              FROM order_assignments a
+              WHERE a.order_id = ?1
+                AND a.driver_id = ?2
+                AND a.state = 'active'
+                AND a.revoked_at IS NULL
+                AND a.phase = 'in_trip'
+            )
+          )
       `)
       .bind(
         id,
@@ -542,14 +473,102 @@ export async function advanceDriverOrder(
         expectedStatus,
         targetStatus,
         timestamp
-      )
-      .run();
+      );
+
+
+  const assignmentComplete =
+    db
+      .prepare(`
+        UPDATE order_assignments
+
+        SET
+          state = 'completed',
+          revision = revision + 1
+
+        WHERE order_id = ?1
+          AND driver_id = ?2
+          AND state = 'active'
+          AND revoked_at IS NULL
+          AND phase = 'in_trip'
+
+          AND EXISTS (
+            SELECT 1
+            FROM orders
+            WHERE id = ?1
+              AND driver_id = ?2
+              AND status = 'done'
+          )
+      `)
+      .bind(
+        id,
+        driver
+      );
+
+
+  const results =
+    await db.batch([
+      orderUpdate,
+      assignmentComplete
+    ]);
+
+
+  if (
+    !Array.isArray(
+      results
+    )
+    ||
+    results.length !== 2
+  ) {
+
+    throw new Error(
+      "Order transition failed"
+    );
+  }
+
+
+  const assignmentResult =
+    results[1];
+
+
+  if (
+    assignmentResult?.success !== true
+  ) {
+
+    throw new Error(
+      "Order assignment completion failed"
+    );
+  }
+
+
+  const assignmentChanges =
+    Number(
+      assignmentResult
+        ?.meta
+        ?.changes ??
+      0
+    );
+
+
+  if (
+    !Number.isSafeInteger(
+      assignmentChanges
+    )
+    ||
+    assignmentChanges < 0
+    ||
+    assignmentChanges > 1
+  ) {
+
+    throw new Error(
+      "Invalid order assignment completion result"
+    );
+  }
 
 
   return completeOrderTransition(
     env,
     id,
-    result
+    results[0]
   );
 }
 
@@ -596,8 +615,8 @@ export async function cancelOrder(
     );
 
 
-  const result =
-    await db
+  const orderUpdate =
+    db
       .prepare(`
         UPDATE orders
 
@@ -621,14 +640,105 @@ export async function cancelOrder(
       .bind(
         id,
         timestamp
-      )
-      .run();
+      );
+
+
+  const assignmentRevoke =
+    db
+      .prepare(`
+        UPDATE order_assignments
+
+        SET
+          state = 'revoked',
+          revision = revision + 1,
+          revoked_at =
+            CASE
+              WHEN created_at > ?2
+                THEN created_at
+              ELSE ?2
+            END
+
+        WHERE order_id = ?1
+          AND state = 'active'
+          AND revoked_at IS NULL
+
+          AND EXISTS (
+            SELECT 1
+            FROM orders
+            WHERE id = ?1
+              AND status = 'canceled'
+          )
+      `)
+      .bind(
+        id,
+        timestamp
+      );
+
+
+  const results =
+    await db.batch([
+      orderUpdate,
+      assignmentRevoke
+    ]);
+
+
+  if (
+    !Array.isArray(
+      results
+    )
+    ||
+    results.length !== 2
+  ) {
+
+    throw new Error(
+      "Order transition failed"
+    );
+  }
+
+
+  const assignmentResult =
+    results[1];
+
+
+  if (
+    assignmentResult?.success !== true
+  ) {
+
+    throw new Error(
+      "Order assignment revocation failed"
+    );
+  }
+
+
+  const assignmentChanges =
+    Number(
+      assignmentResult
+        ?.meta
+        ?.changes ??
+      0
+    );
+
+
+  if (
+    !Number.isSafeInteger(
+      assignmentChanges
+    )
+    ||
+    assignmentChanges < 0
+    ||
+    assignmentChanges > 1
+  ) {
+
+    throw new Error(
+      "Invalid order assignment revocation result"
+    );
+  }
 
 
   return completeOrderTransition(
     env,
     id,
-    result
+    results[0]
   );
 }
 
