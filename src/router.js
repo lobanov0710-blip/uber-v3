@@ -2996,6 +2996,41 @@ export default async function router(
 
 
     // =========================
+    // ADMIN PERMISSION
+    // =========================
+
+    if (isAdmin) {
+
+      let adminAccess;
+
+      try {
+        adminAccess =
+          await resolveAdminAccess(
+            env,
+            user
+          );
+      } catch {
+        return safeError(
+          "admin authorization failed",
+          500
+        );
+      }
+
+      if (
+        !adminCan(
+          adminAccess,
+          "orders.cancel"
+        )
+      ) {
+        return safeError(
+          "forbidden",
+          403
+        );
+      }
+    }
+
+
+    // =========================
     // ORDER ID
     // =========================
 
@@ -3588,6 +3623,41 @@ export default async function router(
           "forbidden",
           403
         );
+      }
+
+
+      // =========================
+      // ADMIN PERMISSION
+      // =========================
+
+      if (isAdmin) {
+
+        let adminAccess;
+
+        try {
+          adminAccess =
+            await resolveAdminAccess(
+              env,
+              user
+            );
+        } catch {
+          return safeError(
+            "admin authorization failed",
+            500
+          );
+        }
+
+        if (
+          !adminCan(
+            adminAccess,
+            "orders.read"
+          )
+        ) {
+          return safeError(
+            "forbidden",
+            403
+          );
+        }
       }
 
 
