@@ -32,6 +32,10 @@ import {
 } from "./firebaseIdTokenVerifier.js";
 
 import {
+  verifyFirebaseAppCheckToken
+} from "./firebaseAppCheckVerifier.js";
+
+import {
   commitExistingFirebaseExchange,
   commitNewFirebaseExchange,
   findDriverFirebaseIdentity,
@@ -711,6 +715,62 @@ export async function exchangeDriverFirebaseSession(
         now
       );
     }
+  }
+
+
+  const appCheckToken =
+    clean(
+      options.appCheckToken
+    );
+
+
+  if (!appCheckToken) {
+
+    return unauthorized(
+      "firebase_app_check_required"
+    );
+  }
+
+
+  try {
+
+    await (
+      options.verifyFirebaseAppCheckToken ??
+      verifyFirebaseAppCheckToken
+    )(
+      env,
+      appCheckToken,
+      {
+        nowMs:
+          now,
+
+        fetchImpl:
+          options.fetchImpl
+      }
+    );
+
+  } catch (
+    error
+  ) {
+
+    if (
+      /not configured/i.test(
+        String(
+          error?.message ??
+          ""
+        )
+      )
+    ) {
+
+      return unavailable(
+        "firebase_app_check_not_configured"
+      );
+    }
+
+
+    return unauthorized(
+      "invalid_firebase_app_check"
+    );
   }
 
 
