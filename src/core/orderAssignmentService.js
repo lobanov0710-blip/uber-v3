@@ -240,13 +240,15 @@ async function requireAdminPermission(
 async function checkCandidate(
   env,
   driverId,
-  vehicleId
+  vehicleId,
+  nowMs
 ) {
   const candidate =
     await getAssignmentCandidateEligibility(
       env,
       driverId,
-      vehicleId
+      vehicleId,
+      nowMs
     );
 
   if (!candidate) {
@@ -287,6 +289,14 @@ async function checkCandidate(
   ) {
     return unprocessable(
       "vehicle_not_approved"
+    );
+  }
+
+  if (
+    candidate.photoControlBlocked
+  ) {
+    return unprocessable(
+      "vehicle_photo_control_required"
     );
   }
 
@@ -587,23 +597,33 @@ export async function assignOrderByAdmin(
     );
   }
 
-  const candidateError =
-    await checkCandidate(
-      env,
-      parsed.driverId,
-      parsed.vehicleId
-    );
-
-  if (candidateError) {
-    return candidateError;
-  }
-
   const now =
     Number.isSafeInteger(
       options.nowMs
     )
       ? options.nowMs
       : Date.now();
+
+  if (
+    !Number.isSafeInteger(now) ||
+    now <= 0
+  ) {
+    throw new Error(
+      "invalid assignment timestamp"
+    );
+  }
+
+  const candidateError =
+    await checkCandidate(
+      env,
+      parsed.driverId,
+      parsed.vehicleId,
+      now
+    );
+
+  if (candidateError) {
+    return candidateError;
+  }
 
   const result =
     await assignOrderToDriverVehicle(
@@ -777,23 +797,33 @@ export async function reassignOrderByAdmin(
     );
   }
 
-  const candidateError =
-    await checkCandidate(
-      env,
-      parsed.driverId,
-      parsed.vehicleId
-    );
-
-  if (candidateError) {
-    return candidateError;
-  }
-
   const now =
     Number.isSafeInteger(
       options.nowMs
     )
       ? options.nowMs
       : Date.now();
+
+  if (
+    !Number.isSafeInteger(now) ||
+    now <= 0
+  ) {
+    throw new Error(
+      "invalid reassignment timestamp"
+    );
+  }
+
+  const candidateError =
+    await checkCandidate(
+      env,
+      parsed.driverId,
+      parsed.vehicleId,
+      now
+    );
+
+  if (candidateError) {
+    return candidateError;
+  }
 
   const previousDriverId =
     state.assignment.driverId;
