@@ -141,6 +141,84 @@ export async function getVehiclePhotoControlState(
 }
 
 
+export async function getDriverPhotoCheckUploadState(
+  env,
+  {
+    driverId,
+    vehicleId,
+    photoCheckId
+  }
+) {
+  const db =
+    requireDatabase(env);
+
+  const row =
+    await db
+      .prepare(`
+        SELECT
+          pc.id,
+          pc.vehicle_id,
+          pc.result,
+          pc.revision,
+          pc.due_at,
+          pc.grace_until,
+          pc.restriction_mode,
+          v.driver_id
+
+        FROM vehicle_photo_checks pc
+
+        INNER JOIN vehicles v
+          ON v.id = pc.vehicle_id
+
+        WHERE pc.id = ?1
+          AND pc.vehicle_id = ?2
+          AND v.driver_id = ?3
+
+        LIMIT 1
+      `)
+      .bind(
+        requireText(
+          photoCheckId,
+          "photoCheckId"
+        ),
+        requireText(
+          vehicleId,
+          "vehicleId"
+        ),
+        requireText(
+          driverId,
+          "driverId"
+        )
+      )
+      .first();
+
+
+  if (!row) {
+    return null;
+  }
+
+
+  return {
+    id:
+      clean(row.id),
+    vehicleId:
+      clean(row.vehicle_id),
+    driverId:
+      clean(row.driver_id),
+    result:
+      clean(row.result),
+    revision:
+      Number(row.revision),
+    dueAt:
+      Number(row.due_at),
+    graceUntil:
+      Number(row.grace_until),
+    restrictionMode:
+      clean(row.restriction_mode)
+  };
+}
+
+
 async function finalizeConflictIdempotency(
   env,
   idempotency,
