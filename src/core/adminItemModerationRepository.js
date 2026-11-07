@@ -937,6 +937,7 @@ export async function moderateDocument(
     decision,
     note,
     reviewedAt,
+    nextPhotoCheckDueAt,
     requestId,
     reviewId,
     auditId,
@@ -973,7 +974,19 @@ export async function moderateDocument(
           status = ?5,
           revision = revision + 1,
           last_review_id = ?6,
-          updated_at = ?7
+          updated_at = ?7,
+          last_photo_check_passed_at =
+            CASE
+              WHEN ?13 IS NULL
+                THEN last_photo_check_passed_at
+              ELSE ?7
+            END,
+          next_photo_check_due_at =
+            CASE
+              WHEN ?13 IS NULL
+                THEN next_photo_check_due_at
+              ELSE ?13
+            END
 
         WHERE id = ?1
           AND owner_driver_id = ?2
@@ -1519,7 +1532,13 @@ export async function moderateVehicle(
         requireText(
           idempotency.claimId,
           "claimId"
-        )
+        ),
+        nextPhotoCheckDueAt == null
+          ? null
+          : requirePositiveInteger(
+              nextPhotoCheckDueAt,
+              "nextPhotoCheckDueAt"
+            )
       );
 
   const review =
@@ -1569,7 +1588,19 @@ export async function moderateVehicle(
       decision:
         normalizedDecision,
       revision:
-        revision + 1
+        revision + 1,
+      ...(
+        normalizedDecision ===
+          "approved"
+          ? {
+              nextPhotoCheckDueAt:
+                requirePositiveInteger(
+                  nextPhotoCheckDueAt,
+                  "nextPhotoCheckDueAt"
+                )
+            }
+          : {}
+      )
     }
   };
 
