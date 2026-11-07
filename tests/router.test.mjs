@@ -1311,20 +1311,22 @@ await test(
           )
       )
     );
-    assert.equal(scheduledPush.length, 1,
-      "A newly persisted order schedules one driver push");
-    await Promise.all(scheduledPush);
+    assert.equal(
+      scheduledPush.length,
+      0,
+      "An unassigned order must not notify any Driver"
+    );
 
   }
 );
 
 
 // ========================================
-// IDEMPOTENT ORDER RETRIES MUST NOT PUSH
+// ORDER CREATION MUST NOT PUSH TO DRIVERS
 // ========================================
 
 await test(
-  "idempotent POST /orders returns the existing receipt without another driver push",
+  "idempotent POST /orders remains silent for Driver push",
   async () => {
     const quoteId = "123e4567-e89b-42d3-a456-426614174000";
     const orderId = "abcdef12-3456-4234-9abc-123456789abc";
@@ -1389,7 +1391,7 @@ await test(
     assert.equal(reads, 1);
     assert.equal(writes, 0);
     assert.equal(scheduledPush.length, 0,
-      "An idempotent retry must not wake drivers twice");
+      "An idempotent retry must not notify any Driver");
   }
 );
 
