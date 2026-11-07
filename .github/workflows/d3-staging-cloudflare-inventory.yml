@@ -48,6 +48,7 @@ jobs:
           PY
 
       - name: List staging KV namespaces
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -69,6 +70,7 @@ jobs:
           PY
 
       - name: List candidate R2 buckets
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -79,3 +81,48 @@ jobs:
           safe=[line.strip() for line in raw if re.search(r'(staging|driver|transfer)',line,re.I)]
           print('R2_CANDIDATES=' + repr(safe))
           PY
+
+      - name: Inspect active staging Worker bindings
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npx --yes wrangler@4.156.0 versions list             --name uber-v3-staging             --json > /tmp/versions.json
+
+          VERSION_ID="$(python3 - <<'PY'
+          import json
+          data=json.load(open('/tmp/versions.json',encoding='utf-8'))
+          rows=data if isinstance(data,list) else data.get('result',data.get('versions',[]))
+          if not rows:
+              raise SystemExit(5)
+          row=rows[0]
+          value=row.get('id') or row.get('version_id') or row.get('versionId')
+          if not value:
+              raise SystemExit(6)
+          print(value)
+          PY
+          )"
+
+          npx --yes wrangler@4.156.0 versions view "$VERSION_ID"             --name uber-v3-staging             --json > /tmp/version.json
+
+          python3 - <<'PY'
+          import json
+          data=json.load(open('/tmp/version.json',encoding='utf-8'))
+          allowed={'type','name','namespace_id','database_id','database_name','bucket_name','class_name','script_name'}
+          found=[]
+
+          def walk(node):
+              if isinstance(node,dict):
+                  if 'type' in node and 'name' in node:
+                      item={k:node.get(k) for k in allowed if k in node}
+                      found.append(item)
+                  for value in node.values():
+                      walk(value)
+              elif isinstance(node,list):
+                  for value in node:
+                      walk(value)
+
+          walk(data)
+          print('STAGING_WORKER_BINDINGS=' + json.dumps(found,ensure_ascii=False,sort_keys=True))
+          PY
+
