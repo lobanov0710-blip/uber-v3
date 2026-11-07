@@ -25,5 +25,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validate D1 migrations offline
+        run: python3 tools/test_migrations.py
       - name: Run backend unit and router tests
         run: npm test
