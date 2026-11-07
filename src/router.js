@@ -244,6 +244,11 @@ export default async function router(
             clientIp:
               req.headers.get(
                 "CF-Connecting-IP"
+              ),
+
+            appCheckToken:
+              req.headers.get(
+                "X-Firebase-AppCheck"
               )
           }
         );
