@@ -1,6 +1,6 @@
 {
   "date": "2026-11-07",
-  "lock_sha256": "bf5b8f92fe241d899a13252c4988a05c6609ce263e77bc5f5c589d49d2c737eb",
+  "lock_sha256": "fc7936886ee67347fae842da144a8c74735953b80cfd8369c0d144fd471fd451",
   "npm_audit": {
     "info": 0,
     "low": 0,
@@ -374,5 +374,6 @@
       "name": "youch-core",
       "version": "0.3.3"
     }
-  ]
+  ],
+  "package_manager": "npm@11.9.0"
 }

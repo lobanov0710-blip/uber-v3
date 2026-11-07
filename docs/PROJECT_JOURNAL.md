@@ -25,3 +25,16 @@ Merge/deploy не выполнялись. Реальные D1/R2/Firebase E2E и
 
 Следующие блокеры: terminal done/canceled mutations с revision/idempotency/audit,
 полный photo-check eligibility и согласование Android с /v1 assignment flow.
+
+## CI run 156: обнаружена разница npm, исправление воспроизводимости
+
+Первый CI нового audit commit e774e4fe6e25956aff5e8a474ffdb1e5808134cc
+завершился EUSAGE на npm ci: runner Node 22 использовал npm 10.9.9,
+а scoped-overrides lock был подготовлен и проверен npm 11.9.0.
+Тесты и audit в этом CI запуске не выполнялись.
+
+В CI явно устанавливается npm 11.9.0; packageManager/engines описывают
+поддерживаемые версии. Lock обновлён тем же npm, unsafe versions не возвращались.
+Зафиксированы SHA checkout/setup-node из прошедшего setup run 156,
+checkout больше не сохраняет credentials для последующих шагов.
+Повтор CI запускается на новом commit; результат записывается отдельно.
