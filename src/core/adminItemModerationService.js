@@ -8,6 +8,10 @@ import {
 } from "./adminAuthorization.js";
 
 import {
+  addOneCalendarMonthUtc
+} from "./photoControlSchedule.js";
+
+import {
   finalizeDriverRegistrationModeration,
   getAdminRegistrationReviewBundle,
   moderateDocument,
@@ -947,7 +951,14 @@ export async function reviewAdminRegistrationItem(
         {
           ...common,
           vehicleId:
-            clean(targetId)
+            clean(targetId),
+          nextPhotoCheckDueAt:
+            decision ===
+              "approved"
+              ? addOneCalendarMonthUtc(
+                  now
+                )
+              : null
         }
       );
   }
