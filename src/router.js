@@ -34,7 +34,6 @@ import {
 import {
   getOrderById,
   listOrders,
-  takeOrderForDriver,
   advanceDriverOrder,
   cancelOrder
 } from "./core/orderRepository.js";
@@ -108,6 +107,12 @@ import {
 import {
   readAdminPrivateResource
 } from "./core/adminPrivateResourceService.js";
+
+import {
+  assignOrderByAdmin,
+  listDriverAssignments,
+  reassignOrderByAdmin
+} from "./core/orderAssignmentService.js";
 
 
 // =========================
@@ -1566,6 +1571,308 @@ export default async function router(
 
           code:
             "private_resource_read_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // ADMIN ORDER ASSIGNMENT V1
+  // =========================
+
+  const adminOrderAssignmentMatch =
+    path.match(
+      /^\/v1\/admin\/orders\/([^/]+)\/(assign|reassign)$/
+    );
+
+
+  if (
+    adminOrderAssignmentMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let orderId;
+    let action;
+
+
+    try {
+
+      orderId =
+        decodeURIComponent(
+          adminOrderAssignmentMatch[1]
+        )
+          .trim();
+
+      action =
+        adminOrderAssignmentMatch[2];
+
+    } catch {
+
+      orderId =
+        "";
+
+      action =
+        "";
+    }
+
+
+    if (
+      !/^[A-Za-z0-9_-]{8,120}$/.test(
+        orderId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_order_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const service =
+        action ===
+          "assign"
+          ? assignOrderByAdmin
+          : reassignOrderByAdmin;
+
+
+      const result =
+        await service(
+          env,
+          auth.user,
+          orderId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN ORDER ASSIGNMENT ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "order assignment failed",
+
+          code:
+            "order_assignment_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER ASSIGNMENTS V1
+  // =========================
+
+  if (
+    path ===
+      "/v1/driver/assignments"
+  ) {
+
+    if (
+      req.method !==
+        "GET"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await listDriverAssignments(
+          env,
+          auth.user,
+          {
+            limit:
+              url.searchParams.get(
+                "limit"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER ASSIGNMENTS ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "driver assignments failed",
+
+          code:
+            "driver_assignments_failed",
 
           requestId
         },
@@ -3982,9 +4289,6 @@ export default async function router(
   //
   // Driver:
   //
-  // new
-  //   -> taken
-  //
   // taken
   //   -> in_progress
   //
@@ -4258,17 +4562,6 @@ export default async function router(
       ) {
 
         if (
-          targetStatus === "taken"
-        ) {
-
-          transitionResult =
-            await takeOrderForDriver(
-              env,
-              orderId,
-              driverId
-            );
-
-        } else if (
           targetStatus ===
             "in_progress"
           ||
@@ -4425,7 +4718,10 @@ export default async function router(
             transitionedOrder.driverId,
 
           updatedAt:
-            transitionedOrder.updatedAt
+            transitionedOrder.updatedAt,
+
+          revision:
+            transitionedOrder.revision
         }
       },
       200,
@@ -4879,15 +5175,11 @@ export default async function router(
       // DRIVER VISIBILITY
       // =========================
       //
-      // Driver видит:
+      // Driver видит только заказы,
+      // назначенные ему сервером.
       //
-      // 1. новые заказы;
-      //
-      // 2. заказы,
-      //    назначенные ему.
-      //
-      // Заказы другого
-      // водителя скрыты.
+      // Свободные new-заказы Driver
+      // больше не получает.
       // =========================
 
       if (
@@ -4896,27 +5188,14 @@ export default async function router(
 
         visibleOrders =
           visibleOrders.filter(
-            order => {
-
-              if (
-                order.status ===
-                "new"
-              ) {
-
-                return true;
-              }
-
-
-              return (
-                String(
-                  order.driverId ||
-                    ""
-                ) ===
-                String(
-                  user.id
-                )
-              );
-            }
+            order =>
+              String(
+                order.driverId ||
+                  ""
+              ) ===
+              String(
+                user.id
+              )
           );
       }
 
@@ -5025,7 +5304,10 @@ export default async function router(
                 order.createdAt,
 
               updatedAt:
-                order.updatedAt
+                order.updatedAt,
+
+              revision:
+                order.revision
             };
 
 
@@ -5040,10 +5322,8 @@ export default async function router(
             //   только если заказ
             //   назначен именно ему.
             //
-            // Новый неназначенный заказ
-            // показывается водителю
-            // без имени, телефона
-            // и комментария.
+            // Неназначенные заказы Driver
+            // вообще не получает.
             // =========================
 
             const canSeeCustomer =
