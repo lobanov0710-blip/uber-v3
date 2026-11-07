@@ -457,6 +457,30 @@ export async function transitionOrderTerminal(
       : Date.now();
 
 
+  const previousUpdatedAt =
+    Number(
+      state.updatedAt
+    );
+
+  const changedAt =
+    Math.max(
+      now,
+      previousUpdatedAt + 1
+    );
+
+
+  if (
+    !Number.isSafeInteger(
+      changedAt
+    ) ||
+    changedAt <= 0
+  ) {
+    throw new Error(
+      "invalid terminal mutation timestamp"
+    );
+  }
+
+
   const result =
     await transitionTerminalOrder(
       env,
@@ -467,9 +491,10 @@ export async function transitionOrderTerminal(
         expectedRevision,
         targetStatus,
         currentDriverId:
-          state.driverId,
-        changedAt:
-          now,
+          targetStatus === "done"
+            ? actorAccountId
+            : state.driverId,
+        changedAt,
         requestId:
           clean(
             options.requestId
