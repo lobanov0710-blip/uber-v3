@@ -1484,6 +1484,144 @@ await test(
 
 
 // ========================================
+// D3 TERMINAL CONTRACT
+// ========================================
+
+await test(
+  "terminal mutation requires Idempotency-Key",
+  async () => {
+
+    const token =
+      await createStaffToken();
+
+    const {
+      db
+    } =
+      createTransitionDatabase(
+        orderRow({
+          status:
+            "in_progress",
+          driver_id:
+            "driver-1"
+        })
+      );
+
+    const response =
+      await router(
+        new Request(
+          "https://worker.test/orders/order-1/status",
+          {
+            method:
+              "POST",
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+              "Content-Type":
+                "application/json"
+            },
+            body:
+              JSON.stringify({
+                status:
+                  "done",
+                expectedRevision:
+                  1
+              })
+          }
+        ),
+        {
+          JWT_SECRET:
+            JWT_SECRET,
+          DB:
+            db
+        }
+      );
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+    assert.equal(
+      response.status,
+      400
+    );
+
+    assert.equal(
+      body.code,
+      "idempotency_key_required"
+    );
+  }
+);
+
+
+await test(
+  "terminal mutation requires expectedRevision",
+  async () => {
+
+    const token =
+      await createStaffToken();
+
+    const {
+      db
+    } =
+      createTransitionDatabase(
+        orderRow({
+          status:
+            "in_progress",
+          driver_id:
+            "driver-1"
+        })
+      );
+
+    const response =
+      await router(
+        new Request(
+          "https://worker.test/orders/order-1/status",
+          {
+            method:
+              "POST",
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+              "Content-Type":
+                "application/json",
+              "Idempotency-Key":
+                "terminal-required-key"
+            },
+            body:
+              JSON.stringify({
+                status:
+                  "done"
+              })
+          }
+        ),
+        {
+          JWT_SECRET:
+            JWT_SECRET,
+          DB:
+            db
+        }
+      );
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+    assert.equal(
+      response.status,
+      400
+    );
+
+    assert.equal(
+      body.code,
+      "invalid_revision"
+    );
+  }
+);
+
+
+// ========================================
 // INVALID STATUS
 // ========================================
 
@@ -1877,6 +2015,58 @@ await test(
 // ========================================
 // WRONG DRIVER
 // ========================================
+
+await test(
+  "other driver cannot complete another driver's trip",
+  async () => {
+
+    const token =
+      await createStaffToken({
+        id:
+          "driver-2",
+        role:
+          "driver"
+      });
+
+    const {
+      db
+    } =
+      createTransitionDatabase(
+        orderRow({
+          status:
+            "in_progress",
+          driver_id:
+            "driver-1"
+        }),
+        {
+          staffId:
+            "driver-2",
+          role:
+            "driver"
+        }
+      );
+
+    const response =
+      await router(
+        transitionRequest(
+          token,
+          "done"
+        ),
+        {
+          JWT_SECRET:
+            JWT_SECRET,
+          DB:
+            db
+        }
+      );
+
+    assert.equal(
+      response.status,
+      409
+    );
+  }
+);
+
 
 await test(
   "other driver cannot use legacy trip-start transition",
