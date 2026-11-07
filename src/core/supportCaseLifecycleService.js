@@ -987,6 +987,8 @@ export async function runSupportChatRetention(
     {
       nowMs:
         nowFrom(options),
+      retentionMs:
+        SUPPORT_CHAT_RETENTION_MS,
       limit:
         options.limit
     }
