@@ -23,6 +23,10 @@ import {
   getMutationIdempotencyRecord
 } from "./mutationIdempotencyRepository.js";
 
+import {
+  notifyDriverAssignmentEvent
+} from "./staffPushNotificationService.js";
+
 
 const INPUT_KEYS =
   new Set([
@@ -97,6 +101,32 @@ function createId(prefix) {
   }
 
   return `${prefix}_${crypto.randomUUID()}`;
+}
+
+
+function scheduleBestEffortPush(
+  options,
+  promise
+) {
+  if (
+    typeof options?.schedule !==
+      "function"
+  ) {
+    return;
+  }
+
+  options.schedule(
+    Promise.resolve(
+      promise
+    )
+      .catch(
+        () => {
+          console.error(
+            "ORDER ASSIGNMENT PUSH DELIVERY ERROR"
+          );
+        }
+      )
+  );
 }
 
 
@@ -611,6 +641,41 @@ export async function assignOrderByAdmin(
       }
     );
 
+
+  if (
+    result.kind ===
+      "success"
+  ) {
+
+    scheduleBestEffortPush(
+      options,
+      notifyDriverAssignmentEvent(
+        env,
+        {
+          type:
+            "order_assigned",
+
+          accountId:
+            parsed.driverId,
+
+          orderId:
+            clean(orderId),
+
+          assignmentId:
+            result.result
+              .assignment
+              .id,
+
+          orderRevision:
+            result.result
+              .assignment
+              .orderRevision
+        }
+      )
+    );
+  }
+
+
   return resolveRepositoryResult(
     env,
     authorization.access,
@@ -727,6 +792,10 @@ export async function reassignOrderByAdmin(
       ? options.nowMs
       : Date.now();
 
+  const previousDriverId =
+    state.assignment.driverId;
+
+
   const result =
     await reassignOrderToDriverVehicle(
       env,
@@ -762,6 +831,64 @@ export async function reassignOrderByAdmin(
           idempotency.value
       }
     );
+
+
+  if (
+    result.kind ===
+      "success"
+  ) {
+
+    const orderRevision =
+      result.result
+        .assignment
+        .orderRevision;
+
+
+    scheduleBestEffortPush(
+      options,
+      notifyDriverAssignmentEvent(
+        env,
+        {
+          type:
+            "order_assignment_revoked",
+
+          accountId:
+            previousDriverId,
+
+          orderId:
+            clean(orderId),
+
+          orderRevision
+        }
+      )
+    );
+
+
+    scheduleBestEffortPush(
+      options,
+      notifyDriverAssignmentEvent(
+        env,
+        {
+          type:
+            "order_assigned",
+
+          accountId:
+            parsed.driverId,
+
+          orderId:
+            clean(orderId),
+
+          assignmentId:
+            result.result
+              .assignment
+              .id,
+
+          orderRevision
+        }
+      )
+    );
+  }
+
 
   return resolveRepositoryResult(
     env,
