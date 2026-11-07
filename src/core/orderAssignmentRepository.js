@@ -7,6 +7,10 @@ import {
   prepareMutationIdempotencyComplete
 } from "./mutationIdempotencyRepository.js";
 
+import {
+  PHOTO_CONTROL_GRACE_MS
+} from "./photoControlSchedule.js";
+
 
 function requireDatabase(env) {
   if (!env?.DB) {
@@ -408,8 +412,14 @@ export async function getAssignmentCandidateEligibility(
 
           v.id AS vehicle_id,
           v.status AS vehicle_status,
+          v.next_photo_check_due_at,
 
-          EXISTS (
+          (
+            (
+              v.next_photo_check_due_at IS NOT NULL
+              AND v.next_photo_check_due_at + ?4 < ?3
+            )
+            OR EXISTS (
             SELECT 1
             FROM vehicle_photo_checks pc
             WHERE pc.vehicle_id = v.id
@@ -433,6 +443,7 @@ export async function getAssignmentCandidateEligibility(
                   )
                 )
               )
+          )
           ) AS photo_control_blocked,
 
           EXISTS (
@@ -471,7 +482,8 @@ export async function getAssignmentCandidateEligibility(
           vehicleId,
           "vehicleId"
         ),
-        timestamp
+        timestamp,
+        PHOTO_CONTROL_GRACE_MS
       )
       .first();
 
@@ -1037,6 +1049,14 @@ export async function assignOrderToDriverVehicle(
 
           AND NOT EXISTS (
             SELECT 1
+            FROM vehicles overdue
+            WHERE overdue.id = ?6
+              AND overdue.next_photo_check_due_at IS NOT NULL
+              AND overdue.next_photo_check_due_at + ?12 < ?4
+          )
+
+          AND NOT EXISTS (
+            SELECT 1
             FROM driver_availability da
             WHERE da.driver_id = ?2
               AND da.state = 'on_line'
@@ -1093,7 +1113,8 @@ export async function assignOrderToDriverVehicle(
         requireText(
           idempotency.claimId,
           "claimId"
-        )
+        ),
+        PHOTO_CONTROL_GRACE_MS
       );
 
 
@@ -1333,6 +1354,14 @@ export async function reassignOrderToDriverVehicle(
 
           AND NOT EXISTS (
             SELECT 1
+            FROM vehicles overdue
+            WHERE overdue.id = ?6
+              AND overdue.next_photo_check_due_at IS NOT NULL
+              AND overdue.next_photo_check_due_at + ?12 < ?4
+          )
+
+          AND NOT EXISTS (
+            SELECT 1
             FROM driver_availability da
             WHERE da.driver_id = ?2
               AND da.state = 'on_line'
@@ -1389,7 +1418,8 @@ export async function reassignOrderToDriverVehicle(
         requireText(
           idempotency.claimId,
           "claimId"
-        )
+        ),
+        PHOTO_CONTROL_GRACE_MS
       );
 
 
