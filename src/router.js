@@ -239,7 +239,12 @@ export default async function router(
           env,
           body,
           {
-            requestId
+            requestId,
+
+            clientIp:
+              req.headers.get(
+                "CF-Connecting-IP"
+              )
           }
         );
 
