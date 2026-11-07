@@ -25,6 +25,16 @@ CREATE TABLE driver_upload_sessions (
         CHECK (created_at > 0),
     expires_at INTEGER NOT NULL
         CHECK (expires_at > created_at),
+    claim_id TEXT DEFAULT NULL
+        CHECK (
+            claim_id IS NULL
+            OR length(claim_id) BETWEEN 8 AND 100
+        ),
+    claimed_at INTEGER DEFAULT NULL
+        CHECK (
+            claimed_at IS NULL
+            OR claimed_at >= created_at
+        ),
     consumed_at INTEGER DEFAULT NULL
         CHECK (
             consumed_at IS NULL
@@ -42,6 +52,15 @@ CREATE TABLE driver_upload_sessions (
         (resource_type = 'document')
         OR
         (resource_type = 'vehicle_photo' AND vehicle_id IS NOT NULL)
+    ),
+    CHECK (
+        (claim_id IS NULL AND claimed_at IS NULL)
+        OR
+        (claim_id IS NOT NULL AND claimed_at IS NOT NULL)
+    ),
+    CHECK (
+        consumed_at IS NULL
+        OR claim_id IS NOT NULL
     )
 );
 
