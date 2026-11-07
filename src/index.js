@@ -5,6 +5,10 @@ import {
   runMonthlyPhotoControlDueGeneration
 } from "./core/vehiclePhotoControlService.js";
 
+import {
+  runSupportChatRetention
+} from "./core/supportCaseLifecycleService.js";
+
 export default {
   async fetch(req, env, ctx) {
     try {
@@ -22,16 +26,29 @@ export default {
     ctx
   ) {
     const task =
-      runMonthlyPhotoControlDueGeneration(
-        env
-      )
-        .catch(
-          () => {
-            console.error(
-              "PHOTO CONTROL DUE GENERATION ERROR"
-            );
-          }
-        );
+      Promise.all([
+        runMonthlyPhotoControlDueGeneration(
+          env
+        )
+          .catch(
+            () => {
+              console.error(
+                "PHOTO CONTROL DUE GENERATION ERROR"
+              );
+            }
+          ),
+
+        runSupportChatRetention(
+          env
+        )
+          .catch(
+            () => {
+              console.error(
+                "SUPPORT CHAT RETENTION ERROR"
+              );
+            }
+          )
+      ]);
 
     if (
       ctx &&
