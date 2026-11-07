@@ -94,3 +94,83 @@ Merge и production deploy не выполнялись. D4–D7 не выбир�
 Следующий утверждённый D3-блок: server-authoritative photo-control eligibility,
 после него — support/photo-control API и дальнейшее согласование Android с
 assigned-only `/v1` flow.
+
+## D3 photo-control eligibility and support API foundation — 2026-11-07
+
+После закрытия terminal hardening начат следующий утверждённый D3-блок.
+
+### Photo-control
+
+Добавлена additive migration `0016_photo_control_support_hardening.sql`:
+- `vehicle_photo_checks.revision`;
+- server-authoritative `restriction_mode`:
+  `grace_period | after_current_trip | immediate`;
+- `created_by`;
+- дополнительные индексы eligibility.
+
+Реализован утверждённый контракт:
+`POST /v1/admin/vehicles/{vehicleId}/photo-checks`.
+
+Требования:
+- текущая staff-session;
+- permission `vehicles.verify` либо OWNER override;
+- обязательный `Idempotency-Key`;
+- обязательный `expectedRevision` автомобиля;
+- reason 1..500;
+- `monthly` создаётся с утверждённым ТЗ grace-period ровно 24 часа;
+- `complaint/manual` требуют режим `after_current_trip` либо `immediate`.
+
+Создание одной D1 batch связывает idempotency claim, revision автомобиля,
+photo-check, success audit и сохранённый idempotent response.
+
+Photo-control eligibility теперь является server-side hard gate:
+- `PUT /v1/driver/availability` не разрешает `on_line`, если check blocking;
+- assign/reassign не разрешают новое назначение blocking-автомобиля;
+- те же ограничения проверяются непосредственно SQL, а не только service/UI;
+- `monthly` в пределах 24 часов остаётся допустимым `grace_period`;
+- после grace новые `on_line`/assignment запрещаются;
+- `after_current_trip` и `immediate` запрещают новые назначения сразу;
+- существующая поездка автоматически не отменяется: отдельного product rule на
+  auto-cancel ТЗ не задаёт, решение остаётся за уполномоченным администратором.
+
+Автоматический ежемесячный scheduler и review/result API ещё не объявляются
+готовыми. Они нужны, чтобы полностью замкнуть lifecycle photo-control.
+
+### Driver support
+
+Реализован утверждённый create-контракт:
+`POST /v1/driver/support-cases`.
+
+- только authenticated Driver;
+- категории строго из ТЗ;
+- обязательный `Idempotency-Key`;
+- создаётся только собственный case;
+- при `orderId` backend проверяет историческую/текущую принадлежность заказа
+  водителю и скрывает чужой ресурс как 404;
+- support endpoint не меняет и не отменяет заказ;
+- case создаётся с `revision=1`;
+- claim, insert, audit и сохранённый response связаны одной D1 batch.
+
+Для create нового supportCase prior revision отсутствует; optimistic revision
+фиксируется с версии 1 и должен быть обязателен для будущих update/resolve mutations.
+
+### Проверки
+
+GitHub Actions run 188: PASS на
+`4b8de9e44d44098917909fafcb9e81fbf5e13838`.
+
+- migration smoke: 16/16 PASS;
+- полный `npm test`: PASS;
+- новый real-SQLite suite photo-control/support: 5/5 PASS;
+- monthly 24h grace: PASS;
+- block after grace: PASS;
+- immediate unplanned assignment block: PASS;
+- support idempotency/audit: PASS;
+- чужой order в support: PASS/404;
+- local workerd/D1 audit check: PASS;
+- Worker dry-run: PASS.
+
+Merge и production deploy не выполнялись. D4–D7 не выбирались.
+Следующий безопасный D3-подэтап: замкнуть photo-check lifecycle
+(review/result + привязка приватных контрольных фото + monthly due generation),
+после чего расширять support lifecycle/chat без VoIP/D5 решений.
