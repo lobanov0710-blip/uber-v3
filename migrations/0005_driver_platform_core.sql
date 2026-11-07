@@ -44,7 +44,7 @@ ON driver_profiles (identity_status, updated_at DESC);
 CREATE TABLE vehicles (
     id TEXT PRIMARY KEY NOT NULL,
     driver_id TEXT NOT NULL,
-    vin TEXT NOT NULL UNIQUE
+    vin TEXT NOT NULL
         CHECK (length(vin) = 17),
     plate TEXT NOT NULL
         CHECK (length(plate) BETWEEN 1 AND 32),
@@ -80,6 +80,9 @@ ON vehicles (driver_id, status, updated_at DESC);
 
 CREATE INDEX idx_vehicles_plate
 ON vehicles (plate);
+
+CREATE INDEX idx_vehicles_vin
+ON vehicles (vin);
 
 
 CREATE TABLE document_resources (
