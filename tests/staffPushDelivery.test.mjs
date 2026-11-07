@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import {
-  listActiveDriverPushTargets
+  listActiveDriverPushTargetsForAccount
 } from "../src/core/staffPushDeliveryRepository.js";
 
 import {
@@ -145,11 +145,12 @@ await test(
 
 
     const targets =
-      await listActiveDriverPushTargets(
+      await listActiveDriverPushTargetsForAccount(
         {
           DB:
             db
         },
+        "staff-1",
         FIXED_NOW
       );
 
@@ -177,6 +178,12 @@ await test(
     assert.equal(
       calls.length,
       1
+    );
+
+
+    assert.match(
+      calls[0].sql,
+      /p\.account_id\s*=\s*\?1/i
     );
 
 
@@ -212,13 +219,14 @@ await test(
 
     assert.match(
       calls[0].sql,
-      /s\.expires_at\s*>\s*\?1/i
+      /s\.expires_at\s*>\s*\?2/i
     );
 
 
     assert.deepEqual(
       calls[0].args,
       [
+        "staff-1",
         FIXED_NOW
       ]
     );
@@ -227,7 +235,7 @@ await test(
 
 
 await test(
-  "FCM new-order data message contains only routing metadata",
+  "FCM assignment data message contains only opaque routing metadata",
   async () => {
 
     let capturedUrl =
@@ -280,10 +288,16 @@ await test(
         FCM_TOKEN,
         {
           type:
-            "new_order",
+            "order_assigned",
 
           orderId:
-            ORDER_ID
+            ORDER_ID,
+
+          assignmentId:
+            "assignment_opaque123",
+
+          orderRevision:
+            "2"
         },
         fakeFetch
       );
@@ -317,10 +331,16 @@ await test(
       body.message.data,
       {
         type:
-          "new_order",
+          "order_assigned",
 
         orderId:
-          ORDER_ID
+          ORDER_ID,
+
+        assignmentId:
+          "assignment_opaque123",
+
+        orderRevision:
+          "2"
       }
     );
 
@@ -396,10 +416,16 @@ await test(
         FCM_TOKEN,
         {
           type:
-            "new_order",
+            "order_assigned",
 
           orderId:
-            ORDER_ID
+            ORDER_ID,
+
+          assignmentId:
+            "assignment_opaque123",
+
+          orderRevision:
+            "2"
         },
         fakeFetch
       );

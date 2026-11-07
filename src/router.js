@@ -33,10 +33,7 @@ import {
 
 import {
   getOrderById,
-  listOrders,
-  takeOrderForDriver,
-  advanceDriverOrder,
-  cancelOrder
+  listOrders
 } from "./core/orderRepository.js";
 
 import {
@@ -68,8 +65,82 @@ import {
 } from "./core/staffPushDeviceService.js";
 
 import {
-  notifyActiveDriversOfNewOrder
-} from "./core/staffPushNotificationService.js";
+  exchangeDriverFirebaseSession
+} from "./core/driverFirebaseSessionService.js";
+
+import {
+  createDriverVehicle,
+  getDriverMe,
+  patchDriverVehicle,
+  putDriverRegistration
+} from "./core/driverRegistrationService.js";
+
+import {
+  completeDriverPrivateUpload,
+  issueDriverPrivateUpload,
+  submitDriverRegistrationForReview
+} from "./core/driverPrivateUploadService.js";
+
+import {
+  adminCan,
+  requireOwner,
+  resolveAdminAccess
+} from "./core/adminAuthorization.js";
+
+import {
+  getAdminRegistrationQueue
+} from "./core/adminRegistrationService.js";
+
+import {
+  completeAdminRegistrationReview,
+  getAdminRegistrationReview,
+  reviewAdminRegistrationItem,
+  startAdminRegistrationReview
+} from "./core/adminItemModerationService.js";
+
+import {
+  readAdminPrivateResource
+} from "./core/adminPrivateResourceService.js";
+
+import {
+  assignOrderByAdmin,
+  listDriverAssignments,
+  reassignOrderByAdmin
+} from "./core/orderAssignmentService.js";
+
+import {
+  putDriverAvailability
+} from "./core/driverAvailabilityService.js";
+
+import {
+  changeDriverAssignmentPhase,
+  createDriverTripVerificationChallenge
+} from "./core/driverTripOperationalService.js";
+
+import {
+  transitionOrderTerminal
+} from "./core/orderTerminalMutationService.js";
+
+import {
+  getAdminVehiclePhotoCheck,
+  getDriverPhotoChecks,
+  requestVehiclePhotoCheck,
+  reviewAdminVehiclePhotoCheck
+} from "./core/vehiclePhotoControlService.js";
+
+import {
+  postDriverSupportCase
+} from "./core/driverSupportCaseService.js";
+
+import {
+  getAdminSupportCase,
+  getAdminSupportCases,
+  getDriverSupportCase,
+  getDriverSupportCases,
+  postAdminSupportCaseStatus,
+  postAdminSupportMessage,
+  postDriverSupportMessage
+} from "./core/supportCaseLifecycleService.js";
 
 
 // =========================
@@ -185,6 +256,4353 @@ export default async function router(
   }
 
 
+  // =========================
+  // DRIVER FIREBASE SESSION EXCHANGE
+  // =========================
+  //
+  // Public identity exchange endpoint.
+  //
+  // Trust boundary:
+  // - Firebase ID token is verified server-side.
+  // - phone/role/driverId from client are rejected.
+  // - successful exchange returns the existing
+  //   staff access + rotating refresh session.
+  // =========================
+
+  if (
+    path ===
+      "/v1/driver/session/exchange"
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      (
+        "req_" +
+        crypto.randomUUID()
+      );
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await exchangeDriverFirebaseSession(
+          env,
+          body,
+          {
+            requestId,
+
+            clientIp:
+              req.headers.get(
+                "CF-Connecting-IP"
+              ),
+
+            appCheckToken:
+              req.headers.get(
+                "X-Firebase-AppCheck"
+              )
+          }
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ok:
+              false,
+
+            error:
+              result?.error ||
+              "authentication failed",
+
+            code:
+              result?.code ||
+              "driver_session_exchange_failed",
+
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result.created
+          ? 201
+          : 200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER FIREBASE SESSION EXCHANGE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "authentication failed",
+
+          code:
+            "driver_session_exchange_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+
+    } finally {
+
+      // Reduce the lifetime of the raw
+      // Firebase ID token in request scope.
+      if (
+        body
+        &&
+        typeof body ===
+          "object"
+        &&
+        !Array.isArray(
+          body
+        )
+        &&
+        Object.hasOwn(
+          body,
+          "firebaseIdToken"
+        )
+      ) {
+
+        body.firebaseIdToken =
+          null;
+      }
+    }
+  }
+
+
+  // =========================
+  // ADMIN SELF / AUTHORIZATION V1
+  // =========================
+
+  if (
+    path === "/v1/admin/me"
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+    try {
+
+      const access =
+        await resolveAdminAccess(
+          env,
+          auth.user
+        );
+
+      if (
+        access?.ok !== true
+      ) {
+        return json(
+          {
+            ok: false,
+            error:
+              "forbidden",
+            code:
+              access?.code ||
+              "admin_role_required",
+            requestId
+          },
+          access?.status ||
+            403,
+          cors
+        );
+      }
+
+      return json(
+        {
+          ok: true,
+          admin: {
+            accountId:
+              access.accountId,
+            role:
+              access.role,
+            permissions:
+              access.permissions
+          },
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "ADMIN ME ERROR"
+      );
+
+      return json(
+        {
+          ok: false,
+          error:
+            "admin authorization failed",
+          code:
+            "admin_authorization_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // ADMIN REGISTRATION MODERATION V1
+  // =========================
+
+  if (
+    path ===
+      "/v1/admin/registrations"
+  ) {
+
+    if (
+      req.method !==
+        "GET"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getAdminRegistrationQueue(
+          env,
+          auth.user,
+          {
+            status:
+              url.searchParams.get(
+                "status"
+              ),
+
+            limit:
+              url.searchParams.get(
+                "limit"
+              )
+          }
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN REGISTRATION QUEUE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "registration queue failed",
+
+          code:
+            "registration_queue_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminRegistrationDetailMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)$/
+    );
+
+
+  if (
+    adminRegistrationDetailMatch
+  ) {
+
+    if (
+      req.method !==
+        "GET"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminRegistrationDetailMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_driver_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getAdminRegistrationReview(
+          env,
+          auth.user,
+          driverId
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN REGISTRATION DETAIL ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "registration detail failed",
+
+          code:
+            "registration_detail_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminRegistrationItemReviewMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)\/review\/items\/([^/]+)\/([^/]+)$/
+    );
+
+
+  if (
+    adminRegistrationItemReviewMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+    let targetType;
+    let targetId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminRegistrationItemReviewMatch[1]
+        )
+          .trim();
+
+      targetType =
+        decodeURIComponent(
+          adminRegistrationItemReviewMatch[2]
+        )
+          .trim()
+          .toLowerCase();
+
+      targetId =
+        decodeURIComponent(
+          adminRegistrationItemReviewMatch[3]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+
+      targetType =
+        "";
+
+      targetId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+      ||
+      ![
+        "document",
+        "vehicle",
+        "vehicle_photo",
+        "identity"
+      ].includes(
+        targetType
+      )
+      ||
+      !/^[A-Za-z0-9_-]{8,120}$/.test(
+        targetId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_moderation_target",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await reviewAdminRegistrationItem(
+          env,
+          auth.user,
+          driverId,
+          targetType,
+          targetId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN ITEM MODERATION ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "item moderation failed",
+
+          code:
+            "item_moderation_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminRegistrationCompleteMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)\/review\/complete$/
+    );
+
+
+  if (
+    adminRegistrationCompleteMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminRegistrationCompleteMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_driver_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await completeAdminRegistrationReview(
+          env,
+          auth.user,
+          driverId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN REGISTRATION COMPLETE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "registration completion failed",
+
+          code:
+            "registration_completion_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminRegistrationReviewMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)\/review$/
+    );
+
+
+  if (
+    adminRegistrationReviewMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminRegistrationReviewMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_driver_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await startAdminRegistrationReview(
+          env,
+          auth.user,
+          driverId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN REGISTRATION REVIEW ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "registration review failed",
+
+          code:
+            "registration_review_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminPrivateResourceMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)\/resources\/(document|vehicle_photo)\/([^/]+)$/
+    );
+
+
+  if (
+    adminPrivateResourceMatch
+  ) {
+
+    if (
+      req.method !==
+        "GET"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+    let resourceType;
+    let resourceId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminPrivateResourceMatch[1]
+        )
+          .trim();
+
+      resourceType =
+        decodeURIComponent(
+          adminPrivateResourceMatch[2]
+        )
+          .trim()
+          .toLowerCase();
+
+      resourceId =
+        decodeURIComponent(
+          adminPrivateResourceMatch[3]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+
+      resourceType =
+        "";
+
+      resourceId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+      ||
+      !/^[A-Za-z0-9_-]{8,120}$/.test(
+        resourceId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_private_resource",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await readAdminPrivateResource(
+          env,
+          auth.user,
+          {
+            driverId,
+            resourceType,
+            resourceId
+          },
+          {
+            requestId
+          }
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return new Response(
+        result.resource.body,
+        {
+          status:
+            200,
+
+          headers: {
+            "Content-Type":
+              result.resource
+                .contentType,
+
+            "Cache-Control":
+              "no-store, private",
+
+            "Pragma":
+              "no-cache",
+
+            "X-Content-Type-Options":
+              "nosniff",
+
+            "Content-Disposition":
+              "inline",
+
+            "Content-Security-Policy":
+              "default-src 'none'; sandbox",
+
+            "Referrer-Policy":
+              "no-referrer",
+
+            "X-Request-Id":
+              requestId
+          }
+        }
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN PRIVATE RESOURCE READ ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "private resource read failed",
+
+          code:
+            "private_resource_read_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // ADMIN ORDER ASSIGNMENT V1
+  // =========================
+
+  const adminOrderAssignmentMatch =
+    path.match(
+      /^\/v1\/admin\/orders\/([^/]+)\/(assign|reassign)$/
+    );
+
+
+  if (
+    adminOrderAssignmentMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let orderId;
+    let action;
+
+
+    try {
+
+      orderId =
+        decodeURIComponent(
+          adminOrderAssignmentMatch[1]
+        )
+          .trim();
+
+      action =
+        adminOrderAssignmentMatch[2];
+
+    } catch {
+
+      orderId =
+        "";
+
+      action =
+        "";
+    }
+
+
+    if (
+      !/^[A-Za-z0-9_-]{8,120}$/.test(
+        orderId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_order_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const service =
+        action ===
+          "assign"
+          ? assignOrderByAdmin
+          : reassignOrderByAdmin;
+
+
+      const result =
+        await service(
+          env,
+          auth.user,
+          orderId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              ),
+
+            schedule:
+              executionContext
+              &&
+              typeof executionContext.waitUntil ===
+                "function"
+                ? promise =>
+                    executionContext.waitUntil(
+                      promise
+                    )
+                : null
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN ORDER ASSIGNMENT ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "order assignment failed",
+
+          code:
+            "order_assignment_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // ADMIN VEHICLE PHOTO CONTROL V1
+  // =========================
+
+  const adminVehiclePhotoCheckReviewMatch =
+    path.match(
+      /^\/v1\/admin\/vehicles\/([^/]+)\/photo-checks\/([^/]+)\/review$/
+    );
+
+
+  if (
+    adminVehiclePhotoCheckReviewMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let vehicleId;
+    let photoCheckId;
+
+    try {
+      vehicleId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckReviewMatch[1]
+        )
+          .trim();
+
+      photoCheckId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckReviewMatch[2]
+        )
+          .trim();
+
+    } catch {
+      vehicleId = "";
+      photoCheckId = "";
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await reviewAdminVehiclePhotoCheck(
+          env,
+          auth.user,
+          vehicleId,
+          photoCheckId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN VEHICLE PHOTO CHECK REVIEW ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle photo check review failed",
+          code:
+            "vehicle_photo_check_review_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminVehiclePhotoCheckReadMatch =
+    path.match(
+      /^\/v1\/admin\/vehicles\/([^/]+)\/photo-checks\/([^/]+)$/
+    );
+
+
+  if (
+    adminVehiclePhotoCheckReadMatch
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let vehicleId;
+    let photoCheckId;
+
+    try {
+      vehicleId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckReadMatch[1]
+        )
+          .trim();
+
+      photoCheckId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckReadMatch[2]
+        )
+          .trim();
+
+    } catch {
+      vehicleId = "";
+      photoCheckId = "";
+    }
+
+
+    try {
+
+      const result =
+        await getAdminVehiclePhotoCheck(
+          env,
+          auth.user,
+          vehicleId,
+          photoCheckId
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN VEHICLE PHOTO CHECK READ ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle photo check read failed",
+          code:
+            "vehicle_photo_check_read_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminVehiclePhotoCheckMatch =
+    path.match(
+      /^\/v1\/admin\/vehicles\/([^/]+)\/photo-checks$/
+    );
+
+
+  if (
+    adminVehiclePhotoCheckMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let vehicleId;
+
+    try {
+      vehicleId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckMatch[1]
+        )
+          .trim();
+    } catch {
+      vehicleId = "";
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await requestVehiclePhotoCheck(
+          env,
+          auth.user,
+          vehicleId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN VEHICLE PHOTO CHECK ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle photo check failed",
+          code:
+            "vehicle_photo_check_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER PHOTO CONTROLS V1
+  // =========================
+
+  if (
+    path ===
+      "/v1/driver/photo-checks"
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getDriverPhotoChecks(
+          env,
+          auth.user
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "DRIVER PHOTO CONTROLS ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "driver photo controls failed",
+          code:
+            "driver_photo_controls_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER ASSIGNMENTS V1
+  // =========================
+
+  if (
+    path ===
+      "/v1/driver/assignments"
+  ) {
+
+    if (
+      req.method !==
+        "GET"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await listDriverAssignments(
+          env,
+          auth.user,
+          {
+            limit:
+              url.searchParams.get(
+                "limit"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER ASSIGNMENTS ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "driver assignments failed",
+
+          code:
+            "driver_assignments_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // SUPPORT CASES V1
+  // =========================
+
+  const adminSupportMessageMatch =
+    path.match(
+      /^\/v1\/admin\/support-cases\/([^/]+)\/messages$/
+    );
+
+
+  if (
+    adminSupportMessageMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          adminSupportMessageMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await postAdminSupportMessage(
+          env,
+          auth.user,
+          caseId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN SUPPORT MESSAGE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support message failed",
+          code:
+            "support_message_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminSupportStatusMatch =
+    path.match(
+      /^\/v1\/admin\/support-cases\/([^/]+)\/status$/
+    );
+
+
+  if (
+    adminSupportStatusMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          adminSupportStatusMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await postAdminSupportCaseStatus(
+          env,
+          auth.user,
+          caseId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN SUPPORT STATUS ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support status failed",
+          code:
+            "support_status_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminSupportDetailMatch =
+    path.match(
+      /^\/v1\/admin\/support-cases\/([^/]+)$/
+    );
+
+
+  if (
+    adminSupportDetailMatch
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          adminSupportDetailMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
+    try {
+
+      const result =
+        await getAdminSupportCase(
+          env,
+          auth.user,
+          caseId
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN SUPPORT CASE READ ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support case read failed",
+          code:
+            "support_case_read_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path ===
+      "/v1/admin/support-cases"
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getAdminSupportCases(
+          env,
+          auth.user,
+          {
+            status:
+              url.searchParams.get(
+                "status"
+              ),
+            limit:
+              Number(
+                url.searchParams.get(
+                  "limit"
+                ) ||
+                100
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN SUPPORT CASES ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support cases failed",
+          code:
+            "support_cases_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverSupportMessageMatch =
+    path.match(
+      /^\/v1\/driver\/support-cases\/([^/]+)\/messages$/
+    );
+
+
+  if (
+    driverSupportMessageMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          driverSupportMessageMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await postDriverSupportMessage(
+          env,
+          auth.user,
+          caseId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "DRIVER SUPPORT MESSAGE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support message failed",
+          code:
+            "support_message_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverSupportDetailMatch =
+    path.match(
+      /^\/v1\/driver\/support-cases\/([^/]+)$/
+    );
+
+
+  if (
+    driverSupportDetailMatch
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let caseId;
+
+    try {
+      caseId =
+        decodeURIComponent(
+          driverSupportDetailMatch[1]
+        )
+          .trim();
+    } catch {
+      caseId = "";
+    }
+
+
+    try {
+
+      const result =
+        await getDriverSupportCase(
+          env,
+          auth.user,
+          caseId
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "DRIVER SUPPORT CASE READ ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support case read failed",
+          code:
+            "support_case_read_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path ===
+      "/v1/driver/support-cases"
+  ) {
+
+    if (
+      req.method !== "GET" &&
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    try {
+
+      if (
+        req.method === "GET"
+      ) {
+        const result =
+          await getDriverSupportCases(
+            env,
+            auth.user,
+            {
+              limit:
+                Number(
+                  url.searchParams.get(
+                    "limit"
+                  ) ||
+                  100
+                )
+            }
+          );
+
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.ok === true
+            ? 200
+            : result?.status || 500,
+          cors
+        );
+      }
+
+
+      const body =
+        await safeJson(
+          req
+        );
+
+
+      const result =
+        await postDriverSupportCase(
+          env,
+          auth.user,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "DRIVER SUPPORT CASE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support case failed",
+          code:
+            "support_case_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER AVAILABILITY V1
+  // =========================
+
+  if (
+    path ===
+      "/v1/driver/availability"
+  ) {
+
+    if (
+      req.method !==
+        "PUT"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await putDriverAvailability(
+          env,
+          auth.user,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER AVAILABILITY ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "driver availability failed",
+
+          code:
+            "driver_availability_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER TRIP VERIFICATION / PHASE V1
+  // =========================
+
+  const driverVerificationChallengeMatch =
+    path.match(
+      /^\/v1\/driver\/assignments\/([^/]+)\/verification-challenges$/
+    );
+
+
+  if (
+    driverVerificationChallengeMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let assignmentId;
+
+
+    try {
+
+      assignmentId =
+        decodeURIComponent(
+          driverVerificationChallengeMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      assignmentId =
+        "";
+    }
+
+
+    if (
+      !/^assignment_[A-Za-z0-9_-]{8,100}$/.test(
+        assignmentId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_assignment_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await createDriverTripVerificationChallenge(
+          env,
+          auth.user,
+          assignmentId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER TRIP VERIFICATION CHALLENGE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "trip verification challenge failed",
+
+          code:
+            "trip_verification_challenge_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverAssignmentPhaseMatch =
+    path.match(
+      /^\/v1\/driver\/assignments\/([^/]+)\/phase$/
+    );
+
+
+  if (
+    driverAssignmentPhaseMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let assignmentId;
+
+
+    try {
+
+      assignmentId =
+        decodeURIComponent(
+          driverAssignmentPhaseMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      assignmentId =
+        "";
+    }
+
+
+    if (
+      !/^assignment_[A-Za-z0-9_-]{8,100}$/.test(
+        assignmentId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_assignment_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await changeDriverAssignmentPhase(
+          env,
+          auth.user,
+          assignmentId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER ASSIGNMENT PHASE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "assignment phase failed",
+
+          code:
+            "assignment_phase_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER SELF-SERVICE V1
+  // =========================
+
+  if (
+    path === "/v1/driver/me"
+  ) {
+
+    if (req.method !== "GET") {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (auth?.ok !== true) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getDriverMe(
+          env,
+          auth.user
+        );
+
+
+      if (result?.ok !== true) {
+
+        return json(
+          {
+            ok: false,
+            error:
+              result?.error ||
+              "driver request failed",
+            code:
+              result?.code ||
+              "driver_request_failed",
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER ME ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "driver request failed",
+          code:
+            "driver_request_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path ===
+      "/v1/driver/registration"
+  ) {
+
+    if (req.method !== "PUT") {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (auth?.ok !== true) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await putDriverRegistration(
+          env,
+          auth.user,
+          body
+        );
+
+
+      if (result?.ok !== true) {
+
+        return json(
+          {
+            ok: false,
+            error:
+              result?.error ||
+              "driver registration failed",
+            code:
+              result?.code ||
+              "driver_registration_failed",
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER REGISTRATION UPDATE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "driver registration failed",
+          code:
+            "driver_registration_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path === "/v1/driver/vehicles"
+  ) {
+
+    if (req.method !== "POST") {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (auth?.ok !== true) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await createDriverVehicle(
+          env,
+          auth.user,
+          body
+        );
+
+
+      if (result?.ok !== true) {
+
+        return json(
+          {
+            ok: false,
+            error:
+              result?.error ||
+              "vehicle request failed",
+            code:
+              result?.code ||
+              "vehicle_request_failed",
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        201,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER VEHICLE CREATE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle request failed",
+          code:
+            "vehicle_request_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverVehicleMatch =
+    path.match(
+      /^\/v1\/driver\/vehicles\/([^/]+)$/
+    );
+
+
+  if (
+    driverVehicleMatch
+  ) {
+
+    if (req.method !== "PATCH") {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const vehicleId =
+      decodeURIComponent(
+        driverVehicleMatch[1]
+      );
+
+
+    if (
+      !/^vehicle_[0-9a-f-]{36}$/i.test(
+        vehicleId
+      )
+    ) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "invalid_vehicle_id",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (auth?.ok !== true) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await patchDriverVehicle(
+          env,
+          auth.user,
+          vehicleId,
+          body
+        );
+
+
+      if (result?.ok !== true) {
+
+        return json(
+          {
+            ok: false,
+            error:
+              result?.error ||
+              "vehicle request failed",
+            code:
+              result?.code ||
+              "vehicle_request_failed",
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER VEHICLE UPDATE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle request failed",
+          code:
+            "vehicle_request_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER PRIVATE UPLOADS
+  // =========================
+
+  if (
+    path === "/v1/driver/uploads"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+    const body =
+      await safeJson(
+        req
+      );
+
+    try {
+
+      const result =
+        await issueDriverPrivateUpload(
+          env,
+          auth.user,
+          body,
+          {
+            requestId
+          }
+        );
+
+      if (
+        result?.ok !== true
+      ) {
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        201,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER UPLOAD ISSUE ERROR"
+      );
+
+      return json(
+        {
+          ok: false,
+          error:
+            "upload request failed",
+          code:
+            "upload_request_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverUploadMatch =
+    path.match(
+      /^\/v1\/driver\/uploads\/([^/]+)$/
+    );
+
+
+  if (
+    driverUploadMatch
+  ) {
+
+    if (
+      req.method !== "PUT"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+    let uploadId;
+
+    try {
+      uploadId =
+        decodeURIComponent(
+          driverUploadMatch[1]
+        )
+          .trim();
+    } catch {
+      uploadId =
+        "";
+    }
+
+    if (
+      !/^upload_[0-9a-f-]{36}$/i.test(
+        uploadId
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "invalid_upload_id",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+    const configuredLimit =
+      Number(
+        env?.DRIVER_UPLOAD_MAX_BYTES
+      );
+
+    if (
+      !Number.isSafeInteger(
+        configuredLimit
+      ) ||
+      configuredLimit <= 0
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "service unavailable",
+          code:
+            "driver_upload_limit_not_configured",
+          requestId
+        },
+        503,
+        cors
+      );
+    }
+
+    const declaredLength =
+      Number(
+        req.headers.get(
+          "Content-Length"
+        )
+      );
+
+    if (
+      !Number.isSafeInteger(
+        declaredLength
+      ) ||
+      declaredLength <= 0
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "content_length_required",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+    if (
+      declaredLength >
+        configuredLimit
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "invalid_upload_size",
+          requestId
+        },
+        413,
+        cors
+      );
+    }
+
+    let bodyBytes;
+
+    try {
+      bodyBytes =
+        await req.arrayBuffer();
+    } catch {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "invalid_upload_body",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+    if (
+      bodyBytes.byteLength !==
+        declaredLength
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "content_length_mismatch",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+    try {
+
+      const result =
+        await completeDriverPrivateUpload(
+          env,
+          auth.user,
+          uploadId,
+          {
+            contentType:
+              req.headers.get(
+                "Content-Type"
+              ),
+
+            bodyBytes,
+
+            requestId
+          }
+        );
+
+      if (
+        result?.ok !== true
+      ) {
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        201,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER PRIVATE UPLOAD ERROR"
+      );
+
+      return json(
+        {
+          ok: false,
+          error:
+            "upload failed",
+          code:
+            "upload_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path ===
+      "/v1/driver/registration/submit"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+    const body =
+      await safeJson(
+        req
+      );
+
+    try {
+
+      const result =
+        await submitDriverRegistrationForReview(
+          env,
+          auth.user,
+          body,
+          {
+            requestId
+          }
+        );
+
+      if (
+        result?.ok !== true
+      ) {
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER REGISTRATION SUBMIT ERROR"
+      );
+
+      return json(
+        {
+          ok: false,
+          error:
+            "registration submit failed",
+          code:
+            "registration_submit_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
     // =========================
   // STAFF LOGIN
   // =========================
@@ -255,10 +4673,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF LOGIN ERROR:",
-        error
-      );
+      console.error("STAFF LOGIN ERROR:");
 
 
       return safeError(
@@ -336,10 +4751,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF REFRESH ERROR:",
-        error
-      );
+      console.error("STAFF REFRESH ERROR:");
 
 
       return safeError(
@@ -401,10 +4813,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF LOGOUT ERROR:",
-        error
-      );
+      console.error("STAFF LOGOUT ERROR:");
 
 
       return safeError(
@@ -635,16 +5044,27 @@ export default async function router(
 
 
     // =======================
-    // ADMIN ONLY
+    // OWNER / PERMISSION
     // =======================
 
-    if (
-      !hasRole(
-        auth.user,
-        "admin"
-      )
-    ) {
+    let adminAccess;
 
+    try {
+      adminAccess =
+        await resolveAdminAccess(
+          env,
+          auth.user
+        );
+    } catch {
+      return safeError(
+        "admin authorization failed",
+        500
+      );
+    }
+
+    if (
+      adminAccess?.ok !== true
+    ) {
       return safeError(
         "forbidden",
         403
@@ -659,6 +5079,18 @@ export default async function router(
     if (
       req.method === "GET"
     ) {
+
+      if (
+        !adminCan(
+          adminAccess,
+          "drivers.read"
+        )
+      ) {
+        return safeError(
+          "forbidden",
+          403
+        );
+      }
 
       try {
 
@@ -701,10 +5133,7 @@ export default async function router(
         error
       ) {
 
-        console.error(
-          "STAFF ACCOUNT LIST ERROR:",
-          error
-        );
+        console.error("STAFF ACCOUNT LIST ERROR:");
 
 
         return safeError(
@@ -716,8 +5145,19 @@ export default async function router(
 
 
     // =======================
-    // CREATE DRIVER
+    // CREATE DRIVER (LEGACY, OWNER ONLY)
     // =======================
+
+    if (
+      requireOwner(
+        adminAccess
+      ).ok !== true
+    ) {
+      return safeError(
+        "forbidden",
+        403
+      );
+    }
 
     const body =
       await safeJson(
@@ -764,10 +5204,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF ACCOUNT CREATE ERROR:",
-        error
-      );
+      console.error("STAFF ACCOUNT CREATE ERROR:");
 
 
       return safeError(
@@ -853,16 +5290,29 @@ export default async function router(
 
 
     // =======================
-    // ADMIN ONLY
+    // OWNER ONLY
     // =======================
 
-    if (
-      !hasRole(
-        auth.user,
-        "admin"
-      )
-    ) {
+    let adminAccess;
 
+    try {
+      adminAccess =
+        await resolveAdminAccess(
+          env,
+          auth.user
+        );
+    } catch {
+      return safeError(
+        "admin authorization failed",
+        500
+      );
+    }
+
+    if (
+      requireOwner(
+        adminAccess
+      ).ok !== true
+    ) {
       return safeError(
         "forbidden",
         403
@@ -958,10 +5408,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF ACCOUNT STATUS ERROR:",
-        error
-      );
+      console.error("STAFF ACCOUNT STATUS ERROR:");
 
 
       return safeError(
@@ -1024,16 +5471,29 @@ export default async function router(
 
 
     // =======================
-    // ADMIN ONLY
+    // OWNER ONLY
     // =======================
 
-    if (
-      !hasRole(
-        auth.user,
-        "admin"
-      )
-    ) {
+    let adminAccess;
 
+    try {
+      adminAccess =
+        await resolveAdminAccess(
+          env,
+          auth.user
+        );
+    } catch {
+      return safeError(
+        "admin authorization failed",
+        500
+      );
+    }
+
+    if (
+      requireOwner(
+        adminAccess
+      ).ok !== true
+    ) {
       return safeError(
         "forbidden",
         403
@@ -1126,10 +5586,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF PASSWORD RESET ERROR:",
-        error
-      );
+      console.error("STAFF PASSWORD RESET ERROR:");
 
 
       return safeError(
@@ -1309,26 +5766,6 @@ export default async function router(
         400
       );
     }
-
-
-    // =========================
-    // LOG
-    // =========================
-    //
-    // На следующем security
-    // этапе production logging
-    // будет дополнительно
-    // сокращён.
-    // =========================
-
-    console.log(
-      "CALCULATE:",
-      {
-        from,
-        to,
-        tariff
-      }
-    );
 
 
     try {
@@ -1561,10 +5998,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "ROUTE CALCULATE ERROR:",
-        error
-      );
+      console.error("ROUTE CALCULATE ERROR:");
 
       return safeError(
         "route calculation failed",
@@ -1575,34 +6009,22 @@ export default async function router(
 
 
     // =========================
-  // PRIVATE ORDER TRANSITION
+  // PUBLIC STAFF ORDER TERMINAL MUTATION
   // =========================
-  //
-  // Staff-only endpoint:
   //
   // POST /orders/{orderId}/status
   //
-  // Authentication:
-  // staff JWT
-  //
   // Driver:
+  //   in_progress -> done
   //
-  // new
-  //   -> taken
+  // Admin with orders.cancel:
+  //   new/taken/in_progress -> canceled
   //
-  // taken
-  //   -> in_progress
-  //
-  // in_progress
-  //   -> done
-  //
-  // Admin:
-  //
-  // new / taken / in_progress
-  //   -> canceled
-  //
-  // Repository performs the actual
-  // transition atomically in D1.
+  // D3 hardening:
+  // - mandatory Idempotency-Key
+  // - mandatory expectedRevision
+  // - atomic order + assignment + audit
+  // - idempotent result replay
   // =========================
 
   const orderTransitionMatch =
@@ -1615,10 +6037,6 @@ export default async function router(
     orderTransitionMatch
   ) {
 
-    // =========================
-    // METHOD
-    // =========================
-
     if (
       req.method !== "POST"
     ) {
@@ -1630,23 +6048,10 @@ export default async function router(
     }
 
 
-        // =========================
-    // STAFF AUTHORIZATION
-    // =========================
-    //
-    // JWT signature alone is not enough.
-    //
-    // authenticateStaffRequest verifies:
-    //
-    // - staff scope
-    // - account identity
-    // - role
-    // - tokenVersion
-    // - active D1 account
-    // - active D1 session
-    // - session ownership
-    // - revocation / rotation / expiration
-    // =========================
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
 
     const auth =
       await authenticateStaffRequest(
@@ -1656,53 +6061,23 @@ export default async function router(
 
 
     if (
-      !auth.ok
+      auth?.ok !== true
     ) {
 
-      return safeError(
-        auth.error,
-        auth.status
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
       );
     }
 
-
-    const user =
-      auth.user;
-
-
-    // =========================
-    // ROLE
-    // =========================
-
-    const isAdmin =
-      hasRole(
-        user,
-        "admin"
-      );
-
-
-    const isDriver =
-      hasRole(
-        user,
-        "driver"
-      );
-
-
-    if (
-      !isAdmin &&
-      !isDriver
-    ) {
-
-      return safeError(
-        "forbidden",
-        403
-      );
-    }
-
-
-    // =========================
-    // ORDER ID
-    // =========================
 
     let orderId;
 
@@ -1715,29 +6090,29 @@ export default async function router(
         )
           .trim();
 
-    } catch (
-      error
-    ) {
+    } catch {
 
-      return safeError(
-        "invalid order id",
-        400
-      );
+      orderId =
+        "";
     }
 
 
     if (!orderId) {
 
-      return safeError(
-        "invalid order id",
-        400
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid order id",
+          code:
+            "invalid_order_id",
+          requestId
+        },
+        400,
+        cors
       );
     }
 
-
-    // =========================
-    // BODY
-    // =========================
 
     const body =
       await safeJson(
@@ -1745,262 +6120,57 @@ export default async function router(
       );
 
 
-    const targetStatus =
-      String(
-        body?.status ??
-        ""
-      )
-        .trim()
-        .toLowerCase();
-
-
-    const allowedTargetStatuses =
-      new Set([
-        "taken",
-        "in_progress",
-        "done",
-        "canceled"
-      ]);
-
-
-    if (
-      !allowedTargetStatuses.has(
-        targetStatus
-      )
-    ) {
-
-      return safeError(
-        "invalid status",
-        400
-      );
-    }
-
-
-    // =========================
-    // AUTHORITATIVE DRIVER ID
-    // =========================
-    //
-    // user.id was reconstructed from
-    // the active D1 staff account by
-    // authenticateStaffRequest().
-    //
-    // DRIVERS KV is no longer part of
-    // authentication/authorization.
-    // =========================
-
-    let driverId =
-      null;
-
-
-    if (
-      isDriver
-    ) {
-
-      driverId =
-        String(
-          user.id ??
-          ""
-        )
-          .trim();
-
-
-      if (!driverId) {
-
-        return safeError(
-          "invalid staff identity",
-          500
-        );
-      }
-    }
-
-
-    // =========================
-    // ROLE -> TRANSITION POLICY
-    // =========================
-
-    let transitionResult;
-
-
     try {
 
-      if (
-        isDriver
-      ) {
+      const result =
+        await transitionOrderTerminal(
+          env,
+          auth.user,
+          orderId,
+          body,
+          {
+            requestId,
 
-        if (
-          targetStatus === "taken"
-        ) {
-
-          transitionResult =
-            await takeOrderForDriver(
-              env,
-              orderId,
-              driverId
-            );
-
-        } else if (
-          targetStatus ===
-            "in_progress"
-          ||
-          targetStatus ===
-            "done"
-        ) {
-
-          transitionResult =
-            await advanceDriverOrder(
-              env,
-              orderId,
-              driverId,
-              targetStatus
-            );
-
-        } else {
-
-          return safeError(
-            "forbidden transition",
-            403
-          );
-        }
-
-      } else {
-
-        // =========================
-        // ADMIN
-        // =========================
-        //
-        // ARCH-08 intentionally gives
-        // admin only the cancellation
-        // transition.
-        //
-        // Admin must not impersonate
-        // driver workflow.
-        // =========================
-
-        if (
-          targetStatus !==
-            "canceled"
-        ) {
-
-          return safeError(
-            "forbidden transition",
-            403
-          );
-        }
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
 
 
-        transitionResult =
-          await cancelOrder(
-            env,
-            orderId
-          );
-      }
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
 
-    } catch (
-      error
-    ) {
+    } catch {
 
       console.error(
-        "ORDER TRANSITION ERROR:",
-        error
+        "ORDER TERMINAL MUTATION ERROR"
       );
 
 
-      return safeError(
-        "order transition failed",
-        500
-      );
-    }
-
-
-    // =========================
-    // TRANSITION RESULT
-    // =========================
-
-    if (
-      transitionResult?.ok !== true
-    ) {
-
-      if (
-        transitionResult?.reason ===
-          "not_found"
-      ) {
-
-        return safeError(
-          "order not found",
-          404
-        );
-      }
-
-
-      if (
-        transitionResult?.reason ===
-          "conflict"
-      ) {
-
-        return safeError(
-          "order transition conflict",
-          409
-        );
-      }
-
-
-      return safeError(
-        "order transition failed",
-        500
+      return json(
+        {
+          ok: false,
+          error:
+            "order transition failed",
+          code:
+            "order_terminal_mutation_failed",
+          requestId
+        },
+        500,
+        cors
       );
     }
-
-
-    const transitionedOrder =
-      transitionResult.order;
-
-
-    if (
-      !transitionedOrder
-      ||
-      !transitionedOrder.id
-    ) {
-
-      return safeError(
-        "order transition failed",
-        500
-      );
-    }
-
-
-    // =========================
-    // RESPONSE
-    // =========================
-    //
-    // Deliberately minimal.
-    //
-    // No passenger PII is required
-    // for acknowledgement of the
-    // state transition itself.
-    // =========================
-
-    return json(
-      {
-        ok: true,
-
-        order: {
-
-          id:
-            transitionedOrder.id,
-
-          status:
-            transitionedOrder.status,
-
-          driverId:
-            transitionedOrder.driverId,
-
-          updatedAt:
-            transitionedOrder.updatedAt
-        }
-      },
-      200,
-      cors
-    );
   }
 
 
@@ -2138,47 +6308,8 @@ export default async function router(
           );
 
 
-        // =========================
-        // DRIVER PUSH
-        // =========================
-        //
-        // Push is best effort and must never
-        // turn a successfully created order
-        // into an HTTP failure.
-        //
-        // Production Workers provide
-        // ExecutionContext.waitUntil().
-        // Unit tests may call router directly
-        // without an execution context.
-        // =========================
-
-        // Only a newly persisted D1 order generates the new-order FCM event.
-        // Idempotent POST retries and concurrent quote insert losers must not
-        // notify drivers again. The passenger still receives a fresh token.
-        if (
-          result.idempotent === false
-          &&
-          executionContext
-          &&
-          typeof executionContext.waitUntil ===
-            "function"
-        ) {
-
-          executionContext.waitUntil(
-            notifyActiveDriversOfNewOrder(
-              env,
-              result.order.id
-            )
-              .catch(
-                () => {
-
-                  console.error(
-                    "NEW ORDER PUSH DELIVERY ERROR"
-                  );
-                }
-              )
-          );
-        }
+        // Driver notifications are assignment-scoped.
+        // Creating an unassigned order must not wake any Driver.
 
 
         // =========================
@@ -2210,10 +6341,7 @@ export default async function router(
         error
       ) {
 
-        console.error(
-          "ORDER CREATE ERROR:",
-          error
-        );
+        console.error("ORDER CREATE ERROR:");
 
         return safeError(
           "order create failed",
@@ -2293,6 +6421,41 @@ export default async function router(
           "forbidden",
           403
         );
+      }
+
+
+      // =========================
+      // ADMIN PERMISSION
+      // =========================
+
+      if (isAdmin) {
+
+        let adminAccess;
+
+        try {
+          adminAccess =
+            await resolveAdminAccess(
+              env,
+              user
+            );
+        } catch {
+          return safeError(
+            "admin authorization failed",
+            500
+          );
+        }
+
+        if (
+          !adminCan(
+            adminAccess,
+            "orders.read"
+          )
+        ) {
+          return safeError(
+            "forbidden",
+            403
+          );
+        }
       }
 
 
@@ -2386,10 +6549,7 @@ export default async function router(
         error
       ) {
 
-        console.error(
-          "ORDER LIST ERROR:",
-          error
-        );
+        console.error("ORDER LIST ERROR:");
 
         return safeError(
           "order list failed",
@@ -2414,15 +6574,11 @@ export default async function router(
       // DRIVER VISIBILITY
       // =========================
       //
-      // Driver видит:
+      // Driver видит только заказы,
+      // назначенные ему сервером.
       //
-      // 1. новые заказы;
-      //
-      // 2. заказы,
-      //    назначенные ему.
-      //
-      // Заказы другого
-      // водителя скрыты.
+      // Свободные new-заказы Driver
+      // больше не получает.
       // =========================
 
       if (
@@ -2431,27 +6587,14 @@ export default async function router(
 
         visibleOrders =
           visibleOrders.filter(
-            order => {
-
-              if (
-                order.status ===
-                "new"
-              ) {
-
-                return true;
-              }
-
-
-              return (
-                String(
-                  order.driverId ||
-                    ""
-                ) ===
-                String(
-                  user.id
-                )
-              );
-            }
+            order =>
+              String(
+                order.driverId ||
+                  ""
+              ) ===
+              String(
+                user.id
+              )
           );
       }
 
@@ -2560,7 +6703,10 @@ export default async function router(
                 order.createdAt,
 
               updatedAt:
-                order.updatedAt
+                order.updatedAt,
+
+              revision:
+                order.revision
             };
 
 
@@ -2575,10 +6721,8 @@ export default async function router(
             //   только если заказ
             //   назначен именно ему.
             //
-            // Новый неназначенный заказ
-            // показывается водителю
-            // без имени, телефона
-            // и комментария.
+            // Неназначенные заказы Driver
+            // вообще не получает.
             // =========================
 
             const canSeeCustomer =
@@ -2799,10 +6943,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "PASSENGER ORDER READ ERROR:",
-        error
-      );
+      console.error("PASSENGER ORDER READ ERROR:");
 
       return safeError(
         "order read failed",

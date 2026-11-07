@@ -20,10 +20,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified in run 156
+        with:
+          persist-credentials: false
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4, verified in run 156
         with:
           node-version: '22'
+      - name: Use the verified npm version for scoped overrides
+        run: npm install --global npm@11.9.0 --ignore-scripts
+      - name: Install locked development dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+      - name: Check dependency advisories
+        run: npm audit --audit-level=high
+      - name: Validate D1 migrations offline
+        run: python3 tools/test_migrations.py
       - name: Run backend unit and router tests
         run: npm test
+      - name: Verify audit transaction with local workerd and D1
+        run: node tools/check_availability_d1.mjs
+      - name: Bundle Worker without deploying
+        run: npm exec -- wrangler deploy --dry-run --outdir /tmp/worker-audit-bundle

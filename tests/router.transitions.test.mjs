@@ -172,6 +172,12 @@ function orderRow(
     updated_at:
       1000,
 
+    revision:
+      1,
+
+    last_terminal_claim_id:
+      null,
+
     ...overrides
   };
 }
@@ -358,6 +364,18 @@ function createTransitionDatabase(
         }
       : null;
 
+  let idempotencyRecord =
+    null;
+
+  let lastOrderMutationSucceeded =
+    false;
+
+  let lastAuditMutationSucceeded =
+    false;
+
+  const auditRows =
+    [];
+
 
   const db = {
 
@@ -397,6 +415,67 @@ function createTransitionDatabase(
 
 
           if (
+            /INSERT OR IGNORE INTO mutation_idempotency/i.test(
+              sql
+            )
+          ) {
+
+            const [
+              actorAccountId,
+              operation,
+              keyDigest,
+              requestDigest,
+              claimId,
+              createdAt
+            ] =
+              call.args;
+
+
+            if (
+              !idempotencyRecord
+            ) {
+
+              idempotencyRecord = {
+                actor_account_id:
+                  actorAccountId,
+                operation,
+                key_digest:
+                  keyDigest,
+                request_digest:
+                  requestDigest,
+                claim_id:
+                  claimId,
+                state:
+                  "in_progress",
+                http_status:
+                  null,
+                result_code:
+                  null,
+                result_json:
+                  null,
+                created_at:
+                  createdAt,
+                completed_at:
+                  null
+              };
+
+              changes =
+                1;
+            }
+
+
+            return {
+              success:
+                true,
+
+              meta: {
+                changes
+              }
+            };
+          }
+
+
+          if (
             /UPDATE orders/i.test(
               sql
             )
@@ -411,6 +490,211 @@ function createTransitionDatabase(
                 meta: {
                   changes:
                     0
+                }
+              };
+            }
+
+
+            // =========================
+            // D3 TERMINAL MUTATION
+            // =========================
+
+            if (
+              /last_terminal_claim_id/i.test(
+                sql
+              )
+            ) {
+
+              lastOrderMutationSucceeded =
+                false;
+
+              lastAuditMutationSucceeded =
+                false;
+
+
+              if (
+                /status = 'done'/i.test(
+                  sql
+                )
+              ) {
+
+                const [
+                  orderId,
+                  expectedRevision,
+                  driverId,
+                  updatedAt,
+                  claimId,
+                  actorAccountId,
+                  operation,
+                  keyDigest,
+                  requestDigest
+                ] =
+                  call.args;
+
+
+                if (
+                  row.id ===
+                    orderId
+                  &&
+                  Number(
+                    row.revision
+                  ) ===
+                    Number(
+                      expectedRevision
+                    )
+                  &&
+                  row.status ===
+                    "in_progress"
+                  &&
+                  row.driver_id ===
+                    driverId
+                  &&
+                  idempotencyRecord
+                  &&
+                  idempotencyRecord.actor_account_id ===
+                    actorAccountId
+                  &&
+                  idempotencyRecord.operation ===
+                    operation
+                  &&
+                  idempotencyRecord.key_digest ===
+                    keyDigest
+                  &&
+                  idempotencyRecord.request_digest ===
+                    requestDigest
+                  &&
+                  idempotencyRecord.claim_id ===
+                    claimId
+                  &&
+                  idempotencyRecord.state ===
+                    "in_progress"
+                ) {
+
+                  row.status =
+                    "done";
+
+                  row.revision =
+                    Number(
+                      row.revision
+                    ) + 1;
+
+                  row.updated_at =
+                    Math.max(
+                      Number(
+                        updatedAt
+                      ),
+
+                      Number(
+                        row.updated_at
+                      ) + 1
+                    );
+
+                  row.last_terminal_claim_id =
+                    claimId;
+
+                  changes =
+                    1;
+
+                  lastOrderMutationSucceeded =
+                    true;
+                }
+
+              } else if (
+                /status = 'canceled'/i.test(
+                  sql
+                )
+              ) {
+
+                const [
+                  orderId,
+                  expectedRevision,
+                  updatedAt,
+                  claimId,
+                  actorAccountId,
+                  operation,
+                  keyDigest,
+                  requestDigest
+                ] =
+                  call.args;
+
+
+                if (
+                  row.id ===
+                    orderId
+                  &&
+                  Number(
+                    row.revision
+                  ) ===
+                    Number(
+                      expectedRevision
+                    )
+                  &&
+                  [
+                    "new",
+                    "taken",
+                    "in_progress"
+                  ].includes(
+                    row.status
+                  )
+                  &&
+                  idempotencyRecord
+                  &&
+                  idempotencyRecord.actor_account_id ===
+                    actorAccountId
+                  &&
+                  idempotencyRecord.operation ===
+                    operation
+                  &&
+                  idempotencyRecord.key_digest ===
+                    keyDigest
+                  &&
+                  idempotencyRecord.request_digest ===
+                    requestDigest
+                  &&
+                  idempotencyRecord.claim_id ===
+                    claimId
+                  &&
+                  idempotencyRecord.state ===
+                    "in_progress"
+                ) {
+
+                  row.status =
+                    "canceled";
+
+                  row.revision =
+                    Number(
+                      row.revision
+                    ) + 1;
+
+                  row.updated_at =
+                    Math.max(
+                      Number(
+                        updatedAt
+                      ),
+
+                      Number(
+                        row.updated_at
+                      ) + 1
+                    );
+
+                  row.last_terminal_claim_id =
+                    claimId;
+
+                  changes =
+                    1;
+
+                  lastOrderMutationSucceeded =
+                    true;
+                }
+              }
+
+
+              return {
+                success:
+                  true,
+
+                meta: {
+                  changes
                 }
               };
             }
@@ -608,6 +892,164 @@ function createTransitionDatabase(
           }
 
 
+          if (
+            /UPDATE order_assignments/i.test(
+              sql
+            )
+          ) {
+
+            // Legacy router fixtures do not
+            // model order_assignments.
+            return {
+              success:
+                true,
+
+              meta: {
+                changes:
+                  0
+              }
+            };
+          }
+
+
+          if (
+            /INSERT INTO audit_events/i.test(
+              sql
+            )
+          ) {
+
+            lastAuditMutationSucceeded =
+              false;
+
+
+            if (
+              lastOrderMutationSucceeded
+              &&
+              row
+            ) {
+
+              auditRows.push({
+                id:
+                  call.args[0],
+                actor_account_id:
+                  call.args[1],
+                action:
+                  call.args[2],
+                target_id:
+                  call.args[3]
+              });
+
+              changes =
+                1;
+
+              lastAuditMutationSucceeded =
+                true;
+            }
+
+
+            return {
+              success:
+                true,
+
+              meta: {
+                changes
+              }
+            };
+          }
+
+
+          if (
+            /UPDATE mutation_idempotency/i.test(
+              sql
+            )
+          ) {
+
+            const requiresAuditSuccess =
+              /AND\s+changes\(\)\s*=\s*1/i.test(
+                sql
+              );
+
+
+            if (
+              (
+                !requiresAuditSuccess
+                ||
+                lastAuditMutationSucceeded
+              )
+              &&
+              idempotencyRecord
+              &&
+              idempotencyRecord.actor_account_id ===
+                call.args[0]
+              &&
+              idempotencyRecord.operation ===
+                call.args[1]
+              &&
+              idempotencyRecord.key_digest ===
+                call.args[2]
+              &&
+              idempotencyRecord.request_digest ===
+                call.args[3]
+              &&
+              idempotencyRecord.claim_id ===
+                call.args[4]
+              &&
+              idempotencyRecord.state ===
+                "in_progress"
+            ) {
+
+              idempotencyRecord.state =
+                "completed";
+
+              if (
+                /result_json = \?6/i.test(
+                  sql
+                )
+              ) {
+
+                idempotencyRecord.http_status =
+                  200;
+
+                idempotencyRecord.result_code =
+                  null;
+
+                idempotencyRecord.result_json =
+                  call.args[5];
+
+                idempotencyRecord.completed_at =
+                  call.args[6];
+
+              } else {
+
+                idempotencyRecord.http_status =
+                  call.args[5];
+
+                idempotencyRecord.result_code =
+                  call.args[6];
+
+                idempotencyRecord.result_json =
+                  call.args[7];
+
+                idempotencyRecord.completed_at =
+                  call.args[8];
+              }
+
+              changes =
+                1;
+            }
+
+
+            return {
+              success:
+                true,
+
+              meta: {
+                changes
+              }
+            };
+          }
+
+
           throw new Error(
             "Unexpected transition SQL"
           );
@@ -615,6 +1057,70 @@ function createTransitionDatabase(
 
 
         async first() {
+
+          // =========================
+          // IDEMPOTENCY LOOKUP
+          // =========================
+
+          if (
+            /FROM mutation_idempotency/i.test(
+              sql
+            )
+          ) {
+
+            if (
+              !idempotencyRecord
+            ) {
+              return null;
+            }
+
+
+            if (
+              idempotencyRecord.actor_account_id !==
+                call.args[0]
+              ||
+              idempotencyRecord.operation !==
+                call.args[1]
+              ||
+              idempotencyRecord.key_digest !==
+                call.args[2]
+            ) {
+              return null;
+            }
+
+
+            return {
+              ...idempotencyRecord
+            };
+          }
+
+
+          // =========================
+          // OWNER BINDING
+          // =========================
+
+          if (
+            /FROM staff_owner_binding/i.test(
+              sql
+            )
+          ) {
+
+            return (
+              role === "admin"
+              &&
+              String(
+                call.args[0] ??
+                ""
+              ) ===
+                staffId
+            )
+              ? {
+                  account_id:
+                    staffId
+                }
+              : null;
+          }
+
 
           // =========================
           // STAFF ACCOUNT
@@ -745,6 +1251,19 @@ function createTransitionDatabase(
 
 
       return statement;
+    },
+
+
+    async batch(
+      statements
+    ) {
+
+      return Promise.all(
+        statements.map(
+          statement =>
+            statement.run()
+        )
+      );
     }
   };
 
@@ -784,7 +1303,10 @@ function transitionRequest(
   status,
   {
     method = "POST",
-    orderId = "order-1"
+    orderId = "order-1",
+    expectedRevision = 1,
+    idempotencyKey =
+      "terminal-test-key"
   } = {}
 ) {
 
@@ -807,10 +1329,16 @@ function transitionRequest(
     ] =
       "application/json";
 
+    options.headers[
+      "Idempotency-Key"
+    ] =
+      idempotencyKey;
+
 
     options.body =
       JSON.stringify({
-        status
+        status,
+        expectedRevision
       });
   }
 
@@ -981,6 +1509,144 @@ await test(
 
 
 // ========================================
+// D3 TERMINAL CONTRACT
+// ========================================
+
+await test(
+  "terminal mutation requires Idempotency-Key",
+  async () => {
+
+    const token =
+      await createStaffToken();
+
+    const {
+      db
+    } =
+      createTransitionDatabase(
+        orderRow({
+          status:
+            "in_progress",
+          driver_id:
+            "driver-1"
+        })
+      );
+
+    const response =
+      await router(
+        new Request(
+          "https://worker.test/orders/order-1/status",
+          {
+            method:
+              "POST",
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+              "Content-Type":
+                "application/json"
+            },
+            body:
+              JSON.stringify({
+                status:
+                  "done",
+                expectedRevision:
+                  1
+              })
+          }
+        ),
+        {
+          JWT_SECRET:
+            JWT_SECRET,
+          DB:
+            db
+        }
+      );
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+    assert.equal(
+      response.status,
+      400
+    );
+
+    assert.equal(
+      body.code,
+      "idempotency_key_required"
+    );
+  }
+);
+
+
+await test(
+  "terminal mutation requires expectedRevision",
+  async () => {
+
+    const token =
+      await createStaffToken();
+
+    const {
+      db
+    } =
+      createTransitionDatabase(
+        orderRow({
+          status:
+            "in_progress",
+          driver_id:
+            "driver-1"
+        })
+      );
+
+    const response =
+      await router(
+        new Request(
+          "https://worker.test/orders/order-1/status",
+          {
+            method:
+              "POST",
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+              "Content-Type":
+                "application/json",
+              "Idempotency-Key":
+                "terminal-required-key"
+            },
+            body:
+              JSON.stringify({
+                status:
+                  "done"
+              })
+          }
+        ),
+        {
+          JWT_SECRET:
+            JWT_SECRET,
+          DB:
+            db
+        }
+      );
+
+    const body =
+      await jsonBody(
+        response
+      );
+
+    assert.equal(
+      response.status,
+      400
+    );
+
+    assert.equal(
+      body.code,
+      "invalid_revision"
+    );
+  }
+);
+
+
+// ========================================
 // INVALID STATUS
 // ========================================
 
@@ -1097,11 +1763,11 @@ await test(
 
 
 // ========================================
-// DRIVER TAKE
+// DRIVER SELF-TAKE IS FORBIDDEN
 // ========================================
 
 await test(
-  "active driver takes a new order",
+  "active driver cannot self-take a new order",
   async () => {
 
     const token =
@@ -1154,42 +1820,32 @@ await test(
 
     assert.equal(
       response.status,
-      200
+      403
     );
 
 
     assert.equal(
-      body.ok,
-      true
+      body.error,
+      "forbidden transition"
     );
 
 
     assert.equal(
-      body.order.status,
-      "taken"
-    );
-
-
-    assert.equal(
-      body.order.driverId,
-      "driver-1"
+      getRow().status,
+      "new"
     );
 
 
     assert.equal(
       getRow().driver_id,
-      "driver-1"
+      null
     );
   }
 );
 
 
-// ========================================
-// COMPETING DRIVER
-// ========================================
-
 await test(
-  "second driver receives conflict for claimed order",
+  "driver cannot take an order assigned to another driver",
   async () => {
 
     const token =
@@ -1244,18 +1900,18 @@ await test(
 
     assert.equal(
       response.status,
-      409
+      403
     );
   }
 );
 
 
 // ========================================
-// DRIVER START
+// DRIVER START REQUIRES OPERATIONAL PHASE
 // ========================================
 
 await test(
-  "assigned driver starts own trip",
+  "assigned driver cannot bypass trip verification with legacy in_progress",
   async () => {
 
     const token =
@@ -1263,7 +1919,8 @@ await test(
 
 
     const {
-      db
+      db,
+      getRow
     } =
       createTransitionDatabase(
         orderRow({
@@ -1300,13 +1957,19 @@ await test(
 
     assert.equal(
       response.status,
-      200
+      403
     );
 
 
     assert.equal(
-      body.order.status,
-      "in_progress"
+      body.error,
+      "forbidden transition"
+    );
+
+
+    assert.equal(
+      getRow().status,
+      "taken"
     );
   }
 );
@@ -1379,7 +2042,59 @@ await test(
 // ========================================
 
 await test(
-  "other driver cannot advance assigned order",
+  "other driver cannot complete another driver's trip",
+  async () => {
+
+    const token =
+      await createStaffToken({
+        id:
+          "driver-2",
+        role:
+          "driver"
+      });
+
+    const {
+      db
+    } =
+      createTransitionDatabase(
+        orderRow({
+          status:
+            "in_progress",
+          driver_id:
+            "driver-1"
+        }),
+        {
+          staffId:
+            "driver-2",
+          role:
+            "driver"
+        }
+      );
+
+    const response =
+      await router(
+        transitionRequest(
+          token,
+          "done"
+        ),
+        {
+          JWT_SECRET:
+            JWT_SECRET,
+          DB:
+            db
+        }
+      );
+
+    assert.equal(
+      response.status,
+      409
+    );
+  }
+);
+
+
+await test(
+  "other driver cannot use legacy trip-start transition",
   async () => {
 
     const token =
@@ -1431,7 +2146,7 @@ await test(
 
     assert.equal(
       response.status,
-      409
+      403
     );
   }
 );
