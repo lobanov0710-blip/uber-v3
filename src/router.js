@@ -82,6 +82,12 @@ import {
   putDriverRegistration
 } from "./core/driverRegistrationService.js";
 
+import {
+  completeDriverPrivateUpload,
+  issueDriverPrivateUpload,
+  submitDriverRegistrationForReview
+} from "./core/driverPrivateUploadService.js";
+
 
 // =========================
 // ROUTER
@@ -822,6 +828,471 @@ export default async function router(
             "vehicle request failed",
           code:
             "vehicle_request_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER PRIVATE UPLOADS
+  // =========================
+
+  if (
+    path === "/v1/driver/uploads"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+    const body =
+      await safeJson(
+        req
+      );
+
+    try {
+
+      const result =
+        await issueDriverPrivateUpload(
+          env,
+          auth.user,
+          body,
+          {
+            requestId
+          }
+        );
+
+      if (
+        result?.ok !== true
+      ) {
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        201,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER UPLOAD ISSUE ERROR"
+      );
+
+      return json(
+        {
+          ok: false,
+          error:
+            "upload request failed",
+          code:
+            "upload_request_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverUploadMatch =
+    path.match(
+      /^\/v1\/driver\/uploads\/([^/]+)$/
+    );
+
+
+  if (
+    driverUploadMatch
+  ) {
+
+    if (
+      req.method !== "PUT"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+    let uploadId;
+
+    try {
+      uploadId =
+        decodeURIComponent(
+          driverUploadMatch[1]
+        )
+          .trim();
+    } catch {
+      uploadId =
+        "";
+    }
+
+    if (
+      !/^upload_[0-9a-f-]{36}$/i.test(
+        uploadId
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "invalid_upload_id",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+    const configuredLimit =
+      Number(
+        env?.DRIVER_UPLOAD_MAX_BYTES
+      );
+
+    if (
+      !Number.isSafeInteger(
+        configuredLimit
+      ) ||
+      configuredLimit <= 0
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "service unavailable",
+          code:
+            "driver_upload_limit_not_configured",
+          requestId
+        },
+        503,
+        cors
+      );
+    }
+
+    const declaredLength =
+      Number(
+        req.headers.get(
+          "Content-Length"
+        )
+      );
+
+    if (
+      !Number.isSafeInteger(
+        declaredLength
+      ) ||
+      declaredLength <= 0
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "content_length_required",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+    if (
+      declaredLength >
+        configuredLimit
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "invalid_upload_size",
+          requestId
+        },
+        413,
+        cors
+      );
+    }
+
+    let bodyBytes;
+
+    try {
+      bodyBytes =
+        await req.arrayBuffer();
+    } catch {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "invalid_upload_body",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+    if (
+      bodyBytes.byteLength !==
+        declaredLength
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "content_length_mismatch",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+    try {
+
+      const result =
+        await completeDriverPrivateUpload(
+          env,
+          auth.user,
+          uploadId,
+          {
+            contentType:
+              req.headers.get(
+                "Content-Type"
+              ),
+
+            bodyBytes,
+
+            requestId
+          }
+        );
+
+      if (
+        result?.ok !== true
+      ) {
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        201,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER PRIVATE UPLOAD ERROR"
+      );
+
+      return json(
+        {
+          ok: false,
+          error:
+            "upload failed",
+          code:
+            "upload_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path ===
+      "/v1/driver/registration/submit"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+    const body =
+      await safeJson(
+        req
+      );
+
+    try {
+
+      const result =
+        await submitDriverRegistrationForReview(
+          env,
+          auth.user,
+          body,
+          {
+            requestId
+          }
+        );
+
+      if (
+        result?.ok !== true
+      ) {
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER REGISTRATION SUBMIT ERROR"
+      );
+
+      return json(
+        {
+          ok: false,
+          error:
+            "registration submit failed",
+          code:
+            "registration_submit_failed",
           requestId
         },
         500,
