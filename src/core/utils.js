@@ -8,10 +8,10 @@ export const cors = {
     "*",
 
   "Access-Control-Allow-Headers":
-    "Content-Type, Authorization",
+    "Content-Type, Authorization, Idempotency-Key, X-Firebase-AppCheck",
 
   "Access-Control-Allow-Methods":
-    "GET, POST, PATCH, OPTIONS",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS",
 
   "Access-Control-Max-Age":
     "86400"
