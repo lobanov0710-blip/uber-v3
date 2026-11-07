@@ -5,6 +5,10 @@ import {
   reassignOrderByAdmin
 } from "../src/core/orderAssignmentService.js";
 
+import {
+  createMutationIdempotency
+} from "../src/core/mutationIdempotency.js";
+
 
 const ADMIN_ID =
   "staff_dispatcher123";
@@ -454,6 +458,31 @@ const replayResult = {
 };
 
 
+const replayInput = {
+  driverId:
+    NEW_DRIVER_ID,
+  vehicleId:
+    NEW_VEHICLE_ID,
+  reason:
+    "Назначение",
+  expectedRevision:
+    1
+};
+
+
+const replayDigest =
+  await createMutationIdempotency({
+    key:
+      "assign-push-12345678",
+    operation:
+      "admin.order.assign",
+    target:
+      ORDER_ID,
+    body:
+      replayInput
+  });
+
+
 const replay =
   await executeAndCollect({
     mode:
@@ -462,12 +491,11 @@ const replay =
       actor_account_id:
         ADMIN_ID,
       operation:
-        "admin.order.assign",
+        replayDigest.operation,
       key_digest:
-        // placeholder; fake row is mapped by repository
-        "",
+        replayDigest.keyDigest,
       request_digest:
-        "",
+        replayDigest.requestDigest,
       claim_id:
         "claim_replayed",
       state:
@@ -486,6 +514,12 @@ const replay =
         1800000001000
     }
   });
+
+
+assert.equal(
+  replay.result.ok,
+  true
+);
 
 
 assert.equal(
