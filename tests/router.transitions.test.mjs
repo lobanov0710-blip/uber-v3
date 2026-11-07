@@ -1124,11 +1124,11 @@ await test(
 
 
 // ========================================
-// DRIVER TAKE
+// DRIVER SELF-TAKE IS FORBIDDEN
 // ========================================
 
 await test(
-  "active driver takes a new order",
+  "active driver cannot self-take a new order",
   async () => {
 
     const token =
@@ -1181,42 +1181,32 @@ await test(
 
     assert.equal(
       response.status,
-      200
+      403
     );
 
 
     assert.equal(
-      body.ok,
-      true
+      body.error,
+      "forbidden transition"
     );
 
 
     assert.equal(
-      body.order.status,
-      "taken"
-    );
-
-
-    assert.equal(
-      body.order.driverId,
-      "driver-1"
+      getRow().status,
+      "new"
     );
 
 
     assert.equal(
       getRow().driver_id,
-      "driver-1"
+      null
     );
   }
 );
 
 
-// ========================================
-// COMPETING DRIVER
-// ========================================
-
 await test(
-  "second driver receives conflict for claimed order",
+  "driver cannot take an order assigned to another driver",
   async () => {
 
     const token =
@@ -1271,7 +1261,7 @@ await test(
 
     assert.equal(
       response.status,
-      409
+      403
     );
   }
 );
