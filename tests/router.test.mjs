@@ -1891,7 +1891,7 @@ await test(
 // ========================================
 
 await test(
-  "driver sees new orders and own assigned orders only",
+  "driver sees only server-assigned own orders",
   async () => {
 
     const token =
@@ -1994,13 +1994,13 @@ await test(
 
     assert.equal(
       body.total,
-      2
+      1
     );
 
 
     assert.equal(
       body.orders.length,
-      2
+      1
     );
 
 
@@ -2020,31 +2020,15 @@ await test(
       );
 
 
-    assert.ok(
-      newOrder
+    assert.equal(
+      newOrder,
+      undefined,
+      "unassigned new orders must not be visible to Driver"
     );
 
 
     assert.ok(
       ownOrder
-    );
-
-
-    assert.equal(
-      Object.hasOwn(
-        newOrder,
-        "name"
-      ),
-      false
-    );
-
-
-    assert.equal(
-      Object.hasOwn(
-        newOrder,
-        "phone"
-      ),
-      false
     );
 
 
