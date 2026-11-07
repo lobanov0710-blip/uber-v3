@@ -33,9 +33,7 @@ import {
 
 import {
   getOrderById,
-  listOrders,
-  advanceDriverOrder,
-  cancelOrder
+  listOrders
 } from "./core/orderRepository.js";
 
 import {
@@ -118,6 +116,10 @@ import {
   changeDriverAssignmentPhase,
   createDriverTripVerificationChallenge
 } from "./core/driverTripOperationalService.js";
+
+import {
+  transitionOrderTerminal
+} from "./core/orderTerminalMutationService.js";
 
 
 // =========================
@@ -4715,32 +4717,22 @@ export default async function router(
 
 
     // =========================
-  // PRIVATE ORDER TRANSITION
+  // PUBLIC STAFF ORDER TERMINAL MUTATION
   // =========================
-  //
-  // Staff-only endpoint:
   //
   // POST /orders/{orderId}/status
   //
-  // Authentication:
-  // staff JWT
-  //
   // Driver:
+  //   in_progress -> done
   //
-  // in_progress
-  //   -> done
+  // Admin with orders.cancel:
+  //   new/taken/in_progress -> canceled
   //
-  // taken -> in_progress is controlled only
-  // by /v1/driver/assignments/{id}/phase
-  // after verified trip identity.
-  //
-  // Admin:
-  //
-  // new / taken / in_progress
-  //   -> canceled
-  //
-  // Repository performs the actual
-  // transition atomically in D1.
+  // D3 hardening:
+  // - mandatory Idempotency-Key
+  // - mandatory expectedRevision
+  // - atomic order + assignment + audit
+  // - idempotent result replay
   // =========================
 
   const orderTransitionMatch =
@@ -4753,10 +4745,6 @@ export default async function router(
     orderTransitionMatch
   ) {
 
-    // =========================
-    // METHOD
-    // =========================
-
     if (
       req.method !== "POST"
     ) {
@@ -4768,23 +4756,10 @@ export default async function router(
     }
 
 
-        // =========================
-    // STAFF AUTHORIZATION
-    // =========================
-    //
-    // JWT signature alone is not enough.
-    //
-    // authenticateStaffRequest verifies:
-    //
-    // - staff scope
-    // - account identity
-    // - role
-    // - tokenVersion
-    // - active D1 account
-    // - active D1 session
-    // - session ownership
-    // - revocation / rotation / expiration
-    // =========================
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
 
     const auth =
       await authenticateStaffRequest(
@@ -4794,88 +4769,23 @@ export default async function router(
 
 
     if (
-      !auth.ok
+      auth?.ok !== true
     ) {
 
-      return safeError(
-        auth.error,
-        auth.status
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
       );
     }
 
-
-    const user =
-      auth.user;
-
-
-    // =========================
-    // ROLE
-    // =========================
-
-    const isAdmin =
-      hasRole(
-        user,
-        "admin"
-      );
-
-
-    const isDriver =
-      hasRole(
-        user,
-        "driver"
-      );
-
-
-    if (
-      !isAdmin &&
-      !isDriver
-    ) {
-
-      return safeError(
-        "forbidden",
-        403
-      );
-    }
-
-
-    // =========================
-    // ADMIN PERMISSION
-    // =========================
-
-    if (isAdmin) {
-
-      let adminAccess;
-
-      try {
-        adminAccess =
-          await resolveAdminAccess(
-            env,
-            user
-          );
-      } catch {
-        return safeError(
-          "admin authorization failed",
-          500
-        );
-      }
-
-      if (
-        !adminCan(
-          adminAccess,
-          "orders.cancel"
-        )
-      ) {
-        return safeError(
-          "forbidden",
-          403
-        );
-      }
-    }
-
-
-    // =========================
-    // ORDER ID
-    // =========================
 
     let orderId;
 
@@ -4888,29 +4798,29 @@ export default async function router(
         )
           .trim();
 
-    } catch (
-      error
-    ) {
+    } catch {
 
-      return safeError(
-        "invalid order id",
-        400
-      );
+      orderId =
+        "";
     }
 
 
     if (!orderId) {
 
-      return safeError(
-        "invalid order id",
-        400
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid order id",
+          code:
+            "invalid_order_id",
+          requestId
+        },
+        400,
+        cors
       );
     }
 
-
-    // =========================
-    // BODY
-    // =========================
 
     const body =
       await safeJson(
@@ -4918,248 +4828,57 @@ export default async function router(
       );
 
 
-    const targetStatus =
-      String(
-        body?.status ??
-        ""
-      )
-        .trim()
-        .toLowerCase();
-
-
-    const allowedTargetStatuses =
-      new Set([
-        "taken",
-        "in_progress",
-        "done",
-        "canceled"
-      ]);
-
-
-    if (
-      !allowedTargetStatuses.has(
-        targetStatus
-      )
-    ) {
-
-      return safeError(
-        "invalid status",
-        400
-      );
-    }
-
-
-    // =========================
-    // AUTHORITATIVE DRIVER ID
-    // =========================
-    //
-    // user.id was reconstructed from
-    // the active D1 staff account by
-    // authenticateStaffRequest().
-    //
-    // DRIVERS KV is no longer part of
-    // authentication/authorization.
-    // =========================
-
-    let driverId =
-      null;
-
-
-    if (
-      isDriver
-    ) {
-
-      driverId =
-        String(
-          user.id ??
-          ""
-        )
-          .trim();
-
-
-      if (!driverId) {
-
-        return safeError(
-          "invalid staff identity",
-          500
-        );
-      }
-    }
-
-
-    // =========================
-    // ROLE -> TRANSITION POLICY
-    // =========================
-
-    let transitionResult;
-
-
     try {
 
-      if (
-        isDriver
-      ) {
+      const result =
+        await transitionOrderTerminal(
+          env,
+          auth.user,
+          orderId,
+          body,
+          {
+            requestId,
 
-        if (
-          targetStatus ===
-            "done"
-        ) {
-
-          transitionResult =
-            await advanceDriverOrder(
-              env,
-              orderId,
-              driverId,
-              targetStatus
-            );
-
-        } else {
-
-          return safeError(
-            "forbidden transition",
-            403
-          );
-        }
-
-      } else {
-
-        // =========================
-        // ADMIN
-        // =========================
-        //
-        // ARCH-08 intentionally gives
-        // admin only the cancellation
-        // transition.
-        //
-        // Admin must not impersonate
-        // driver workflow.
-        // =========================
-
-        if (
-          targetStatus !==
-            "canceled"
-        ) {
-
-          return safeError(
-            "forbidden transition",
-            403
-          );
-        }
-
-
-        transitionResult =
-          await cancelOrder(
-            env,
-            orderId
-          );
-      }
-
-    } catch (
-      error
-    ) {
-
-      console.error("ORDER TRANSITION ERROR:");
-
-
-      return safeError(
-        "order transition failed",
-        500
-      );
-    }
-
-
-    // =========================
-    // TRANSITION RESULT
-    // =========================
-
-    if (
-      transitionResult?.ok !== true
-    ) {
-
-      if (
-        transitionResult?.reason ===
-          "not_found"
-      ) {
-
-        return safeError(
-          "order not found",
-          404
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
         );
-      }
 
 
-      if (
-        transitionResult?.reason ===
-          "conflict"
-      ) {
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
 
-        return safeError(
-          "order transition conflict",
-          409
-        );
-      }
+    } catch {
+
+      console.error(
+        "ORDER TERMINAL MUTATION ERROR"
+      );
 
 
-      return safeError(
-        "order transition failed",
-        500
+      return json(
+        {
+          ok: false,
+          error:
+            "order transition failed",
+          code:
+            "order_terminal_mutation_failed",
+          requestId
+        },
+        500,
+        cors
       );
     }
-
-
-    const transitionedOrder =
-      transitionResult.order;
-
-
-    if (
-      !transitionedOrder
-      ||
-      !transitionedOrder.id
-    ) {
-
-      return safeError(
-        "order transition failed",
-        500
-      );
-    }
-
-
-    // =========================
-    // RESPONSE
-    // =========================
-    //
-    // Deliberately minimal.
-    //
-    // No passenger PII is required
-    // for acknowledgement of the
-    // state transition itself.
-    // =========================
-
-    return json(
-      {
-        ok: true,
-
-        order: {
-
-          id:
-            transitionedOrder.id,
-
-          status:
-            transitionedOrder.status,
-
-          driverId:
-            transitionedOrder.driverId,
-
-          updatedAt:
-            transitionedOrder.updatedAt,
-
-          revision:
-            transitionedOrder.revision
-        }
-      },
-      200,
-      cors
-    );
   }
 
 
