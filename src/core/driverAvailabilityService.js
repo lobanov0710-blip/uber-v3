@@ -373,6 +373,18 @@ export async function putDriverAvailability(
     );
   }
 
+  const idempotency =
+    await prepareIdempotency(
+      env,
+      driver.id,
+      options.idempotencyKey,
+      parsed
+    );
+
+  if (!idempotency.ok) {
+    return idempotency.response;
+  }
+
   if (
     current.revision ===
       null
@@ -392,6 +404,7 @@ export async function putDriverAvailability(
   }
 
   if (
+    parsed.requestedState === "on_line" &&
     current.registrationStatus !==
       "approved"
   ) {
@@ -401,6 +414,7 @@ export async function putDriverAvailability(
   }
 
   if (
+    parsed.requestedState === "on_line" &&
     current.identityStatus !==
       "verified"
   ) {
@@ -442,6 +456,7 @@ export async function putDriverAvailability(
     }
 
     if (
+      parsed.requestedState === "on_line" &&
       vehicle.status !==
         "approved"
     ) {
@@ -449,18 +464,6 @@ export async function putDriverAvailability(
         "vehicle_not_approved"
       );
     }
-  }
-
-  const idempotency =
-    await prepareIdempotency(
-      env,
-      driver.id,
-      options.idempotencyKey,
-      parsed
-    );
-
-  if (!idempotency.ok) {
-    return idempotency.response;
   }
 
   const now =

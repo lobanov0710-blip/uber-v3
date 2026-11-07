@@ -40,6 +40,8 @@ function dbFor({
 
         async first() {
 
+          if (/FROM\s+mutation_idempotency/i.test(this.sql)) return null;
+
           if (
             /FROM\s+staff_owner_binding/i.test(
               this.sql

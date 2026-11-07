@@ -416,6 +416,27 @@ export async function createDriverTripVerificationChallenge(
     return notFound();
   }
 
+  const idempotency =
+    await prepareIdempotency(
+      env,
+      driver.id,
+      {
+        key:
+          options.idempotencyKey,
+        operation:
+          "driver.assignment.verification_challenge.create",
+        target:
+          assignment.id,
+        body: {
+          expectedRevision
+        }
+      }
+    );
+
+  if (!idempotency.ok) {
+    return idempotency.response;
+  }
+
   if (
     assignment.state !==
       "active" ||
@@ -449,27 +470,6 @@ export async function createDriverTripVerificationChallenge(
     return unavailable(
       "trip_verification_ttl_not_configured"
     );
-  }
-
-  const idempotency =
-    await prepareIdempotency(
-      env,
-      driver.id,
-      {
-        key:
-          options.idempotencyKey,
-        operation:
-          "driver.assignment.verification_challenge.create",
-        target:
-          assignment.id,
-        body: {
-          expectedRevision
-        }
-      }
-    );
-
-  if (!idempotency.ok) {
-    return idempotency.response;
   }
 
   const now =
@@ -630,6 +630,30 @@ export async function changeDriverAssignmentPhase(
     return notFound();
   }
 
+  const idempotency =
+    await prepareIdempotency(
+      env,
+      driver.id,
+      {
+        key:
+          options.idempotencyKey,
+        operation:
+          "driver.assignment.phase",
+        target:
+          assignment.id,
+        body: {
+          phase:
+            targetPhase,
+          verificationSessionId,
+          expectedRevision
+        }
+      }
+    );
+
+  if (!idempotency.ok) {
+    return idempotency.response;
+  }
+
   if (
     assignment.state !==
       "active" ||
@@ -671,30 +695,6 @@ export async function changeDriverAssignmentPhase(
     return conflict(
       "order_state_conflict"
     );
-  }
-
-  const idempotency =
-    await prepareIdempotency(
-      env,
-      driver.id,
-      {
-        key:
-          options.idempotencyKey,
-        operation:
-          "driver.assignment.phase",
-        target:
-          assignment.id,
-        body: {
-          phase:
-            targetPhase,
-          verificationSessionId,
-          expectedRevision
-        }
-      }
-    );
-
-  if (!idempotency.ok) {
-    return idempotency.response;
   }
 
   const now =

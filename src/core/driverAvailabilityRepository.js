@@ -371,7 +371,7 @@ export async function updateDriverAvailability(
         WHERE driver_id = ?1
           AND revision = ?2
 
-          AND EXISTS (
+          AND (?4 = 'off_line' OR EXISTS (
             SELECT 1
             FROM driver_profiles p
             WHERE p.staff_account_id = ?1
@@ -379,7 +379,7 @@ export async function updateDriverAvailability(
                 'approved'
               AND p.identity_status =
                 'verified'
-          )
+          ))
 
           AND (
             ?3 IS NULL
@@ -388,7 +388,7 @@ export async function updateDriverAvailability(
               FROM vehicles v
               WHERE v.id = ?3
                 AND v.driver_id = ?1
-                AND v.status = 'approved'
+                AND (?4 = 'off_line' OR v.status = 'approved')
             )
           )
 
@@ -407,6 +407,15 @@ export async function updateDriverAvailability(
               ?4 = 'off_line'
               AND ?3 IS NULL
             )
+          )
+
+          AND NOT EXISTS (
+            SELECT 1
+            FROM order_assignments a
+            WHERE a.driver_id = ?1
+              AND a.state = 'active'
+              AND a.revoked_at IS NULL
+              AND (?3 IS NULL OR a.vehicle_id <> ?3)
           )
 
           AND EXISTS (
@@ -469,7 +478,9 @@ export async function updateDriverAvailability(
           ?3,
           ?4
 
-        WHERE EXISTS (
+        -- This statement immediately follows the availability UPDATE in the batch.
+        -- Matching state alone cannot prove that THIS request changed the row.
+        WHERE changes() = 1 AND EXISTS (
           SELECT 1
           FROM driver_availability
           WHERE driver_id = ?2
@@ -534,6 +545,9 @@ export async function updateDriverAvailability(
           AND request_digest = ?4
           AND claim_id = ?5
           AND state = 'in_progress'
+
+          -- The preceding audit INSERT must belong to a successful mutation.
+          AND changes() = 1
 
           AND EXISTS (
             SELECT 1

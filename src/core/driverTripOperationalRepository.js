@@ -903,7 +903,7 @@ export async function advanceDriverAssignmentPhase(
             revision = revision + 1,
             updated_at = ?4
 
-          WHERE id = (
+          WHERE changes() = 1 AND id = (
             SELECT order_id
             FROM order_assignments
             WHERE id = ?1
@@ -950,7 +950,8 @@ export async function advanceDriverAssignmentPhase(
           ?4,
           ?5
 
-        WHERE EXISTS (
+        -- Immediately follows this batch's assignment/order UPDATE.
+        WHERE changes() = 1 AND EXISTS (
           SELECT 1
           FROM order_assignments
           WHERE id = ?3
@@ -1020,6 +1021,7 @@ export async function advanceDriverAssignmentPhase(
           AND request_digest = ?4
           AND claim_id = ?5
           AND state = 'in_progress'
+          AND changes() = 1
 
           AND EXISTS (
             SELECT 1

@@ -543,6 +543,26 @@ export async function assignOrderByAdmin(
     return notFound();
   }
 
+  const idempotency =
+    await prepareIdempotency(
+      env,
+      authorization.access,
+      {
+        key:
+          options.idempotencyKey,
+        operation:
+          "admin.order.assign",
+        target:
+          clean(orderId),
+        body:
+          parsed
+      }
+    );
+
+  if (!idempotency.ok) {
+    return idempotency.response;
+  }
+
   if (
     state.orderRevision !==
       parsed.expectedRevision
@@ -576,26 +596,6 @@ export async function assignOrderByAdmin(
 
   if (candidateError) {
     return candidateError;
-  }
-
-  const idempotency =
-    await prepareIdempotency(
-      env,
-      authorization.access,
-      {
-        key:
-          options.idempotencyKey,
-        operation:
-          "admin.order.assign",
-        target:
-          clean(orderId),
-        body:
-          parsed
-      }
-    );
-
-  if (!idempotency.ok) {
-    return idempotency.response;
   }
 
   const now =
@@ -725,6 +725,26 @@ export async function reassignOrderByAdmin(
     return notFound();
   }
 
+  const idempotency =
+    await prepareIdempotency(
+      env,
+      authorization.access,
+      {
+        key:
+          options.idempotencyKey,
+        operation:
+          "admin.order.reassign",
+        target:
+          clean(orderId),
+        body:
+          parsed
+      }
+    );
+
+  if (!idempotency.ok) {
+    return idempotency.response;
+  }
+
   if (
     state.orderRevision !==
       parsed.expectedRevision
@@ -766,26 +786,6 @@ export async function reassignOrderByAdmin(
 
   if (candidateError) {
     return candidateError;
-  }
-
-  const idempotency =
-    await prepareIdempotency(
-      env,
-      authorization.access,
-      {
-        key:
-          options.idempotencyKey,
-        operation:
-          "admin.order.reassign",
-        target:
-          clean(orderId),
-        body:
-          parsed
-      }
-    );
-
-  if (!idempotency.ok) {
-    return idempotency.response;
   }
 
   const now =

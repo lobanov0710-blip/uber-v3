@@ -25,7 +25,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install locked development dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+      - name: Check dependency advisories
+        run: npm audit --audit-level=high
       - name: Validate D1 migrations offline
         run: python3 tools/test_migrations.py
       - name: Run backend unit and router tests
         run: npm test
+      - name: Bundle Worker without deploying
+        run: npm exec -- wrangler deploy --dry-run --outdir /tmp/worker-audit-bundle

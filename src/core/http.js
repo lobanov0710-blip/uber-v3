@@ -23,26 +23,18 @@ export async function fetchJSON(
       );
 
     if (!response.ok) {
-      const body =
-        await response
-          .text()
-          .catch(() => "");
+      await response.body?.cancel().catch(() => {});
 
       console.error(
         "HTTP ERROR:",
         {
-          url,
-          status: response.status,
-          statusText:
-            response.statusText,
-          body:
-            body.slice(0, 500)
+          status: response.status
         }
       );
 
       const error =
         new Error(
-          `HTTP ${response.status} ${response.statusText}`
+          "Upstream request failed"
         );
 
       error.status =
@@ -56,8 +48,7 @@ export async function fetchJSON(
   } catch (error) {
     console.error(
       "FETCH ERROR:",
-      url,
-      error
+      { status: Number.isInteger(error?.status) ? error.status : 0 }
     );
 
     const status =

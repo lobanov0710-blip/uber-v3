@@ -3379,10 +3379,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF LOGIN ERROR:",
-        error
-      );
+      console.error("STAFF LOGIN ERROR:");
 
 
       return safeError(
@@ -3460,10 +3457,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF REFRESH ERROR:",
-        error
-      );
+      console.error("STAFF REFRESH ERROR:");
 
 
       return safeError(
@@ -3525,10 +3519,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF LOGOUT ERROR:",
-        error
-      );
+      console.error("STAFF LOGOUT ERROR:");
 
 
       return safeError(
@@ -3848,10 +3839,7 @@ export default async function router(
         error
       ) {
 
-        console.error(
-          "STAFF ACCOUNT LIST ERROR:",
-          error
-        );
+        console.error("STAFF ACCOUNT LIST ERROR:");
 
 
         return safeError(
@@ -3922,10 +3910,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF ACCOUNT CREATE ERROR:",
-        error
-      );
+      console.error("STAFF ACCOUNT CREATE ERROR:");
 
 
       return safeError(
@@ -4129,10 +4114,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF ACCOUNT STATUS ERROR:",
-        error
-      );
+      console.error("STAFF ACCOUNT STATUS ERROR:");
 
 
       return safeError(
@@ -4310,10 +4292,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "STAFF PASSWORD RESET ERROR:",
-        error
-      );
+      console.error("STAFF PASSWORD RESET ERROR:");
 
 
       return safeError(
@@ -4493,26 +4472,6 @@ export default async function router(
         400
       );
     }
-
-
-    // =========================
-    // LOG
-    // =========================
-    //
-    // На следующем security
-    // этапе production logging
-    // будет дополнительно
-    // сокращён.
-    // =========================
-
-    console.log(
-      "CALCULATE:",
-      {
-        from,
-        to,
-        tariff
-      }
-    );
 
 
     try {
@@ -4745,10 +4704,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "ROUTE CALCULATE ERROR:",
-        error
-      );
+      console.error("ROUTE CALCULATE ERROR:");
 
       return safeError(
         "route calculation failed",
@@ -5102,10 +5058,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "ORDER TRANSITION ERROR:",
-        error
-      );
+      console.error("ORDER TRANSITION ERROR:");
 
 
       return safeError(
@@ -5377,10 +5330,7 @@ export default async function router(
         error
       ) {
 
-        console.error(
-          "ORDER CREATE ERROR:",
-          error
-        );
+        console.error("ORDER CREATE ERROR:");
 
         return safeError(
           "order create failed",
@@ -5588,10 +5538,7 @@ export default async function router(
         error
       ) {
 
-        console.error(
-          "ORDER LIST ERROR:",
-          error
-        );
+        console.error("ORDER LIST ERROR:");
 
         return safeError(
           "order list failed",
@@ -5985,10 +5932,7 @@ export default async function router(
       error
     ) {
 
-      console.error(
-        "PASSENGER ORDER READ ERROR:",
-        error
-      );
+      console.error("PASSENGER ORDER READ ERROR:");
 
       return safeError(
         "order read failed",
