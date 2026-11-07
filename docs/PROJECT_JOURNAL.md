@@ -287,3 +287,25 @@ Merge и production deploy не выполнялись. D4–D7 не затра�
 Следующий D3-подэтап: согласовать Android TransferDriver с готовыми
 server-authoritative `/v1` contracts (photo-check/support/assigned-only flow)
 и добавить клиентские contract/instrumentation tests без обхода backend guards.
+
+## 2026-11-07 — D3 photo-control client recovery contract
+
+Для Android photo-control UI расширен driver read-model без изменения policy:
+
+- `GET /v1/driver/photo-checks` теперь возвращает `uploadedKinds` в
+  server-authoritative порядке обязательных ракурсов;
+- `uploadedKindCount` сохранён для совместимости;
+- список формируется только по private `vehicle_photos`, связанным с конкретным
+  `photo_check_id + vehicle_id`;
+- public URLs не добавлялись;
+- D4/liveness не затрагивался.
+
+Причина: после restart/network uncertainty Android должен восстановить фактически
+принятые backend ракурсы, а не угадывать их по локальному состоянию.
+
+Regression:
+- photo-control lifecycle SQLite проверяет полный `uploadedKinds`;
+- full backend CI GitHub Actions run 220 — PASS на
+  `abb787ddd1017c0b7e0a20ca68b62a530f8eea44`.
+
+Production deploy и merge не выполнялись.
