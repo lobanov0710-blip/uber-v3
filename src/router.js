@@ -125,6 +125,10 @@ import {
   requestVehiclePhotoCheck
 } from "./core/vehiclePhotoControlService.js";
 
+import {
+  postDriverSupportCase
+} from "./core/driverSupportCaseService.js";
+
 
 // =========================
 // ROUTER
@@ -2020,6 +2024,111 @@ export default async function router(
           code:
             "driver_assignments_failed",
 
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER SUPPORT CASES V1
+  // =========================
+
+  if (
+    path ===
+      "/v1/driver/support-cases"
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await postDriverSupportCase(
+          env,
+          auth.user,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "DRIVER SUPPORT CASE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "support case failed",
+          code:
+            "support_case_failed",
           requestId
         },
         500,
