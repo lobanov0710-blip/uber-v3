@@ -21,6 +21,8 @@ function dbFor({
   registrationStatus = "approved",
   identityStatus = "verified",
   vehicleStatus = "approved",
+  photoControlBlocked = false,
+  photoControlGrace = false,
   availabilityState = "off_line",
   activeVehicleId = null
 } = {}) {
@@ -107,6 +109,10 @@ function dbFor({
                 VEHICLE_ID,
               vehicle_status:
                 vehicleStatus,
+              photo_control_blocked:
+                photoControlBlocked ? 1 : 0,
+              photo_control_grace:
+                photoControlGrace ? 1 : 0,
               availability_state:
                 availabilityState,
               active_vehicle_id:
@@ -320,6 +326,49 @@ assert.equal(
 assert.equal(
   activeMismatch.code,
   "active_vehicle_mismatch"
+);
+
+
+const photoBlockedAssignment =
+  await assignOrderByAdmin(
+    {
+      DB:
+        dbFor({
+          permissions: [
+            "orders.assign"
+          ],
+          photoControlBlocked:
+            true
+        })
+    },
+    dispatcher,
+    ORDER_ID,
+    {
+      driverId:
+        DRIVER_ID,
+      vehicleId:
+        VEHICLE_ID,
+      reason:
+        "Назначение",
+      expectedRevision:
+        1
+    },
+    {
+      idempotencyKey:
+        "photo-blocked-assignment",
+      nowMs:
+        1800000001000
+    }
+  );
+
+assert.equal(
+  photoBlockedAssignment.status,
+  422
+);
+
+assert.equal(
+  photoBlockedAssignment.code,
+  "vehicle_photo_control_required"
 );
 
 
