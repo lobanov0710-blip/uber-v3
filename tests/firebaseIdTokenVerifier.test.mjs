@@ -309,9 +309,9 @@ assert.match(
 
 
 await assert.rejects(
-  () =>
+  async () =>
     verify(
-      createToken({
+      await createToken({
         aud:
           "attacker-project"
       })
