@@ -13,6 +13,10 @@ Read-only Cloudflare audit подтвердил:
 - KV `DRIVERS`: `b8fdeb74fda8415ab06b3b1c86c78e8f`;
 - active Worker bindings сейчас содержат только `APP_ENV`, `DB`, `DRIVERS`;
 - binding `DRIVER_PRIVATE_FILES` сейчас отсутствует;
+- Firebase D2 identifiers `FIREBASE_PROJECT_ID`, `FIREBASE_PROJECT_NUMBER`,
+  `FIREBASE_DRIVER_APP_ID` в staging Worker отсутствуют;
+- в активном production Worker эти D2 identifiers также отсутствуют, поэтому
+  их нельзя безопасно копировать из production deployment;
 - live Driver v1 probe на текущем staging deployment возвращает 404 даже для
   `GET /v1/driver/me`, то есть Worker deployment отстаёт от D3 backend code;
 - remote D1 migration list показывает к применению `0005`–`0017`;
@@ -35,6 +39,10 @@ Read-only Cloudflare audit подтвердил:
 - bucket должен быть явно staging-scoped;
 - `DRIVER_UPLOAD_MAX_BYTES` обязателен и должен находиться в безопасном диапазоне
   1–20 MiB;
+- обязательны публичные Firebase identifiers:
+  `FIREBASE_PROJECT_ID`, `FIREBASE_PROJECT_NUMBER`,
+  `FIREBASE_DRIVER_APP_ID`; они должны быть подтверждены из реальной
+  Firebase Android-конфигурации, а не придуманы;
 - hourly D3 cron `0 * * * *` обязателен;
 - credentials/secrets в `[vars]` запрещены;
 - migration chain `0001`–`0017` должна быть полной;
@@ -56,17 +64,20 @@ python3 tools/d3_staging_preflight.py \
 1. Создать или независимо подтвердить отдельный **private staging R2 bucket** и
    привязать его как `DRIVER_PRIVATE_FILES`.
 2. Установить разумный `DRIVER_UPLOAD_MAX_BYTES` в staging config.
-3. Сформировать реальный `wrangler.staging.toml` из подтверждённых bindings и
+3. Подтвердить Firebase project ID/number и Android app ID из реальной
+   Firebase-конфигурации Driver app; настроить App Check Play Integrity для
+   тестового канала распространения.
+4. Сформировать реальный `wrangler.staging.toml` из подтверждённых bindings и
    прогнать fail-closed preflight.
-4. Перед remote apply отдельно подтвердить применение migrations `0005–0017`
+5. Перед remote apply отдельно подтвердить применение migrations `0005–0017`
    к staging D1.
-5. После migrations выполнить deployment **только** `uber-v3-staging`.
-6. Повторить unauthenticated route probe:
+6. После migrations выполнить deployment **только** `uber-v3-staging`.
+7. Повторить unauthenticated route probe:
    - `/v1/driver/me` → 401;
    - `/v1/driver/photo-checks` → 401;
    - `/v1/driver/support-cases` → 401;
    - GET `/v1/driver/uploads` → 405.
-7. Только после этого запускать authenticated Driver E2E:
+8. Только после этого запускать authenticated Driver E2E:
    photo-check → private R2 upload → backend state refresh → support case →
    support message/history.
 
