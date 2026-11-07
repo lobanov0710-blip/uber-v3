@@ -309,3 +309,79 @@ Regression:
   `abb787ddd1017c0b7e0a20ca68b62a530f8eea44`.
 
 Production deploy и merge не выполнялись.
+
+## 2026-11-07 — D3 STAGING E2E readiness audit + D2 prerequisite
+
+Проведён read-only аудит фактического `uber-v3-staging` перед Driver
+photo-control/support E2E. Remote mutations, D1 migration apply и Worker deploy
+не выполнялись.
+
+### Фактическое состояние STAGING
+
+Cloudflare read-only checks подтвердили:
+- Worker: `uber-v3-staging`;
+- D1: `transfer-servis52-staging`;
+- D1 ID: `66474481-a123-47f9-81b4-12af7565ec8d`;
+- KV `DRIVERS`: `b8fdeb74fda8415ab06b3b1c86c78e8f`;
+- active Worker bindings: `APP_ENV`, `DB`, `DRIVERS`;
+- `DRIVER_PRIVATE_FILES` R2 binding отсутствует;
+- `FIREBASE_PROJECT_ID`, `FIREBASE_PROJECT_NUMBER`,
+  `FIREBASE_DRIVER_APP_ID` отсутствуют;
+- active production Worker также не содержит этих D2 Firebase identifiers.
+
+Live unauthenticated probe текущего STAGING:
+- `GET /v1/driver/me` -> HTTP 404;
+- следовательно deployed staging Worker ещё не содержит Driver v1/D3 API.
+
+### STAGING D1
+
+Remote migration list показывает 13 pending migrations:
+`0005` ... `0017`, включая:
+- `0016_photo_control_support_hardening.sql`;
+- `0017_photo_check_lifecycle.sql`.
+
+Fail-closed static audit pending chain:
+- pending migrations: 13;
+- `ALTER TABLE ... ADD COLUMN`: 28;
+- destructive statements: 0;
+- unsafe ALTER: 0;
+- `D3_MIGRATION_STATIC_SAFETY=PASS`.
+
+Read-only D1 state:
+- tables: legacy order/quote/staff base only; `driver_profiles` ещё нет;
+- orders: 6;
+- quotes: 14;
+- staff_accounts: 0;
+- Time Travel: available;
+- remote mutations: none.
+
+### Canonical preflight
+
+Добавлен `tools/d3_staging_preflight.py` + regression tests.
+Gate блокирует staging deploy если:
+- Worker/D1/KV не совпадают с staging identities;
+- используется production D1/KV;
+- отсутствует private `DRIVER_PRIVATE_FILES` R2;
+- R2 bucket не staging-scoped;
+- отсутствует/некорректен `DRIVER_UPLOAD_MAX_BYTES`;
+- отсутствуют D2 Firebase public identifiers;
+- отсутствует hourly cron;
+- config содержит credential-like vars;
+- migration chain неполна/содержит destructive SQL или unsafe ALTER.
+
+Backend CI run 229 на code/docs-preflight head
+`42adb7854ff5cf1511b0862b4774acdb7afac58c` — PASS.
+
+### Вывод
+
+Authenticated D3 STAGING E2E пока технически заблокирован инфраструктурой.
+До E2E нужны отдельные подтверждённые remote actions:
+1. staging D1 migrations `0005–0017`;
+2. отдельный private staging R2 + binding;
+3. подтверждённые Firebase project ID/number/Driver app ID;
+4. staging-only Worker deploy;
+5. повторный route probe;
+6. Firebase Phone/App Check Driver session exchange.
+
+Никакие перечисленные remote actions в этом checkpoint не выполнялись.
+Production не изменялся. D4–D7 не затрагивались.
