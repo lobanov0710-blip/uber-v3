@@ -219,7 +219,7 @@ await test(
 
     assert.match(
       calls[0].sql,
-      /s\.expires_at\s*>\s*\?1/i
+      /s\.expires_at\s*>\s*\?2/i
     );
 
 
