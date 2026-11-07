@@ -690,8 +690,6 @@ async function appendSupportMessage(
         id,
       senderKind:
         clean(senderKind),
-      body:
-        clean(body),
       createdAt:
         timestamp,
       expiresAt:
