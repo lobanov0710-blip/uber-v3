@@ -1,0 +1,81 @@
+name: D3 staging Cloudflare inventory
+
+on:
+  push:
+    branches:
+      - 'probe/d3-staging-inventory'
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      WRANGLER_SEND_METRICS: "false"
+
+    steps:
+      - name: Verify Cloudflare credentials are available
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+            echo 'CLOUDFLARE_READONLY_CREDS=MISSING'
+            exit 3
+          fi
+          echo 'CLOUDFLARE_READONLY_CREDS=PRESENT'
+
+      - name: List staging D1 databases
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.156.0 d1 list --json > /tmp/d1.json
+          python3 - <<'PY'
+          import json
+          data=json.load(open('/tmp/d1.json',encoding='utf-8'))
+          rows=data if isinstance(data,list) else data.get('result',data.get('databases',[]))
+          found=[]
+          for row in rows or []:
+              name=str(row.get('name',''))
+              if 'staging' in name.lower():
+                  found.append({'name':name,'uuid':row.get('uuid') or row.get('id')})
+          print('STAGING_D1=' + json.dumps(found,ensure_ascii=False,sort_keys=True))
+          if not found:
+              raise SystemExit(4)
+          PY
+
+      - name: List staging KV namespaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.156.0 kv namespace list > /tmp/kv.txt
+          python3 - <<'PY'
+          import json
+          raw=open('/tmp/kv.txt',encoding='utf-8').read().strip()
+          try:
+              rows=json.loads(raw)
+          except Exception:
+              rows=[]
+          found=[]
+          if isinstance(rows,list):
+              for row in rows:
+                  title=str(row.get('title') or row.get('name') or '')
+                  if 'staging' in title.lower():
+                      found.append({'title':title,'id':row.get('id')})
+          print('STAGING_KV=' + json.dumps(found,ensure_ascii=False,sort_keys=True))
+          PY
+
+      - name: List candidate R2 buckets
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.156.0 r2 bucket list > /tmp/r2.txt
+          python3 - <<'PY'
+          import re
+          raw=open('/tmp/r2.txt',encoding='utf-8').read().splitlines()
+          safe=[line.strip() for line in raw if re.search(r'(staging|driver|transfer)',line,re.I)]
+          print('R2_CANDIDATES=' + repr(safe))
+          PY
