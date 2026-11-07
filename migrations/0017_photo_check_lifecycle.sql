@@ -97,6 +97,13 @@ ON vehicle_photo_check_reviews (
     created_at DESC
 );
 
+CREATE UNIQUE INDEX idx_photo_checks_monthly_due
+ON vehicle_photo_checks (
+    vehicle_id,
+    due_at
+)
+WHERE kind = 'monthly';
+
 CREATE INDEX idx_vehicles_photo_check_due
 ON vehicles (
     status,
