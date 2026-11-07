@@ -17,12 +17,17 @@ import {
 
 import {
   createVehiclePhotoCheck,
-  getVehiclePhotoControlState
+  generateDueMonthlyPhotoChecks,
+  getAdminVehiclePhotoCheckBundle,
+  getVehiclePhotoControlState,
+  listDriverOpenPhotoChecks,
+  reviewVehiclePhotoCheck
 } from "./vehiclePhotoControlRepository.js";
 
-
-const MONTHLY_GRACE_MS =
-  24 * 60 * 60 * 1000;
+import {
+  addOneCalendarMonthUtc,
+  PHOTO_CONTROL_GRACE_MS
+} from "./photoControlSchedule.js";
 
 const KINDS =
   new Set([
@@ -482,7 +487,8 @@ export async function requestVehiclePhotoCheck(
 
   const graceUntil =
     parsed.kind === "monthly"
-      ? now + MONTHLY_GRACE_MS
+      ? now +
+        PHOTO_CONTROL_GRACE_MS
       : now;
 
 
@@ -543,3 +549,541 @@ export async function requestVehiclePhotoCheck(
     result
   );
 }
+
+// =========================================
+// PHOTO-CONTROL LIFECYCLE
+// =========================================
+
+const REVIEW_DECISIONS =
+  new Set([
+    "passed",
+    "failed",
+    "manual_review"
+  ]);
+
+const REVIEW_INPUT_KEYS =
+  new Set([
+    "decision",
+    "expectedRevision",
+    "note"
+  ]);
+
+const REQUIRED_PHOTO_KINDS = [
+  "left",
+  "front",
+  "right",
+  "rear",
+  "open_trunk",
+  "rear_cabin",
+  "front_cabin"
+];
+
+
+function normalizeReviewInput(
+  input
+) {
+  if (
+    !input ||
+    typeof input !== "object" ||
+    Array.isArray(input) ||
+    Object.keys(input)
+      .some(
+        key =>
+          !REVIEW_INPUT_KEYS
+            .has(key)
+      )
+  ) {
+    return null;
+  }
+
+
+  const decision =
+    clean(input.decision)
+      .toLowerCase();
+
+  const expectedRevision =
+    Number(
+      input.expectedRevision
+    );
+
+  const note =
+    input.note == null ||
+    clean(input.note) === ""
+      ? null
+      : clean(input.note);
+
+
+  if (
+    !REVIEW_DECISIONS.has(
+      decision
+    ) ||
+    !Number.isSafeInteger(
+      expectedRevision
+    ) ||
+    expectedRevision < 1 ||
+    (
+      note !== null &&
+      (
+        note.length > 1000 ||
+        /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(
+          note
+        )
+      )
+    )
+  ) {
+    return null;
+  }
+
+
+  return {
+    decision,
+    expectedRevision,
+    note
+  };
+}
+
+
+async function requireVehicleVerifyAccess(
+  env,
+  user
+) {
+  const access =
+    await resolveAdminAccess(
+      env,
+      user
+    );
+
+
+  if (
+    access?.ok !== true ||
+    !adminCan(
+      access,
+      "vehicles.verify"
+    )
+  ) {
+    return {
+      ok: false,
+      response:
+        forbidden(
+          access?.code ||
+          "permission_required"
+        )
+    };
+  }
+
+
+  return {
+    ok: true,
+    access
+  };
+}
+
+
+async function prepareReviewIdempotency(
+  env,
+  actorAccountId,
+  key,
+  target,
+  body
+) {
+  const prepared =
+    await createMutationIdempotency({
+      key,
+      operation:
+        "admin.vehicle.photo_check.review",
+      target,
+      body
+    });
+
+
+  if (
+    prepared?.ok !== true
+  ) {
+    return {
+      ok: false,
+      response:
+        prepared
+    };
+  }
+
+
+  const existing =
+    await getMutationIdempotencyRecord(
+      env,
+      {
+        actorAccountId,
+        operation:
+          prepared.operation,
+        keyDigest:
+          prepared.keyDigest
+      }
+    );
+
+
+  if (existing) {
+    if (
+      existing.requestDigest !==
+        prepared.requestDigest
+    ) {
+      return {
+        ok: false,
+        response:
+          conflict(
+            "idempotency_key_reused"
+          )
+      };
+    }
+
+
+    if (
+      existing.state ===
+        "completed" &&
+      existing.result
+    ) {
+      return {
+        ok: false,
+        response:
+          existing.result
+      };
+    }
+
+
+    return {
+      ok: false,
+      response:
+        conflict(
+          "idempotency_in_progress"
+        )
+    };
+  }
+
+
+  return {
+    ok: true,
+    value: {
+      ...prepared,
+      claimId:
+        createId(
+          "idem-claim"
+        )
+    }
+  };
+}
+
+
+export async function getAdminVehiclePhotoCheck(
+  env,
+  user,
+  vehicleId,
+  photoCheckId
+) {
+  const resolved =
+    await requireVehicleVerifyAccess(
+      env,
+      user
+    );
+
+
+  if (!resolved.ok) {
+    return resolved.response;
+  }
+
+
+  const bundle =
+    await getAdminVehiclePhotoCheckBundle(
+      env,
+      clean(vehicleId),
+      clean(photoCheckId)
+    );
+
+
+  if (!bundle) {
+    return notFound(
+      "photo_check_not_found"
+    );
+  }
+
+
+  return {
+    ok: true,
+    photoCheck:
+      bundle
+  };
+}
+
+
+export async function getDriverPhotoChecks(
+  env,
+  user
+) {
+  if (
+    !user ||
+    typeof user !== "object" ||
+    Array.isArray(user) ||
+    clean(user.role)
+      .toLowerCase() !==
+      "driver" ||
+    !clean(user.id)
+  ) {
+    return forbidden(
+      "driver_role_required"
+    );
+  }
+
+
+  const photoChecks =
+    await listDriverOpenPhotoChecks(
+      env,
+      clean(user.id)
+    );
+
+
+  return {
+    ok: true,
+    photoChecks
+  };
+}
+
+
+export async function reviewAdminVehiclePhotoCheck(
+  env,
+  user,
+  vehicleId,
+  photoCheckId,
+  input,
+  options = {}
+) {
+  const resolved =
+    await requireVehicleVerifyAccess(
+      env,
+      user
+    );
+
+
+  if (!resolved.ok) {
+    return resolved.response;
+  }
+
+
+  const parsed =
+    normalizeReviewInput(
+      input
+    );
+
+
+  if (!parsed) {
+    return invalid();
+  }
+
+
+  const normalizedVehicleId =
+    clean(vehicleId);
+
+  const normalizedCheckId =
+    clean(photoCheckId);
+
+
+  if (
+    !/^vehicle_[A-Za-z0-9_-]{8,100}$/.test(
+      normalizedVehicleId
+    ) ||
+    !/^photo-check_[A-Za-z0-9_-]{8,120}$/.test(
+      normalizedCheckId
+    )
+  ) {
+    return invalid(
+      "invalid_photo_check"
+    );
+  }
+
+
+  const idempotency =
+    await prepareReviewIdempotency(
+      env,
+      resolved.access.accountId,
+      options.idempotencyKey,
+      `${normalizedVehicleId}:${normalizedCheckId}`,
+      parsed
+    );
+
+
+  if (!idempotency.ok) {
+    return idempotency.response;
+  }
+
+
+  const bundle =
+    await getAdminVehiclePhotoCheckBundle(
+      env,
+      normalizedVehicleId,
+      normalizedCheckId
+    );
+
+
+  if (!bundle) {
+    return notFound(
+      "photo_check_not_found"
+    );
+  }
+
+
+  if (
+    bundle.revision !==
+      parsed.expectedRevision
+  ) {
+    return conflict(
+      "photo_check_revision_conflict"
+    );
+  }
+
+
+  if (
+    bundle.result ===
+      "passed"
+  ) {
+    return conflict(
+      "photo_check_already_passed"
+    );
+  }
+
+
+  if (
+    parsed.decision ===
+      "passed"
+  ) {
+    const present =
+      new Set(
+        bundle.photos.map(
+          photo =>
+            photo.kind
+        )
+      );
+
+
+    const missingPhotoKinds =
+      REQUIRED_PHOTO_KINDS
+        .filter(
+          kind =>
+            !present.has(kind)
+        );
+
+
+    if (
+      missingPhotoKinds.length >
+        0
+    ) {
+      return {
+        ok: false,
+        status: 422,
+        error:
+          "unprocessable entity",
+        code:
+          "photo_check_incomplete",
+        details: {
+          missingPhotoKinds
+        }
+      };
+    }
+  }
+
+
+  const now =
+    Number.isSafeInteger(
+      options.nowMs
+    )
+      ? options.nowMs
+      : Date.now();
+
+
+  if (
+    !Number.isSafeInteger(now) ||
+    now <= 0
+  ) {
+    throw new Error(
+      "invalid photo control review timestamp"
+    );
+  }
+
+
+  const nextDueAt =
+    parsed.decision ===
+      "passed"
+      ? addOneCalendarMonthUtc(
+          now
+        )
+      : null;
+
+
+  const result =
+    await reviewVehiclePhotoCheck(
+      env,
+      {
+        actorAccountId:
+          resolved.access.accountId,
+        vehicleId:
+          normalizedVehicleId,
+        photoCheckId:
+          normalizedCheckId,
+        expectedRevision:
+          parsed.expectedRevision,
+        expectedVehicleRevision:
+          bundle.vehicleRevision,
+        decision:
+          parsed.decision,
+        note:
+          parsed.note,
+        reviewedAt:
+          now,
+        nextDueAt,
+        reviewId:
+          createId(
+            "photo-check-review"
+          ),
+        auditId:
+          createId(
+            "audit"
+          ),
+        requestId:
+          clean(
+            options.requestId
+          ),
+        idempotency:
+          idempotency.value
+      }
+    );
+
+
+  return resolveRepositoryResult(
+    env,
+    resolved.access.accountId,
+    idempotency.value,
+    result
+  );
+}
+
+
+export async function runMonthlyPhotoControlDueGeneration(
+  env,
+  options = {}
+) {
+  const now =
+    Number.isSafeInteger(
+      options.nowMs
+    )
+      ? options.nowMs
+      : Date.now();
+
+
+  return generateDueMonthlyPhotoChecks(
+    env,
+    {
+      nowMs:
+        now,
+      graceMs:
+        PHOTO_CONTROL_GRACE_MS,
+      limit:
+        options.limit
+    }
+  );
+}
+
