@@ -1054,7 +1054,26 @@ export async function listDriverOpenPhotoChecks(
                 'rear_cabin',
                 'front_cabin'
               )
-          ) AS uploaded_kind_count
+          ) AS uploaded_kind_count,
+
+          (
+            SELECT GROUP_CONCAT(
+              vp.kind,
+              '|'
+            )
+            FROM vehicle_photos vp
+            WHERE vp.photo_check_id = pc.id
+              AND vp.vehicle_id = pc.vehicle_id
+              AND vp.kind IN (
+                'left',
+                'front',
+                'right',
+                'rear',
+                'open_trunk',
+                'rear_cabin',
+                'front_cabin'
+              )
+          ) AS uploaded_kinds
 
         FROM vehicle_photo_checks pc
 
@@ -1110,6 +1129,19 @@ export async function listDriverOpenPhotoChecks(
         Number(
           row.uploaded_kind_count
         ),
+      uploadedKinds:
+        REQUIRED_PHOTO_KINDS
+          .filter(
+            kind =>
+              new Set(
+                clean(
+                  row.uploaded_kinds
+                )
+                  .split("|")
+                  .filter(Boolean)
+              )
+                .has(kind)
+          ),
       requiredKindCount:
         REQUIRED_PHOTO_KINDS.length,
       createdAt:
