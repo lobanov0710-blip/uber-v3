@@ -105,6 +105,10 @@ import {
   startAdminRegistrationReview
 } from "./core/adminItemModerationService.js";
 
+import {
+  readAdminPrivateResource
+} from "./core/adminPrivateResourceService.js";
+
 
 // =========================
 // ROUTER
@@ -1336,6 +1340,232 @@ export default async function router(
 
           code:
             "registration_review_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminPrivateResourceMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)\/resources\/(document|vehicle_photo)\/([^/]+)$/
+    );
+
+
+  if (
+    adminPrivateResourceMatch
+  ) {
+
+    if (
+      req.method !==
+        "GET"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+    let resourceType;
+    let resourceId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminPrivateResourceMatch[1]
+        )
+          .trim();
+
+      resourceType =
+        decodeURIComponent(
+          adminPrivateResourceMatch[2]
+        )
+          .trim()
+          .toLowerCase();
+
+      resourceId =
+        decodeURIComponent(
+          adminPrivateResourceMatch[3]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+
+      resourceType =
+        "";
+
+      resourceId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+      ||
+      !/^[A-Za-z0-9_-]{8,120}$/.test(
+        resourceId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_private_resource",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await readAdminPrivateResource(
+          env,
+          auth.user,
+          {
+            driverId,
+            resourceType,
+            resourceId
+          },
+          {
+            requestId
+          }
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return new Response(
+        result.resource.body,
+        {
+          status:
+            200,
+
+          headers: {
+            "Content-Type":
+              result.resource
+                .contentType,
+
+            "Cache-Control":
+              "no-store, private",
+
+            "Pragma":
+              "no-cache",
+
+            "X-Content-Type-Options":
+              "nosniff",
+
+            "Content-Disposition":
+              "inline",
+
+            "Content-Security-Policy":
+              "default-src 'none'; sandbox",
+
+            "Referrer-Policy":
+              "no-referrer",
+
+            "X-Request-Id":
+              requestId
+          }
+        }
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN PRIVATE RESOURCE READ ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "private resource read failed",
+
+          code:
+            "private_resource_read_failed",
 
           requestId
         },
