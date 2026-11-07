@@ -39,8 +39,14 @@ for (const table of requiredTables) {
 
 assert.match(
   sql,
-  /vin\s+TEXT\s+NOT\s+NULL\s+UNIQUE[\s\S]*length\(vin\)\s*=\s*17/i,
-  "VIN must be mandatory and unique"
+  /vin\s+TEXT\s+NOT\s+NULL[\s\S]*length\(vin\)\s*=\s*17/i,
+  "VIN must be mandatory"
+);
+
+assert.doesNotMatch(
+  sql,
+  /vin\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i,
+  "VIN uniqueness is not an approved business rule"
 );
 
 assert.match(
