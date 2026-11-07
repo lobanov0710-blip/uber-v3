@@ -515,12 +515,6 @@ async function appendSupportMessage(
     );
 
 
-  const ownerClause =
-    driverConstraint == null
-      ? ""
-      : "AND driver_id = ?9";
-
-
   const caseUpdate =
     db
       .prepare(`
@@ -538,7 +532,10 @@ async function appendSupportMessage(
         WHERE id = ?1
           AND revision = ?2
           AND status != 'closed'
-          ${ownerClause}
+          AND (
+            ?9 IS NULL
+            OR driver_id = ?9
+          )
 
           AND EXISTS (
             SELECT 1
