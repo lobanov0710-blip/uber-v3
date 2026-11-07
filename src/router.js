@@ -114,6 +114,11 @@ import {
   putDriverAvailability
 } from "./core/driverAvailabilityService.js";
 
+import {
+  changeDriverAssignmentPhase,
+  createDriverTripVerificationChallenge
+} from "./core/driverTripOperationalService.js";
+
 
 // =========================
 // ROUTER
@@ -2008,6 +2013,348 @@ export default async function router(
 
           code:
             "driver_availability_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // DRIVER TRIP VERIFICATION / PHASE V1
+  // =========================
+
+  const driverVerificationChallengeMatch =
+    path.match(
+      /^\/v1\/driver\/assignments\/([^/]+)\/verification-challenges$/
+    );
+
+
+  if (
+    driverVerificationChallengeMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let assignmentId;
+
+
+    try {
+
+      assignmentId =
+        decodeURIComponent(
+          driverVerificationChallengeMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      assignmentId =
+        "";
+    }
+
+
+    if (
+      !/^assignment_[A-Za-z0-9_-]{8,100}$/.test(
+        assignmentId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_assignment_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await createDriverTripVerificationChallenge(
+          env,
+          auth.user,
+          assignmentId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER TRIP VERIFICATION CHALLENGE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "trip verification challenge failed",
+
+          code:
+            "trip_verification_challenge_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverAssignmentPhaseMatch =
+    path.match(
+      /^\/v1\/driver\/assignments\/([^/]+)\/phase$/
+    );
+
+
+  if (
+    driverAssignmentPhaseMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let assignmentId;
+
+
+    try {
+
+      assignmentId =
+        decodeURIComponent(
+          driverAssignmentPhaseMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      assignmentId =
+        "";
+    }
+
+
+    if (
+      !/^assignment_[A-Za-z0-9_-]{8,100}$/.test(
+        assignmentId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_assignment_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await changeDriverAssignmentPhase(
+          env,
+          auth.user,
+          assignmentId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "DRIVER ASSIGNMENT PHASE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "assignment phase failed",
+
+          code:
+            "assignment_phase_failed",
 
           requestId
         },
@@ -4424,11 +4771,12 @@ export default async function router(
   //
   // Driver:
   //
-  // taken
-  //   -> in_progress
-  //
   // in_progress
   //   -> done
+  //
+  // taken -> in_progress is controlled only
+  // by /v1/driver/assignments/{id}/phase
+  // after verified trip identity.
   //
   // Admin:
   //
@@ -4697,9 +5045,6 @@ export default async function router(
       ) {
 
         if (
-          targetStatus ===
-            "in_progress"
-          ||
           targetStatus ===
             "done"
         ) {
