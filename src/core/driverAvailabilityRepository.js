@@ -178,23 +178,67 @@ export async function getDriverAvailabilityState(
 export async function getOwnedVehicleEligibility(
   env,
   driverId,
-  vehicleId
+  vehicleId,
+  nowMs
 ) {
   const db =
     requireDatabase(env);
+
+  const timestamp =
+    requirePositiveInteger(
+      nowMs,
+      "nowMs"
+    );
 
   const row =
     await db
       .prepare(`
         SELECT
-          id,
-          driver_id,
-          status
+          v.id,
+          v.driver_id,
+          v.status,
 
-        FROM vehicles
+          EXISTS (
+            SELECT 1
+            FROM vehicle_photo_checks pc
+            WHERE pc.vehicle_id = v.id
+              AND (
+                pc.result IN (
+                  'failed',
+                  'manual_review'
+                )
+                OR (
+                  pc.result = 'pending'
+                  AND (
+                    pc.restriction_mode IN (
+                      'after_current_trip',
+                      'immediate'
+                    )
+                    OR (
+                      pc.restriction_mode =
+                        'grace_period'
+                      AND pc.grace_until < ?3
+                    )
+                  )
+                )
+              )
+          ) AS photo_control_blocked,
 
-        WHERE id = ?1
-          AND driver_id = ?2
+          EXISTS (
+            SELECT 1
+            FROM vehicle_photo_checks pc
+            WHERE pc.vehicle_id = v.id
+              AND pc.result = 'pending'
+              AND pc.restriction_mode =
+                'grace_period'
+              AND pc.due_at <= ?3
+              AND pc.grace_until >= ?3
+          ) AS photo_control_grace
+
+        FROM vehicles v
+
+        WHERE v.id = ?1
+          AND v.driver_id = ?2
 
         LIMIT 1
       `)
@@ -206,7 +250,8 @@ export async function getOwnedVehicleEligibility(
         requireText(
           driverId,
           "driverId"
-        )
+        ),
+        timestamp
       )
       .first();
 
@@ -230,7 +275,17 @@ export async function getOwnedVehicleEligibility(
     status:
       clean(
         row.status
-      )
+      ),
+
+    photoControlBlocked:
+      Number(
+        row.photo_control_blocked
+      ) === 1,
+
+    photoControlGrace:
+      Number(
+        row.photo_control_grace
+      ) === 1
   };
 }
 
@@ -397,6 +452,35 @@ export async function updateDriverAvailability(
             OR (
               ?4 = 'on_line'
               AND ?3 IS NOT NULL
+            )
+          )
+
+          AND (
+            ?4 = 'off_line'
+            OR NOT EXISTS (
+              SELECT 1
+              FROM vehicle_photo_checks pc
+              WHERE pc.vehicle_id = ?3
+                AND (
+                  pc.result IN (
+                    'failed',
+                    'manual_review'
+                  )
+                  OR (
+                    pc.result = 'pending'
+                    AND (
+                      pc.restriction_mode IN (
+                        'after_current_trip',
+                        'immediate'
+                      )
+                      OR (
+                        pc.restriction_mode =
+                          'grace_period'
+                        AND pc.grace_until < ?5
+                      )
+                    )
+                  )
+                )
             )
           )
 
