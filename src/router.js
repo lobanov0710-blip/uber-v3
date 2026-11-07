@@ -95,9 +95,15 @@ import {
 } from "./core/adminAuthorization.js";
 
 import {
-  beginAdminRegistrationReview,
   getAdminRegistrationQueue
 } from "./core/adminRegistrationService.js";
+
+import {
+  completeAdminRegistrationReview,
+  getAdminRegistrationReview,
+  reviewAdminRegistrationItem,
+  startAdminRegistrationReview
+} from "./core/adminItemModerationService.js";
 
 
 // =========================
@@ -615,6 +621,548 @@ export default async function router(
   }
 
 
+  const adminRegistrationDetailMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)$/
+    );
+
+
+  if (
+    adminRegistrationDetailMatch
+  ) {
+
+    if (
+      req.method !==
+        "GET"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminRegistrationDetailMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_driver_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getAdminRegistrationReview(
+          env,
+          auth.user,
+          driverId
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN REGISTRATION DETAIL ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "registration detail failed",
+
+          code:
+            "registration_detail_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminRegistrationItemReviewMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)\/review\/items\/([^/]+)\/([^/]+)$/
+    );
+
+
+  if (
+    adminRegistrationItemReviewMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+    let targetType;
+    let targetId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminRegistrationItemReviewMatch[1]
+        )
+          .trim();
+
+      targetType =
+        decodeURIComponent(
+          adminRegistrationItemReviewMatch[2]
+        )
+          .trim()
+          .toLowerCase();
+
+      targetId =
+        decodeURIComponent(
+          adminRegistrationItemReviewMatch[3]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+
+      targetType =
+        "";
+
+      targetId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+      ||
+      ![
+        "document",
+        "vehicle",
+        "vehicle_photo",
+        "identity"
+      ].includes(
+        targetType
+      )
+      ||
+      !/^[A-Za-z0-9_-]{8,120}$/.test(
+        targetId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_moderation_target",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await reviewAdminRegistrationItem(
+          env,
+          auth.user,
+          driverId,
+          targetType,
+          targetId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN ITEM MODERATION ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "item moderation failed",
+
+          code:
+            "item_moderation_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminRegistrationCompleteMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)\/review\/complete$/
+    );
+
+
+  if (
+    adminRegistrationCompleteMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminRegistrationCompleteMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_driver_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await completeAdminRegistrationReview(
+          env,
+          auth.user,
+          driverId,
+          body,
+          {
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 200
+          : result?.status ||
+            500,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN REGISTRATION COMPLETE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "registration completion failed",
+
+          code:
+            "registration_completion_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
   const adminRegistrationReviewMatch =
     path.match(
       /^\/v1\/admin\/registrations\/([^/]+)\/review$/
@@ -727,13 +1275,18 @@ export default async function router(
     try {
 
       const result =
-        await beginAdminRegistrationReview(
+        await startAdminRegistrationReview(
           env,
           auth.user,
           driverId,
           body,
           {
-            requestId
+            requestId,
+
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
           }
         );
 
