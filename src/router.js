@@ -67,10 +67,6 @@ import {
 } from "./core/staffPushDeviceService.js";
 
 import {
-  notifyActiveDriversOfNewOrder
-} from "./core/staffPushNotificationService.js";
-
-import {
   exchangeDriverFirebaseSession
 } from "./core/driverFirebaseSessionService.js";
 
@@ -1722,7 +1718,18 @@ export default async function router(
             idempotencyKey:
               req.headers.get(
                 "Idempotency-Key"
-              )
+              ),
+
+            schedule:
+              executionContext
+              &&
+              typeof executionContext.waitUntil ===
+                "function"
+                ? promise =>
+                    executionContext.waitUntil(
+                      promise
+                    )
+                : null
           }
         );
 
@@ -4864,47 +4871,8 @@ export default async function router(
           );
 
 
-        // =========================
-        // DRIVER PUSH
-        // =========================
-        //
-        // Push is best effort and must never
-        // turn a successfully created order
-        // into an HTTP failure.
-        //
-        // Production Workers provide
-        // ExecutionContext.waitUntil().
-        // Unit tests may call router directly
-        // without an execution context.
-        // =========================
-
-        // Only a newly persisted D1 order generates the new-order FCM event.
-        // Idempotent POST retries and concurrent quote insert losers must not
-        // notify drivers again. The passenger still receives a fresh token.
-        if (
-          result.idempotent === false
-          &&
-          executionContext
-          &&
-          typeof executionContext.waitUntil ===
-            "function"
-        ) {
-
-          executionContext.waitUntil(
-            notifyActiveDriversOfNewOrder(
-              env,
-              result.order.id
-            )
-              .catch(
-                () => {
-
-                  console.error(
-                    "NEW ORDER PUSH DELIVERY ERROR"
-                  );
-                }
-              )
-          );
-        }
+        // Driver notifications are assignment-scoped.
+        // Creating an unassigned order must not wake any Driver.
 
 
         // =========================
