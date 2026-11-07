@@ -88,6 +88,12 @@ import {
   submitDriverRegistrationForReview
 } from "./core/driverPrivateUploadService.js";
 
+import {
+  adminCan,
+  requireOwner,
+  resolveAdminAccess
+} from "./core/adminAuthorization.js";
+
 
 // =========================
 // ROUTER
@@ -354,6 +360,118 @@ export default async function router(
         body.firebaseIdToken =
           null;
       }
+    }
+  }
+
+
+  // =========================
+  // ADMIN SELF / AUTHORIZATION V1
+  // =========================
+
+  if (
+    path === "/v1/admin/me"
+  ) {
+
+    if (
+      req.method !== "GET"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+    try {
+
+      const access =
+        await resolveAdminAccess(
+          env,
+          auth.user
+        );
+
+      if (
+        access?.ok !== true
+      ) {
+        return json(
+          {
+            ok: false,
+            error:
+              "forbidden",
+            code:
+              access?.code ||
+              "admin_role_required",
+            requestId
+          },
+          access?.status ||
+            403,
+          cors
+        );
+      }
+
+      return json(
+        {
+          ok: true,
+          admin: {
+            accountId:
+              access.accountId,
+            role:
+              access.role,
+            permissions:
+              access.permissions
+          },
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "ADMIN ME ERROR"
+      );
+
+      return json(
+        {
+          ok: false,
+          error:
+            "admin authorization failed",
+          code:
+            "admin_authorization_failed",
+          requestId
+        },
+        500,
+        cors
+      );
     }
   }
 
@@ -1752,16 +1870,27 @@ export default async function router(
 
 
     // =======================
-    // ADMIN ONLY
+    // OWNER / PERMISSION
     // =======================
 
-    if (
-      !hasRole(
-        auth.user,
-        "admin"
-      )
-    ) {
+    let adminAccess;
 
+    try {
+      adminAccess =
+        await resolveAdminAccess(
+          env,
+          auth.user
+        );
+    } catch {
+      return safeError(
+        "admin authorization failed",
+        500
+      );
+    }
+
+    if (
+      adminAccess?.ok !== true
+    ) {
       return safeError(
         "forbidden",
         403
@@ -1776,6 +1905,18 @@ export default async function router(
     if (
       req.method === "GET"
     ) {
+
+      if (
+        !adminCan(
+          adminAccess,
+          "drivers.read"
+        )
+      ) {
+        return safeError(
+          "forbidden",
+          403
+        );
+      }
 
       try {
 
@@ -1833,8 +1974,19 @@ export default async function router(
 
 
     // =======================
-    // CREATE DRIVER
+    // CREATE DRIVER (LEGACY, OWNER ONLY)
     // =======================
+
+    if (
+      requireOwner(
+        adminAccess
+      ).ok !== true
+    ) {
+      return safeError(
+        "forbidden",
+        403
+      );
+    }
 
     const body =
       await safeJson(
@@ -1970,16 +2122,29 @@ export default async function router(
 
 
     // =======================
-    // ADMIN ONLY
+    // OWNER ONLY
     // =======================
 
-    if (
-      !hasRole(
-        auth.user,
-        "admin"
-      )
-    ) {
+    let adminAccess;
 
+    try {
+      adminAccess =
+        await resolveAdminAccess(
+          env,
+          auth.user
+        );
+    } catch {
+      return safeError(
+        "admin authorization failed",
+        500
+      );
+    }
+
+    if (
+      requireOwner(
+        adminAccess
+      ).ok !== true
+    ) {
       return safeError(
         "forbidden",
         403
@@ -2141,16 +2306,29 @@ export default async function router(
 
 
     // =======================
-    // ADMIN ONLY
+    // OWNER ONLY
     // =======================
 
-    if (
-      !hasRole(
-        auth.user,
-        "admin"
-      )
-    ) {
+    let adminAccess;
 
+    try {
+      adminAccess =
+        await resolveAdminAccess(
+          env,
+          auth.user
+        );
+    } catch {
+      return safeError(
+        "admin authorization failed",
+        500
+      );
+    }
+
+    if (
+      requireOwner(
+        adminAccess
+      ).ok !== true
+    ) {
       return safeError(
         "forbidden",
         403
