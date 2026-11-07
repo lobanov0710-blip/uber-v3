@@ -23,6 +23,60 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Audit pending D3 migrations for destructive SQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, re
+
+          root=pathlib.Path('migrations')
+          files=[]
+          for number in range(5,18):
+              matches=sorted(root.glob(f'{number:04d}_*.sql'))
+              if len(matches)!=1:
+                  raise SystemExit(f'MIGRATION_CHAIN_INVALID={number:04d}')
+              files.append(matches[0])
+
+          destructive=[]
+          unsafe_alter=[]
+          alter_count=0
+
+          for path in files:
+              sql=path.read_text(encoding='utf-8')
+              sql=re.sub(r'/\*.*?\*/','',sql,flags=re.S)
+              sql=re.sub(r'--[^\n]*','',sql)
+              for raw in sql.split(';'):
+                  stmt=' '.join(raw.split()).strip()
+                  if not stmt:
+                      continue
+                  upper=stmt.upper()
+                  first=upper.split(None,1)[0]
+                  if first in {'DROP','DELETE','UPDATE','INSERT','REPLACE','TRUNCATE'}:
+                      destructive.append((path.name,stmt[:220]))
+                  if upper.startswith('ALTER TABLE'):
+                      alter_count+=1
+                      if ' ADD COLUMN ' not in f' {upper} ':
+                          unsafe_alter.append((path.name,stmt[:220]))
+
+          print(f'PENDING_MIGRATIONS={len(files)}')
+          print(f'ALTER_ADD_COLUMN_COUNT={alter_count}')
+          print(f'DESTRUCTIVE_STATEMENTS={len(destructive)}')
+          print(f'UNSAFE_ALTER_STATEMENTS={len(unsafe_alter)}')
+
+          if destructive:
+              for item in destructive:
+                  print('DESTRUCTIVE=' + repr(item))
+              raise SystemExit(7)
+
+          if unsafe_alter:
+              for item in unsafe_alter:
+                  print('UNSAFE_ALTER=' + repr(item))
+              raise SystemExit(8)
+
+          print('D3_MIGRATION_STATIC_SAFETY=PASS')
+          PY
+
       - name: Create read-only staging config
         shell: bash
         run: |
