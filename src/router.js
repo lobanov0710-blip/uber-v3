@@ -121,6 +121,10 @@ import {
   transitionOrderTerminal
 } from "./core/orderTerminalMutationService.js";
 
+import {
+  requestVehiclePhotoCheck
+} from "./core/vehiclePhotoControlService.js";
+
 
 // =========================
 // ROUTER
@@ -1777,6 +1781,130 @@ export default async function router(
           code:
             "order_assignment_failed",
 
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // ADMIN VEHICLE PHOTO CONTROL V1
+  // =========================
+
+  const adminVehiclePhotoCheckMatch =
+    path.match(
+      /^\/v1\/admin\/vehicles\/([^/]+)\/photo-checks$/
+    );
+
+
+  if (
+    adminVehiclePhotoCheckMatch
+  ) {
+
+    if (
+      req.method !== "POST"
+    ) {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !== true
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          requestId
+        },
+        auth?.status || 401,
+        cors
+      );
+    }
+
+
+    let vehicleId;
+
+    try {
+      vehicleId =
+        decodeURIComponent(
+          adminVehiclePhotoCheckMatch[1]
+        )
+          .trim();
+    } catch {
+      vehicleId = "";
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await requestVehiclePhotoCheck(
+          env,
+          auth.user,
+          vehicleId,
+          body,
+          {
+            requestId,
+            idempotencyKey:
+              req.headers.get(
+                "Idempotency-Key"
+              )
+          }
+        );
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        result?.ok === true
+          ? 201
+          : result?.status || 500,
+        cors
+      );
+
+    } catch {
+
+      console.error(
+        "ADMIN VEHICLE PHOTO CHECK ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle photo check failed",
+          code:
+            "vehicle_photo_check_failed",
           requestId
         },
         500,
