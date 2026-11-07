@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/wrangler.d3-staging-readonly.toml <<'TOML'
+          cat > .wrangler.d3-staging-readonly.toml <<'TOML'
           name = "uber-v3-staging"
           main = "src/index.js"
           compatibility_date = "2026-06-01"
@@ -51,7 +51,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npx --yes wrangler@4.156.0 d1 migrations list DB             --remote             --config /tmp/wrangler.d3-staging-readonly.toml             > /tmp/migrations.txt
+          npx --yes wrangler@4.156.0 d1 migrations list DB             --remote             --config .wrangler.d3-staging-readonly.toml             > /tmp/migrations.txt
 
           cat /tmp/migrations.txt
 
