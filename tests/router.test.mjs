@@ -629,6 +629,28 @@ function createListDatabase(
         async first() {
 
           if (
+            /FROM staff_owner_binding/i.test(
+              sql
+            )
+          ) {
+
+            return (
+              role === "admin"
+              &&
+              String(
+                args[0] ?? ""
+              ) ===
+                staffId
+            )
+              ? {
+                  account_id:
+                    staffId
+                }
+              : null;
+          }
+
+
+          if (
             /FROM staff_accounts/i.test(
               sql
             )
