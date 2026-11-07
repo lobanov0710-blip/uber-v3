@@ -1,0 +1,80 @@
+name: D2 Firebase binding inventory
+
+on:
+  push:
+    branches:
+      - 'probe/d3-staging-inventory'
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      WRANGLER_SEND_METRICS: "false"
+
+    steps:
+      - name: Inspect production Firebase public identifiers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npx --yes wrangler@4.156.0 versions list             --name uber-v3             --json > /tmp/prod-versions.json
+
+          VERSION_ID="$(python3 - <<'PY'
+          import json
+          data=json.load(open('/tmp/prod-versions.json',encoding='utf-8'))
+          rows=data if isinstance(data,list) else data.get('result',data.get('versions',[]))
+          if not rows:
+              raise SystemExit(5)
+          row=rows[0]
+          value=row.get('id') or row.get('version_id') or row.get('versionId')
+          if not value:
+              raise SystemExit(6)
+          print(value)
+          PY
+          )"
+
+          npx --yes wrangler@4.156.0 versions view "$VERSION_ID"             --name uber-v3             --json > /tmp/prod-version.json
+
+          python3 - <<'PY'
+          import json
+
+          data=json.load(open('/tmp/prod-version.json',encoding='utf-8'))
+          wanted={
+              'FIREBASE_PROJECT_ID',
+              'FIREBASE_PROJECT_NUMBER',
+              'FIREBASE_DRIVER_APP_ID',
+              'FIREBASE_AUTH_MAX_AGE_SECONDS',
+          }
+          found={}
+
+          def walk(node):
+              if isinstance(node,dict):
+                  name=node.get('name')
+                  if name in wanted:
+                      value=None
+                      for key in ('text','value'):
+                          candidate=node.get(key)
+                          if isinstance(candidate,(str,int,float)):
+                              value=str(candidate)
+                              break
+                      found[name]=value
+                  for child in node.values():
+                      walk(child)
+              elif isinstance(node,list):
+                  for child in node:
+                      walk(child)
+
+          walk(data)
+
+          for name in sorted(wanted):
+              value=found.get(name)
+              print(name + '=' + (value if value is not None else 'NOT_PRESENT'))
+          PY
+
+          echo 'REMOTE_MUTATIONS=NONE'
