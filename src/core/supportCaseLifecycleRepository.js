@@ -1294,6 +1294,7 @@ export async function deleteExpiredSupportMessages(
   env,
   {
     nowMs,
+    retentionMs,
     limit = 500
   }
 ) {
@@ -1305,6 +1306,27 @@ export async function deleteExpiredSupportMessages(
       nowMs,
       "nowMs"
     );
+
+  const retention =
+    requirePositiveInteger(
+      retentionMs,
+      "retentionMs"
+    );
+
+  const cutoff =
+    now -
+    retention;
+
+
+  if (
+    !Number.isSafeInteger(
+      cutoff
+    )
+  ) {
+    throw new Error(
+      "invalid support retention cutoff"
+    );
+  }
 
   const safeLimit =
     Math.max(
@@ -1318,6 +1340,45 @@ export async function deleteExpiredSupportMessages(
         1000
       )
     );
+
+
+  const deleteIdempotency =
+    db
+      .prepare(`
+        DELETE FROM mutation_idempotency
+
+        WHERE (
+          actor_account_id,
+          operation,
+          key_digest
+        ) IN (
+          SELECT
+            actor_account_id,
+            operation,
+            key_digest
+
+          FROM mutation_idempotency
+
+          WHERE operation IN (
+            'driver.support.message.create',
+            'admin.support.message.create'
+          )
+            AND state = 'completed'
+            AND completed_at IS NOT NULL
+            AND completed_at <= ?1
+
+          ORDER BY
+            completed_at ASC,
+            actor_account_id ASC,
+            key_digest ASC
+
+          LIMIT ?2
+        )
+      `)
+      .bind(
+        cutoff,
+        safeLimit
+      );
 
 
   const deleteStatement =
@@ -1377,6 +1438,7 @@ export async function deleteExpiredSupportMessages(
 
   const results =
     await db.batch([
+      deleteIdempotency,
       deleteStatement,
       auditStatement
     ]);
@@ -1384,9 +1446,10 @@ export async function deleteExpiredSupportMessages(
 
   if (
     !Array.isArray(results) ||
-    results.length !== 2 ||
+    results.length !== 3 ||
     results[0]?.success !== true ||
-    results[1]?.success !== true
+    results[1]?.success !== true ||
+    results[2]?.success !== true
   ) {
     throw new Error(
       "support chat retention failed"
@@ -1394,20 +1457,31 @@ export async function deleteExpiredSupportMessages(
   }
 
 
-  const deleted =
+  const idempotencyDeleted =
     Number(
       results[0]?.meta?.changes ??
       0
     );
 
-  const audited =
+  const deleted =
     Number(
       results[1]?.meta?.changes ??
       0
     );
 
+  const audited =
+    Number(
+      results[2]?.meta?.changes ??
+      0
+    );
+
 
   if (
+    !Number.isSafeInteger(
+      idempotencyDeleted
+    ) ||
+    idempotencyDeleted < 0 ||
+    idempotencyDeleted > safeLimit ||
     !Number.isSafeInteger(deleted) ||
     deleted < 0 ||
     deleted > safeLimit ||
@@ -1428,6 +1502,7 @@ export async function deleteExpiredSupportMessages(
 
 
   return {
-    deleted
+    deleted,
+    idempotencyDeleted
   };
 }
