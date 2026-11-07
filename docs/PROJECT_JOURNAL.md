@@ -174,3 +174,116 @@ Merge и production deploy не выполнялись. D4–D7 не выбир�
 Следующий безопасный D3-подэтап: замкнуть photo-check lifecycle
 (review/result + привязка приватных контрольных фото + monthly due generation),
 после чего расширять support lifecycle/chat без VoIP/D5 решений.
+
+## D3 photo-control lifecycle + support/chat lifecycle — completed 2026-11-07
+
+### Photo-control lifecycle
+
+Foundation photo-control замкнут полноценным server-authoritative lifecycle.
+
+Добавлена migration `0017_photo_check_lifecycle.sql`:
+- `vehicles.last_photo_check_passed_at`;
+- `vehicles.next_photo_check_due_at`;
+- nullable binding `photo_check_id` для private upload session и
+  `vehicle_photos`;
+- `vehicle_photo_checks.next_due_at` и `last_review_id`;
+- immutable history `vehicle_photo_check_reviews`;
+- unique monthly `vehicle_id + due_at` для idempotent due-generation.
+
+Контрольные фото используют существующий private R2 upload-контур:
+- permanent public URL не создаётся;
+- upload проверяет принадлежность `driver + vehicle + photoCheck`;
+- photo-control фото не участвуют в registration readiness/moderation;
+- admin bundle отдаёт только resource metadata/ID, а чтение самого private object
+  остаётся в существующем permission/audit контуре.
+
+Новые контракты:
+- `GET /v1/driver/photo-checks`;
+- `GET /v1/admin/vehicles/{vehicleId}/photo-checks/{photoCheckId}`;
+- `POST /v1/admin/vehicles/{vehicleId}/photo-checks/{photoCheckId}/review`.
+
+Review требует `vehicles.verify`, `Idempotency-Key`, `expectedRevision`.
+Решения: `passed | failed | manual_review`. Успешный `passed` требует полный
+набор 7 контрольных ракурсов, атомарно пишет review history + audit, увеличивает
+revision проверки и автомобиля, сохраняет server timestamp последнего PASS и
+следующий due.
+
+Периодичность реализована как один календарный месяц от server PASS/approval
+с end-of-month clamp. При первичном approval автомобиля сразу устанавливается
+первый `next_photo_check_due_at`.
+
+Hourly Worker cron материализует наступивший monthly due в отдельный pending check.
+System audit использует `actor_account_id=NULL`, а не имитирует OWNER.
+Cron является materializer, а не единственной защитой: `on_line` и
+assign/reassign fail-closed по сохранённому `next_photo_check_due_at + 24h`,
+даже если cron не запускался. Production cron не активирован, поскольку deploy
+не выполнялся.
+
+Проверки lifecycle:
+- migration smoke: 17/17 PASS;
+- photo-control lifecycle real-SQLite: 6/6 PASS;
+- calendar month/end-of-month: PASS;
+- private photo-check binding/isolation: PASS;
+- review PASS/history/replay/next-due: PASS;
+- retry-safe monthly generator + system audit: PASS;
+- overdue pre-cron on_line gate: PASS;
+- overdue pre-cron assignment gate: PASS;
+- GitHub Actions run 206: PASS на
+  `9e93988b509e26acbcc4de6e6be3c11c870d0c48`.
+
+### Driver ↔ Administrator support lifecycle/chat
+
+Support foundation расширен без изменения order state machine и без VoIP.
+
+Driver:
+- `GET /v1/driver/support-cases`;
+- `GET /v1/driver/support-cases/{caseId}`;
+- `POST /v1/driver/support-cases/{caseId}/messages`.
+
+Admin:
+- `GET /v1/admin/support-cases`;
+- `GET /v1/admin/support-cases/{caseId}`;
+- `POST /v1/admin/support-cases/{caseId}/messages`;
+- `POST /v1/admin/support-cases/{caseId}/status`.
+
+Для dispatcher введён granular permission `support.manage`; OWNER проходит через
+существующий server-authoritative override. Driver видит/пишет только собственные
+cases. Закрытый case новые сообщения не принимает.
+
+Message/status mutations требуют обязательные `Idempotency-Key` и
+`expectedRevision`, mutation + message/status + audit + replay-result связаны
+D1 batch. Support status mutation не вызывает order mutation: водитель по-прежнему
+не получает API отмены заказа.
+
+Для support chat применяется уже утверждённый срок 30 календарных дней:
+- `expires_at` задаётся backend;
+- expired сообщения перестают отдаваться сразу по server timestamp;
+- hourly retention job физически удаляет expired live-D1 messages;
+- вместе с ними удаляются idempotency rows операций сообщений, чтобы
+  `request_digest` не переживал chat retention;
+- idempotent response не содержит body сообщения;
+- audit retention job не содержит chat text/PII.
+
+Это относится к live D1. Backup-retention/юридические правила не объявляются
+закрытыми и остаются вне D3; D5 не утверждался.
+
+Проверки support:
+- support lifecycle real-SQLite: 5/5 PASS;
+- own-case isolation: PASS;
+- revision/idempotency replay: PASS;
+- chat body absent from idempotency result: PASS;
+- dispatcher without/with `support.manage`: PASS;
+- support status never mutates linked order: PASS;
+- 30-day hide/delete + system audit: PASS;
+- idempotency digest cleanup: PASS;
+- migration smoke: 17/17 PASS;
+- full npm test: PASS;
+- local workerd/D1 audit check: PASS;
+- Worker dry-run: PASS;
+- GitHub Actions run 216: PASS на
+  `92cb7013c934125b243a911e7bf188dbeebf9efd`.
+
+Merge и production deploy не выполнялись. D4–D7 не затрагивались.
+Следующий D3-подэтап: согласовать Android TransferDriver с готовыми
+server-authoritative `/v1` contracts (photo-check/support/assigned-only flow)
+и добавить клиентские contract/instrumentation tests без обхода backend guards.
