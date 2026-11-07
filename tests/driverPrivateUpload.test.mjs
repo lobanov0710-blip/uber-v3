@@ -130,6 +130,7 @@ function createFakeDb() {
               id,
               driverId,
               vehicleId,
+              photoCheckId,
               resourceType,
               kind,
               objectKey,
@@ -147,6 +148,8 @@ function createFakeDb() {
                 driverId,
               vehicle_id:
                 vehicleId,
+              photo_check_id:
+                photoCheckId,
               resource_type:
                 resourceType,
               kind,
