@@ -51,3 +51,46 @@ stale revision и auditRows=1. Проверка сохранена в tools/chec
 При настройке smoke старый формат options был отклонён Miniflare 5;
 использован официальный convertV4MiniflareOptions, без обхода защит.
 Реальная production D1/Firebase/R2 не вызывалась. Merge/deploy не выполнялись.
+
+## D3 terminal mutations hardening — completed 2026-11-07
+
+Публичный `POST /orders/{orderId}/status` для terminal transitions приведён к
+утверждённому D3-контракту.
+
+Реализовано:
+- `done` и `canceled` требуют обязательные `Idempotency-Key` и
+  `expectedRevision`;
+- driver может завершить только собственную `in_progress -> done` поездку;
+- admin cancellation остаётся server-authoritative и требует `orders.cancel`;
+- одинаковый idempotency key с тем же запросом возвращает сохранённый результат,
+  с изменённым body/revision отклоняется;
+- migration `0015_order_terminal_mutation_guard.sql` добавляет только opaque
+  internal claim marker `last_terminal_claim_id`; raw `Idempotency-Key`
+  в `orders` не сохраняется;
+- success-path одной D1 batch связывает idempotency claim, terminal order update,
+  terminal assignment update, success audit и сохранённый idempotency result;
+- `done` переводит active `in_trip` assignment в `completed`;
+- `canceled` отзывает active assignment в `revoked`;
+- legacy orders без assignment остаются совместимыми;
+- stale revision / проигравший claim не могут создать ложный success audit;
+- ошибка audit insert откатывает terminal state и idempotency claim.
+
+Проверки:
+- migration smoke: 15/15 PASS;
+- новый real-SQLite terminal suite: 7/7 PASS;
+- полный `npm test`: PASS;
+- npm audit: PASS;
+- local workerd/D1 audit check: PASS;
+- Worker `wrangler deploy --dry-run`: PASS;
+- GitHub Actions run 173: PASS на code head
+  `1f115c517be8cf1635b9b2f14531c0e4dec9f51a`.
+
+Первые CI run 167/169 выявили несовместимость старого router test-double с новой
+`changes()`-цепочкой; run 171 дошёл до нового SQLite-suite и выявил только
+prototype-sensitive assertion Node SQLite. Оба дефекта исправлены в тестах;
+production terminal mutation logic не ослаблялась.
+
+Merge и production deploy не выполнялись. D4–D7 не выбирались.
+Следующий утверждённый D3-блок: server-authoritative photo-control eligibility,
+после него — support/photo-control API и дальнейшее согласование Android с
+assigned-only `/v1` flow.
