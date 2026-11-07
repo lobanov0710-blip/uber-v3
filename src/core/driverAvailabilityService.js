@@ -438,6 +438,25 @@ export async function putDriverAvailability(
     );
   }
 
+
+  const now =
+    Number.isSafeInteger(
+      options.nowMs
+    )
+      ? options.nowMs
+      : Date.now();
+
+
+  if (
+    !Number.isSafeInteger(now) ||
+    now <= 0
+  ) {
+    throw new Error(
+      "invalid availability timestamp"
+    );
+  }
+
+
   if (
     parsed.activeVehicleId !==
       null
@@ -446,7 +465,8 @@ export async function putDriverAvailability(
       await getOwnedVehicleEligibility(
         env,
         driver.id,
-        parsed.activeVehicleId
+        parsed.activeVehicleId,
+        now
       );
 
     if (!vehicle) {
@@ -464,14 +484,17 @@ export async function putDriverAvailability(
         "vehicle_not_approved"
       );
     }
-  }
 
-  const now =
-    Number.isSafeInteger(
-      options.nowMs
-    )
-      ? options.nowMs
-      : Date.now();
+
+    if (
+      parsed.requestedState === "on_line" &&
+      vehicle.photoControlBlocked
+    ) {
+      return unprocessable(
+        "vehicle_photo_control_required"
+      );
+    }
+  }
 
   const result =
     await updateDriverAvailability(
