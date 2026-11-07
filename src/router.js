@@ -94,6 +94,11 @@ import {
   resolveAdminAccess
 } from "./core/adminAuthorization.js";
 
+import {
+  beginAdminRegistrationReview,
+  getAdminRegistrationQueue
+} from "./core/adminRegistrationService.js";
+
 
 // =========================
 // ROUTER
@@ -467,6 +472,318 @@ export default async function router(
             "admin authorization failed",
           code:
             "admin_authorization_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  // =========================
+  // ADMIN REGISTRATION MODERATION V1
+  // =========================
+
+  if (
+    path ===
+      "/v1/admin/registrations"
+  ) {
+
+    if (
+      req.method !==
+        "GET"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getAdminRegistrationQueue(
+          env,
+          auth.user,
+          {
+            status:
+              url.searchParams.get(
+                "status"
+              ),
+
+            limit:
+              url.searchParams.get(
+                "limit"
+              )
+          }
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN REGISTRATION QUEUE ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "registration queue failed",
+
+          code:
+            "registration_queue_failed",
+
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const adminRegistrationReviewMatch =
+    path.match(
+      /^\/v1\/admin\/registrations\/([^/]+)\/review$/
+    );
+
+
+  if (
+    adminRegistrationReviewMatch
+  ) {
+
+    if (
+      req.method !==
+        "POST"
+    ) {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    let driverId;
+
+
+    try {
+
+      driverId =
+        decodeURIComponent(
+          adminRegistrationReviewMatch[1]
+        )
+          .trim();
+
+    } catch {
+
+      driverId =
+        "";
+    }
+
+
+    if (
+      !/^staff_[A-Za-z0-9_-]{8,94}$/.test(
+        driverId
+      )
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "invalid request",
+
+          code:
+            "invalid_driver_id",
+
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (
+      auth?.ok !==
+        true
+    ) {
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            auth?.error ||
+            "authorization required",
+
+          code:
+            "authorization_required",
+
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await beginAdminRegistrationReview(
+          env,
+          auth.user,
+          driverId,
+          body,
+          {
+            requestId
+          }
+        );
+
+
+      if (
+        result?.ok !==
+          true
+      ) {
+
+        return json(
+          {
+            ...result,
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "ADMIN REGISTRATION REVIEW ERROR"
+      );
+
+
+      return json(
+        {
+          ok:
+            false,
+
+          error:
+            "registration review failed",
+
+          code:
+            "registration_review_failed",
+
           requestId
         },
         500,
