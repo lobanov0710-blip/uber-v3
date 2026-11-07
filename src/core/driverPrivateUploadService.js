@@ -294,6 +294,19 @@ export async function issueDriverPrivateUpload(
       input.contentLength
     );
 
+  const bucket =
+    env?.DRIVER_PRIVATE_FILES;
+
+  if (
+    !bucket ||
+    typeof bucket.put !==
+      "function"
+  ) {
+    return unavailable(
+      "driver_private_storage_not_configured"
+    );
+  }
+
   const maxBytes =
     requireUploadLimit(env);
 
