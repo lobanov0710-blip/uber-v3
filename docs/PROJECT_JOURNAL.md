@@ -38,3 +38,16 @@ Merge/deploy не выполнялись. Реальные D1/R2/Firebase E2E и
 Зафиксированы SHA checkout/setup-node из прошедшего setup run 156,
 checkout больше не сохраняет credentials для последующих шагов.
 Повтор CI запускается на новом commit; результат записывается отдельно.
+
+## Повтор CI и локальный workerd/D1
+
+GitHub Actions run 157: PASS на `0e43d577d8a74e2df09f9cea025df4597653b83a`.
+https://github.com/lobanov0710-blip/uber-v3/actions/runs/42369019150
+
+На Node 22 прошли npm ci, audit, 14 migrations, 57 наборов и bundle dry-run.
+Дополнительно локальный workerd/D1 проверил availability success / losing claim /
+stale revision и auditRows=1. Проверка сохранена в tools/check_availability_d1.mjs
+с синтетическими fixtures/эпhemeral D1 и добавлена отдельным шагом CI.
+При настройке smoke старый формат options был отклонён Miniflare 5;
+использован официальный convertV4MiniflareOptions, без обхода защит.
+Реальная production D1/Firebase/R2 не вызывалась. Merge/deploy не выполнялись.

@@ -37,5 +37,7 @@ jobs:
         run: python3 tools/test_migrations.py
       - name: Run backend unit and router tests
         run: npm test
+      - name: Verify audit transaction with local workerd and D1
+        run: node tools/check_availability_d1.mjs
       - name: Bundle Worker without deploying
         run: npm exec -- wrangler deploy --dry-run --outdir /tmp/worker-audit-bundle
