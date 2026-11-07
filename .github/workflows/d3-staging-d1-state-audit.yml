@@ -1,0 +1,163 @@
+name: D3 staging D1 state audit
+
+on:
+  push:
+    branches:
+      - 'probe/d3-staging-inventory'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      WRANGLER_SEND_METRICS: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+
+      - name: Create read-only staging config
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > .wrangler.d3-staging-readonly.toml <<'TOML'
+          name = "uber-v3-staging"
+          main = "src/index.js"
+          compatibility_date = "2026-06-01"
+          workers_dev = true
+
+          [[kv_namespaces]]
+          binding = "DRIVERS"
+          id = "b8fdeb74fda8415ab06b3b1c86c78e8f"
+
+          [[d1_databases]]
+          binding = "DB"
+          database_name = "transfer-servis52-staging"
+          database_id = "66474481-a123-47f9-81b4-12af7565ec8d"
+          migrations_dir = "migrations"
+
+          [vars]
+          APP_ENV = "staging"
+          TOML
+
+      - name: Read D1 metadata and Time Travel capability
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npx --yes wrangler@4.156.0 d1 info DB             --config .wrangler.d3-staging-readonly.toml             --json > /tmp/d1-info.json
+
+          npx --yes wrangler@4.156.0 d1 time-travel info DB             --config .wrangler.d3-staging-readonly.toml             --json > /tmp/d1-time.json
+
+          python3 - <<'PY'
+          import hashlib, json
+
+          info=json.load(open('/tmp/d1-info.json',encoding='utf-8'))
+          time=json.load(open('/tmp/d1-time.json',encoding='utf-8'))
+
+          version=info.get('version') if isinstance(info,dict) else None
+          size=info.get('file_size') or info.get('size') if isinstance(info,dict) else None
+
+          def find_bookmark(node):
+              if isinstance(node,dict):
+                  value=node.get('bookmark')
+                  if isinstance(value,str) and value:
+                      return value
+                  for child in node.values():
+                      found=find_bookmark(child)
+                      if found:
+                          return found
+              elif isinstance(node,list):
+                  for child in node:
+                      found=find_bookmark(child)
+                      if found:
+                          return found
+              return None
+
+          bookmark=find_bookmark(time)
+
+          print('D1_VERSION=' + str(version))
+          print('D1_SIZE=' + str(size))
+          print('TIME_TRAVEL_AVAILABLE=' + ('YES' if bookmark else 'NO'))
+
+          if bookmark:
+              digest=hashlib.sha256(bookmark.encode()).hexdigest()[:16]
+              print('TIME_TRAVEL_BOOKMARK_SHA256_16=' + digest)
+          PY
+
+      - name: Read schema names and safe row counts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npx --yes wrangler@4.156.0 d1 execute DB             --remote             --config .wrangler.d3-staging-readonly.toml             --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"             --json > /tmp/d1-tables.json
+
+          python3 - <<'PY' > /tmp/tables.env
+          import json
+
+          data=json.load(open('/tmp/d1-tables.json',encoding='utf-8'))
+          names=[]
+
+          def walk(node):
+              if isinstance(node,dict):
+                  if set(node.keys()) == {'name'} and isinstance(node.get('name'),str):
+                      names.append(node['name'])
+                  for child in node.values():
+                      walk(child)
+              elif isinstance(node,list):
+                  for child in node:
+                      walk(child)
+
+          walk(data)
+          safe=sorted(set(names))
+          print('TABLES=' + ','.join(safe))
+          print('HAS_ORDERS=' + ('1' if 'orders' in safe else '0'))
+          print('HAS_QUOTES=' + ('1' if 'quotes' in safe else '0'))
+          print('HAS_STAFF=' + ('1' if 'staff_accounts' in safe else '0'))
+          print('HAS_DRIVER_PROFILES=' + ('1' if 'driver_profiles' in safe else '0'))
+          PY
+
+          cat /tmp/tables.env
+
+          count_table() {
+            local table="$1"
+            local flag="$2"
+            if grep -q "^$flag=1$" /tmp/tables.env; then
+              npx --yes wrangler@4.156.0 d1 execute DB                 --remote                 --config .wrangler.d3-staging-readonly.toml                 --command "SELECT COUNT(*) AS row_count FROM $table"                 --json > "/tmp/count-$table.json"
+
+              TABLE="$table" python3 - <<'PY'
+          import json, os
+          table=os.environ['TABLE']
+          data=json.load(open(f'/tmp/count-{table}.json',encoding='utf-8'))
+          counts=[]
+
+          def walk(node):
+              if isinstance(node,dict):
+                  value=node.get('row_count')
+                  if isinstance(value,(int,float)):
+                      counts.append(int(value))
+                  for child in node.values():
+                      walk(child)
+              elif isinstance(node,list):
+                  for child in node:
+                      walk(child)
+
+          walk(data)
+          print(f'{table.upper()}_COUNT=' + (str(counts[0]) if counts else 'UNKNOWN'))
+          PY
+            fi
+          }
+
+          count_table orders HAS_ORDERS
+          count_table quotes HAS_QUOTES
+          count_table staff_accounts HAS_STAFF
+          count_table driver_profiles HAS_DRIVER_PROFILES
+
+          echo 'REMOTE_MUTATIONS=NONE'
