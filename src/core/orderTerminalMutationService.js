@@ -294,6 +294,8 @@ export async function transitionOrderTerminal(
 
   if (
     ![
+      "taken",
+      "in_progress",
       "done",
       "canceled"
     ].includes(
