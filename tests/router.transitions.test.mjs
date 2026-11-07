@@ -370,6 +370,9 @@ function createTransitionDatabase(
   let lastOrderMutationSucceeded =
     false;
 
+  let lastAuditMutationSucceeded =
+    false;
+
   const auditRows =
     [];
 
@@ -503,6 +506,9 @@ function createTransitionDatabase(
             ) {
 
               lastOrderMutationSucceeded =
+                false;
+
+              lastAuditMutationSucceeded =
                 false;
 
 
@@ -912,6 +918,10 @@ function createTransitionDatabase(
             )
           ) {
 
+            lastAuditMutationSucceeded =
+              false;
+
+
             if (
               lastOrderMutationSucceeded
               &&
@@ -931,6 +941,9 @@ function createTransitionDatabase(
 
               changes =
                 1;
+
+              lastAuditMutationSucceeded =
+                true;
             }
 
 
@@ -951,7 +964,19 @@ function createTransitionDatabase(
             )
           ) {
 
+            const requiresAuditSuccess =
+              /AND\s+changes\(\)\s*=\s*1/i.test(
+                sql
+              );
+
+
             if (
+              (
+                !requiresAuditSuccess
+                ||
+                lastAuditMutationSucceeded
+              )
+              &&
               idempotencyRecord
               &&
               idempotencyRecord.actor_account_id ===
