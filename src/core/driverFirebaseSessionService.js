@@ -38,12 +38,35 @@ import {
   isFirebaseExchangeReplay
 } from "./driverFirebaseAuthRepository.js";
 
+import {
+  consumeDriverExchangeRateLimit,
+  createRateLimitBucketKey
+} from "./driverExchangeRateLimit.js";
+
 
 const ALLOWED_INPUT_KEYS =
   new Set([
     "firebaseIdToken",
     "installationId"
   ]);
+
+const RATE_WINDOW_MS =
+  60 * 1000;
+
+const INSTALLATION_RATE_LIMIT =
+  5;
+
+const PHONE_RATE_LIMIT =
+  5;
+
+const IP_RATE_LIMIT =
+  20;
+
+const RATE_PENALTY_STEP_MS =
+  15 * 1000;
+
+const RATE_MAX_PENALTY_MS =
+  5 * 60 * 1000;
 
 
 function clean(
@@ -151,6 +174,104 @@ function unavailable(
 
     code
   };
+}
+
+
+function rateLimited(
+  blockedUntil,
+  now
+) {
+
+  const retryAfterMs =
+    Number.isSafeInteger(
+      blockedUntil
+    )
+    &&
+    blockedUntil >
+      now
+      ? blockedUntil -
+        now
+      : RATE_PENALTY_STEP_MS;
+
+
+  return {
+    ok:
+      false,
+
+    status:
+      429,
+
+    error:
+      "too many requests",
+
+    code:
+      "driver_session_exchange_rate_limited",
+
+    retryAfterMs
+  };
+}
+
+
+async function enforceRateLimit(
+  env,
+  category,
+  subject,
+  now,
+  limit,
+  options
+) {
+
+  const normalized =
+    clean(
+      subject
+    );
+
+
+  if (!normalized) {
+
+    return {
+      allowed:
+        true,
+
+      blockedUntil:
+        null
+    };
+  }
+
+
+  const createBucket =
+    options.createRateLimitBucketKey ??
+    createRateLimitBucketKey;
+
+
+  const consume =
+    options.consumeRateLimit ??
+    consumeDriverExchangeRateLimit;
+
+
+  const bucketKey =
+    await createBucket(
+      category,
+      normalized
+    );
+
+
+  return consume(
+    env,
+    {
+      bucketKey,
+      now,
+      limit,
+      windowMs:
+        RATE_WINDOW_MS,
+
+      penaltyStepMs:
+        RATE_PENALTY_STEP_MS,
+
+      maxPenaltyMs:
+        RATE_MAX_PENALTY_MS
+    }
+  );
 }
 
 
@@ -538,6 +659,61 @@ export async function exchangeDriverFirebaseSession(
     );
 
 
+  const installationRate =
+    await enforceRateLimit(
+      env,
+      "installation",
+      parsed.installationId,
+      now,
+      INSTALLATION_RATE_LIMIT,
+      options
+    );
+
+
+  if (
+    installationRate.allowed !==
+      true
+  ) {
+
+    return rateLimited(
+      installationRate.blockedUntil,
+      now
+    );
+  }
+
+
+  const clientIp =
+    clean(
+      options.clientIp
+    );
+
+
+  if (clientIp) {
+
+    const ipRate =
+      await enforceRateLimit(
+        env,
+        "ip",
+        clientIp,
+        now,
+        IP_RATE_LIMIT,
+        options
+      );
+
+
+    if (
+      ipRate.allowed !==
+        true
+    ) {
+
+      return rateLimited(
+        ipRate.blockedUntil,
+        now
+      );
+    }
+  }
+
+
   let verified;
 
 
@@ -579,6 +755,29 @@ export async function exchangeDriverFirebaseSession(
 
 
     return unauthorized();
+  }
+
+
+  const phoneRate =
+    await enforceRateLimit(
+      env,
+      "phone",
+      verified.phoneNumber,
+      now,
+      PHONE_RATE_LIMIT,
+      options
+    );
+
+
+  if (
+    phoneRate.allowed !==
+      true
+  ) {
+
+    return rateLimited(
+      phoneRate.blockedUntil,
+      now
+    );
   }
 
 
