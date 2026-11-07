@@ -385,3 +385,22 @@ Authenticated D3 STAGING E2E пока технически заблокиров�
 
 Никакие перечисленные remote actions в этом checkpoint не выполнялись.
 Production не изменялся. D4–D7 не затрагивались.
+
+### 2026-11-07 — STAGING schema compatibility simulation
+
+Дополнительный read-only migration gate выполнен после readiness audit:
+
+- remote D1 export выполнен с `--no-data`: экспортирована только схема;
+- текущая staging schema импортирована в локальный in-memory SQLite — PASS;
+- локально последовательно применены все 13 pending migrations
+  `0005`–`0017` — PASS;
+- последняя применённая в simulation:
+  `0017_photo_check_lifecycle.sql`;
+- обязательные D3 tables после simulation присутствуют;
+- `D3_SCHEMA_MIGRATION_SIMULATION=PASS`;
+- `REMOTE_MUTATIONS=NONE`.
+
+Simulation подтверждает совместимость migration chain с фактической текущей
+STAGING schema на уровне структуры. Данные пользователей не экспортировались.
+Remote `d1 migrations apply` по-прежнему не выполнялся и требует отдельного
+подтверждения владельца.
