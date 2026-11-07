@@ -769,6 +769,162 @@ export async function completeDriverPrivateUpload(
   };
 }
 
+export function evaluateDriverRegistrationReadiness(
+  profile,
+  vehicles,
+  materials
+) {
+  const missingProfile = [];
+
+  if (!clean(profile?.fullName)) {
+    missingProfile.push(
+      "fullName"
+    );
+  }
+
+  if (!clean(profile?.birthDate)) {
+    missingProfile.push(
+      "birthDate"
+    );
+  }
+
+  if (!clean(profile?.region)) {
+    missingProfile.push(
+      "region"
+    );
+  }
+
+  const safeDocuments =
+    Array.isArray(
+      materials?.documents
+    )
+      ? materials.documents
+      : [];
+
+  const safePhotos =
+    Array.isArray(
+      materials?.photos
+    )
+      ? materials.photos
+      : [];
+
+  const driverDocuments =
+    activeMaterialKinds(
+      safeDocuments,
+      material =>
+        material.vehicleId === null
+    );
+
+  const missingDriverDocuments =
+    missingKinds(
+      REQUIRED_DRIVER_DOCUMENTS,
+      driverDocuments
+    );
+
+  const completeVehicleIds = [];
+
+  const vehicleDetails = [];
+
+  for (
+    const vehicle of
+      (
+        Array.isArray(vehicles)
+          ? vehicles
+          : []
+      )
+  ) {
+
+    const documentKinds =
+      activeMaterialKinds(
+        safeDocuments,
+        material =>
+          material.vehicleId ===
+            vehicle.id
+      );
+
+    const photoKinds =
+      activeMaterialKinds(
+        safePhotos,
+        material =>
+          material.vehicleId ===
+            vehicle.id
+      );
+
+    const requiredDocuments = [
+      "sts_front",
+      "sts_back"
+    ];
+
+    if (
+      vehicle.usageBasis ===
+        "rental"
+    ) {
+      requiredDocuments.push(
+        "rental_contract"
+      );
+    }
+
+    const missingDocuments =
+      missingKinds(
+        requiredDocuments,
+        documentKinds
+      );
+
+    const missingPhotos =
+      missingKinds(
+        REQUIRED_VEHICLE_PHOTOS,
+        photoKinds
+      );
+
+    const complete =
+      Boolean(
+        vehicle.usageBasis
+      )
+      &&
+      missingDocuments.length ===
+        0
+      &&
+      missingPhotos.length ===
+        0;
+
+    if (complete) {
+      completeVehicleIds.push(
+        vehicle.id
+      );
+    }
+
+    vehicleDetails.push({
+      vehicleId:
+        vehicle.id,
+
+      complete,
+
+      missingUsageBasis:
+        !vehicle.usageBasis,
+
+      missingDocuments,
+
+      missingPhotos
+    });
+  }
+
+  return {
+    complete:
+      missingProfile.length === 0
+      &&
+      missingDriverDocuments.length === 0
+      &&
+      completeVehicleIds.length > 0,
+
+    missingProfile,
+    missingDriverDocuments,
+    completeVehicleIds,
+    vehicles:
+      vehicleDetails
+  };
+}
+
+
 export async function submitDriverRegistrationForReview(
   env,
   user,
@@ -843,26 +999,6 @@ export async function submitDriverRegistrationForReview(
     );
   }
 
-  const missingProfile = [];
-
-  if (!clean(profile.fullName)) {
-    missingProfile.push(
-      "fullName"
-    );
-  }
-
-  if (!clean(profile.birthDate)) {
-    missingProfile.push(
-      "birthDate"
-    );
-  }
-
-  if (!clean(profile.region)) {
-    missingProfile.push(
-      "region"
-    );
-  }
-
   const vehicles =
     await listDriverVehicles(
       env,
@@ -875,113 +1011,31 @@ export async function submitDriverRegistrationForReview(
       driver.id
     );
 
-  const driverDocuments =
-    activeMaterialKinds(
-      materials.documents,
-      material =>
-        material.vehicleId === null
+  const readiness =
+    evaluateDriverRegistrationReadiness(
+      profile,
+      vehicles,
+      materials
     );
 
-  const missingDriverDocuments =
-    missingKinds(
-      REQUIRED_DRIVER_DOCUMENTS,
-      driverDocuments
-    );
-
-  const completeVehicleIds = [];
-
-  const vehicleDetails = [];
-
-  for (const vehicle of vehicles) {
-    const documentKinds =
-      activeMaterialKinds(
-        materials.documents,
-        material =>
-          material.vehicleId ===
-            vehicle.id
-      );
-
-    const photoKinds =
-      activeMaterialKinds(
-        materials.photos,
-        material =>
-          material.vehicleId ===
-            vehicle.id
-      );
-
-    const requiredDocuments = [
-      "sts_front",
-      "sts_back"
-    ];
-
-    if (
-      vehicle.usageBasis ===
-        "rental"
-    ) {
-      requiredDocuments.push(
-        "rental_contract"
-      );
-    }
-
-    const missingDocuments =
-      missingKinds(
-        requiredDocuments,
-        documentKinds
-      );
-
-    const missingPhotos =
-      missingKinds(
-        REQUIRED_VEHICLE_PHOTOS,
-        photoKinds
-      );
-
-    const complete =
-      Boolean(
-        vehicle.usageBasis
-      )
-      &&
-      missingDocuments.length ===
-        0
-      &&
-      missingPhotos.length ===
-        0;
-
-    if (complete) {
-      completeVehicleIds.push(
-        vehicle.id
-      );
-    }
-
-    vehicleDetails.push({
-      vehicleId:
-        vehicle.id,
-
-      complete,
-
-      missingUsageBasis:
-        !vehicle.usageBasis,
-
-      missingDocuments,
-
-      missingPhotos
-    });
-  }
-
-  if (
-    missingProfile.length > 0 ||
-    missingDriverDocuments.length > 0 ||
-    completeVehicleIds.length === 0
-  ) {
+  if (!readiness.complete) {
     return conflict(
       "registration_incomplete",
       {
-        missingProfile,
-        missingDriverDocuments,
+        missingProfile:
+          readiness.missingProfile,
+
+        missingDriverDocuments:
+          readiness.missingDriverDocuments,
+
         vehicles:
-          vehicleDetails
+          readiness.vehicles
       }
     );
   }
+
+  const completeVehicleIds =
+    readiness.completeVehicleIds;
 
   const now =
     Number.isSafeInteger(
