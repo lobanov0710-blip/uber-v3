@@ -404,3 +404,93 @@ Simulation подтверждает совместимость migration chain �
 STAGING schema на уровне структуры. Данные пользователей не экспортировались.
 Remote `d1 migrations apply` по-прежнему не выполнялся и требует отдельного
 подтверждения владельца.
+
+## 2026-11-07 — approved STAGING D1 apply completed; R2 permission blocker
+
+Владелец явно подтвердил переход к критическим STAGING-операциям:
+применение D1 migrations, создание отдельного private staging R2 и последующий
+staging-only deploy после подтверждения Firebase identifiers.
+
+### STAGING D1 — выполнено
+
+На временной ops-ветке `ops/d3-staging-approved-20261107` выполнен
+fail-closed workflow:
+`Approved D3 staging D1 migration apply`.
+
+GitHub Actions run:
+`42382257830` — **PASS**.
+
+Перед apply workflow подтвердил:
+- remote pending count: 13;
+- first: `0005_driver_platform_core.sql`;
+- last: `0017_photo_check_lifecycle.sql`;
+- pending set: exact `0005–0017`;
+- Time Travel до изменения: available;
+- orders before: 6;
+- quotes before: 14.
+
+После apply:
+- remote pending migrations: 0;
+- orders: 6 -> 6;
+- quotes: 14 -> 14;
+- обязательные D3 tables present: 13/13;
+- `STAGING_D1_MIGRATION_VERIFICATION=PASS`.
+
+Таким образом migrations `0005–0017` применены именно к
+`transfer-servis52-staging`
+(`66474481-a123-47f9-81b4-12af7565ec8d`).
+
+Повторный push на ops-ветку автоматически запустил тот же migration workflow
+ещё раз:
+run `42382345542`.
+
+Guard увидел `REMOTE_PENDING_COUNT=0`, завершился на
+`REMOTE_PENDING_SET_MISMATCH` и **не выполнял повторный apply**.
+Это подтверждает fail-closed защиту от повторного критического запуска.
+
+### Private staging R2 — заблокировано правами
+
+Попытка создать согласованный отдельный bucket
+`transfer-servis52-driver-private-staging` выполнена через Wrangler
+в GitHub Actions run `42382345561`.
+
+Результат:
+- Cloudflare endpoint: `/accounts/***/r2/buckets`;
+- error: `Authentication error [code: 10000]`;
+- Wrangler: current API token lacks permission for R2 operation;
+- `STAGING_R2_CREATE=BLOCKED`;
+- bucket creation не подтверждено;
+- R2 binding не добавлялся.
+
+Обход через production bucket запрещён и не выполнялся.
+
+### Firebase D2 identifiers
+
+Повторный поиск по repository history, conversation/library material и current
+Worker bindings не дал подтверждённых значений:
+- `FIREBASE_PROJECT_ID`;
+- `FIREBASE_PROJECT_NUMBER`;
+- `FIREBASE_DRIVER_APP_ID`.
+
+Package подтверждён только как `ru.transferservis.driver`.
+Неподтверждённые/example значения не используются.
+
+До получения точных Firebase identifiers backend deploy остаётся fail-closed
+заблокированным.
+
+### Текущее состояние
+
+Выполнено:
+- STAGING D1 migrations `0005–0017`.
+
+Остаётся:
+1. дать Cloudflare credential R2 create/list permission либо выполнить
+   авторизованное создание bucket в Cloudflare Dashboard;
+2. подтвердить реальные Firebase project ID / project number / Driver app ID;
+3. создать/проверить private staging R2;
+4. сформировать `wrangler.staging.toml`, пройти D2/D3 preflight;
+5. выполнить deploy **только** `uber-v3-staging`;
+6. повторить route probe и authenticated D3 E2E.
+
+Production Worker, production D1/KV и production traffic не изменялись.
+D4–D7 не затрагивались.
