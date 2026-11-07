@@ -608,6 +608,30 @@ function createTransitionDatabase(
           }
 
 
+          if (
+            /UPDATE order_assignments/i.test(
+              sql
+            )
+          ) {
+
+            // Legacy router fixtures do not
+            // model order_assignments. The
+            // terminal repository explicitly
+            // supports such pre-migration
+            // orders with zero assignment
+            // changes.
+            return {
+              success:
+                true,
+
+              meta: {
+                changes:
+                  0
+              }
+            };
+          }
+
+
           throw new Error(
             "Unexpected transition SQL"
           );
@@ -772,6 +796,19 @@ function createTransitionDatabase(
 
 
       return statement;
+    },
+
+
+    async batch(
+      statements
+    ) {
+
+      return Promise.all(
+        statements.map(
+          statement =>
+            statement.run()
+        )
+      );
     }
   };
 
