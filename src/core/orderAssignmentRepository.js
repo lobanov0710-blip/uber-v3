@@ -516,6 +516,8 @@ export async function listActiveAssignmentsForDriver(
           a.order_id,
           a.vehicle_id,
           a.revision AS assignment_revision,
+          a.phase AS assignment_phase,
+          a.phase_updated_at,
           a.created_at AS assigned_at,
 
           o.revision AS order_revision,
@@ -589,6 +591,19 @@ export async function listActiveAssignmentsForDriver(
         Number(
           row.assigned_at
         ),
+
+      phase:
+        clean(
+          row.assignment_phase ||
+          "assigned"
+        ),
+
+      phaseUpdatedAt:
+        row.phase_updated_at == null
+          ? null
+          : Number(
+              row.phase_updated_at
+            ),
 
       vehicleId:
         clean(
