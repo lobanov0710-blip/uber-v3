@@ -33,7 +33,6 @@ SECRET_LABELS = (
     "TOKEN",
     "PRIVATE_KEY",
     "HMAC",
-    "FIREBASE",
     "GOOGLE_CREDENTIALS",
 )
 
@@ -198,6 +197,53 @@ def verify(
         )
     )
 
+    firebase_project_id = str(
+        variables.get(
+            "FIREBASE_PROJECT_ID",
+            "",
+        )
+    ).strip()
+
+    firebase_project_number = str(
+        variables.get(
+            "FIREBASE_PROJECT_NUMBER",
+            "",
+        )
+    ).strip()
+
+    firebase_driver_app_id = str(
+        variables.get(
+            "FIREBASE_DRIVER_APP_ID",
+            "",
+        )
+    ).strip()
+
+    if not re.fullmatch(
+        r"[a-z0-9][a-z0-9-]{2,98}[a-z0-9]",
+        firebase_project_id,
+        flags=re.I,
+    ):
+        raise PreflightError(
+            "FIREBASE_PROJECT_ID is required and invalid"
+        )
+
+    if not re.fullmatch(
+        r"[0-9]{6,20}",
+        firebase_project_number,
+    ):
+        raise PreflightError(
+            "FIREBASE_PROJECT_NUMBER is required and invalid"
+        )
+
+    if (
+        len(firebase_driver_app_id) < 10
+        or len(firebase_driver_app_id) > 200
+        or ":android:" not in firebase_driver_app_id
+    ):
+        raise PreflightError(
+            "FIREBASE_DRIVER_APP_ID is required and invalid"
+        )
+
     staging_db = single_binding(
         staging,
         "d1_databases",
@@ -275,6 +321,9 @@ def verify(
         "kv_id": STAGING_KV_ID,
         "r2_bucket": bucket_name,
         "upload_limit": upload_limit,
+        "firebase_project_id": firebase_project_id,
+        "firebase_project_number": firebase_project_number,
+        "firebase_driver_app_id": firebase_driver_app_id,
         "cron": REQUIRED_CRON,
     }
 
