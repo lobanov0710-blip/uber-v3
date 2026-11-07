@@ -19,7 +19,9 @@ function dbFor({
   activeVehicleId = null,
   revision = 2,
   vehicleStatus = "approved",
-  vehicleExists = true
+  vehicleExists = true,
+  photoControlBlocked = false,
+  photoControlGrace = false
 } = {}) {
 
   return {
@@ -81,7 +83,11 @@ function dbFor({
               driver_id:
                 DRIVER_ID,
               status:
-                vehicleStatus
+                vehicleStatus,
+              photo_control_blocked:
+                photoControlBlocked ? 1 : 0,
+              photo_control_grace:
+                photoControlGrace ? 1 : 0
             };
           }
 
@@ -290,6 +296,43 @@ assert.equal(
 assert.equal(
   vehicleNotApproved.code,
   "vehicle_not_approved"
+);
+
+
+const photoBlocked =
+  await putDriverAvailability(
+    {
+      DB:
+        dbFor({
+          photoControlBlocked:
+            true
+        })
+    },
+    driver,
+    {
+      activeVehicleId:
+        VEHICLE_ID,
+      requestedState:
+        "on_line",
+      expectedRevision:
+        2
+    },
+    {
+      idempotencyKey:
+        "photo-blocked-key",
+      nowMs:
+        1800000001000
+    }
+  );
+
+assert.equal(
+  photoBlocked.status,
+  422
+);
+
+assert.equal(
+  photoBlocked.code,
+  "vehicle_photo_control_required"
 );
 
 
