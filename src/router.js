@@ -75,6 +75,13 @@ import {
   exchangeDriverFirebaseSession
 } from "./core/driverFirebaseSessionService.js";
 
+import {
+  createDriverVehicle,
+  getDriverMe,
+  patchDriverVehicle,
+  putDriverRegistration
+} from "./core/driverRegistrationService.js";
+
 
 // =========================
 // ROUTER
@@ -341,6 +348,485 @@ export default async function router(
         body.firebaseIdToken =
           null;
       }
+    }
+  }
+
+
+  // =========================
+  // DRIVER SELF-SERVICE V1
+  // =========================
+
+  if (
+    path === "/v1/driver/me"
+  ) {
+
+    if (req.method !== "GET") {
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (auth?.ok !== true) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    try {
+
+      const result =
+        await getDriverMe(
+          env,
+          auth.user
+        );
+
+
+      if (result?.ok !== true) {
+
+        return json(
+          {
+            ok: false,
+            error:
+              result?.error ||
+              "driver request failed",
+            code:
+              result?.code ||
+              "driver_request_failed",
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER ME ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "driver request failed",
+          code:
+            "driver_request_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path ===
+      "/v1/driver/registration"
+  ) {
+
+    if (req.method !== "PUT") {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (auth?.ok !== true) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await putDriverRegistration(
+          env,
+          auth.user,
+          body
+        );
+
+
+      if (result?.ok !== true) {
+
+        return json(
+          {
+            ok: false,
+            error:
+              result?.error ||
+              "driver registration failed",
+            code:
+              result?.code ||
+              "driver_registration_failed",
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER REGISTRATION UPDATE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "driver registration failed",
+          code:
+            "driver_registration_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  if (
+    path === "/v1/driver/vehicles"
+  ) {
+
+    if (req.method !== "POST") {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (auth?.ok !== true) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await createDriverVehicle(
+          env,
+          auth.user,
+          body
+        );
+
+
+      if (result?.ok !== true) {
+
+        return json(
+          {
+            ok: false,
+            error:
+              result?.error ||
+              "vehicle request failed",
+            code:
+              result?.code ||
+              "vehicle_request_failed",
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        201,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER VEHICLE CREATE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle request failed",
+          code:
+            "vehicle_request_failed",
+          requestId
+        },
+        500,
+        cors
+      );
+    }
+  }
+
+
+  const driverVehicleMatch =
+    path.match(
+      /^\/v1\/driver\/vehicles\/([^/]+)$/
+    );
+
+
+  if (
+    driverVehicleMatch
+  ) {
+
+    if (req.method !== "PATCH") {
+
+      return safeError(
+        "method not allowed",
+        405
+      );
+    }
+
+
+    const requestId =
+      "req_" +
+      crypto.randomUUID();
+
+
+    const vehicleId =
+      decodeURIComponent(
+        driverVehicleMatch[1]
+      );
+
+
+    if (
+      !/^vehicle_[0-9a-f-]{36}$/i.test(
+        vehicleId
+      )
+    ) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            "invalid request",
+          code:
+            "invalid_vehicle_id",
+          requestId
+        },
+        400,
+        cors
+      );
+    }
+
+
+    const auth =
+      await authenticateStaffRequest(
+        req,
+        env
+      );
+
+
+    if (auth?.ok !== true) {
+
+      return json(
+        {
+          ok: false,
+          error:
+            auth?.error ||
+            "authorization required",
+          code:
+            "authorization_required",
+          requestId
+        },
+        auth?.status ||
+          401,
+        cors
+      );
+    }
+
+
+    const body =
+      await safeJson(
+        req
+      );
+
+
+    try {
+
+      const result =
+        await patchDriverVehicle(
+          env,
+          auth.user,
+          vehicleId,
+          body
+        );
+
+
+      if (result?.ok !== true) {
+
+        return json(
+          {
+            ok: false,
+            error:
+              result?.error ||
+              "vehicle request failed",
+            code:
+              result?.code ||
+              "vehicle_request_failed",
+            requestId
+          },
+          result?.status ||
+            500,
+          cors
+        );
+      }
+
+
+      return json(
+        {
+          ...result,
+          requestId
+        },
+        200,
+        cors
+      );
+
+    } catch (error) {
+
+      console.error(
+        "DRIVER VEHICLE UPDATE ERROR"
+      );
+
+
+      return json(
+        {
+          ok: false,
+          error:
+            "vehicle request failed",
+          code:
+            "vehicle_request_failed",
+          requestId
+        },
+        500,
+        cors
+      );
     }
   }
 
