@@ -661,6 +661,7 @@ export async function getAdminRegistrationReviewBundle(
           ON v.id = vp.vehicle_id
 
         WHERE v.driver_id = ?1
+          AND vp.photo_check_id IS NULL
 
         ORDER BY vp.created_at ASC
       `)
@@ -1430,6 +1431,7 @@ export async function moderateVehicle(
             )
             FROM vehicle_photos vp
             WHERE vp.vehicle_id = ?1
+              AND vp.photo_check_id IS NULL
               AND vp.status = 'verified'
               AND vp.kind IN (
                 'left',
