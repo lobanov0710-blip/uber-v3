@@ -292,6 +292,41 @@ export async function commitDriverUploadResource(
   statements.push(
     db
       .prepare(`
+        INSERT INTO audit_events (
+          id,
+          actor_account_id,
+          action,
+          target_type,
+          target_id,
+          outcome,
+          request_id,
+          created_at
+        )
+        VALUES (
+          ?1,
+          ?2,
+          'driver.private_resource_uploaded',
+          ?3,
+          ?4,
+          'success',
+          ?5,
+          ?6
+        )
+      `)
+      .bind(
+        "audit_" + crypto.randomUUID(),
+        requireText(upload.driverId, "driverId"),
+        upload.resourceType,
+        requireText(resourceId, "resourceId"),
+        clean(arguments[2]?.requestId) || null,
+        timestamp
+      )
+  );
+
+
+  statements.push(
+    db
+      .prepare(`
         UPDATE driver_upload_sessions
 
         SET consumed_at = ?3
@@ -425,7 +460,9 @@ export async function submitDriverRegistration(
   driverId,
   {
     expectedRevision,
-    submittedAt
+    submittedAt,
+    vehicleIds,
+    requestId
   }
 ) {
   const driver = requireText(driverId, "driverId");
@@ -439,10 +476,34 @@ export async function submitDriverRegistration(
       submittedAt,
       "submittedAt"
     );
-  const db = requireDatabase(env);
 
-  const result =
-    await db
+  if (
+    !Array.isArray(vehicleIds) ||
+    vehicleIds.length === 0
+  ) {
+    throw new Error(
+      "invalid registration vehicleIds"
+    );
+  }
+
+  const uniqueVehicleIds =
+    [
+      ...new Set(
+        vehicleIds.map(
+          value =>
+            requireText(
+              value,
+              "vehicleId"
+            )
+        )
+      )
+    ];
+
+  const db =
+    requireDatabase(env);
+
+  const statements = [
+    db
       .prepare(`
         UPDATE driver_profiles
 
@@ -464,27 +525,125 @@ export async function submitDriverRegistration(
         revision,
         timestamp
       )
-      .run();
+  ];
 
-  const count =
+  for (const vehicleId of uniqueVehicleIds) {
+    statements.push(
+      db
+        .prepare(`
+          UPDATE vehicles
+
+          SET
+            status = 'pending_review',
+            revision = revision + 1,
+            updated_at = ?3
+
+          WHERE id = ?1
+            AND driver_id = ?2
+            AND status IN (
+              'draft',
+              'pending_review'
+            )
+        `)
+        .bind(
+          vehicleId,
+          driver,
+          timestamp
+        )
+    );
+  }
+
+  statements.push(
+    db
+      .prepare(`
+        INSERT INTO audit_events (
+          id,
+          actor_account_id,
+          action,
+          target_type,
+          target_id,
+          outcome,
+          request_id,
+          created_at
+        )
+        VALUES (
+          ?1,
+          ?2,
+          'driver.registration_submitted',
+          'driver_profile',
+          ?2,
+          'success',
+          ?3,
+          ?4
+        )
+      `)
+      .bind(
+        "audit_" + crypto.randomUUID(),
+        driver,
+        clean(requestId) || null,
+        timestamp
+      )
+  );
+
+  const results =
+    await db.batch(
+      statements
+    );
+
+  if (
+    !Array.isArray(results) ||
+    results.length !== statements.length
+  ) {
+    throw new Error(
+      "registration submit transaction failed"
+    );
+  }
+
+  const profileChanges =
     Number(
-      result?.meta?.changes ??
+      results[0]?.meta?.changes ??
       0
     );
 
   if (
-    result?.success !== true ||
-    !Number.isSafeInteger(count) ||
-    count < 0 ||
-    count > 1
+    results[0]?.success !== true ||
+    !Number.isSafeInteger(
+      profileChanges
+    ) ||
+    profileChanges < 0 ||
+    profileChanges > 1
   ) {
     throw new Error(
       "registration submit failed"
     );
   }
 
+  if (profileChanges !== 1) {
+    return {
+      submitted:
+        false
+    };
+  }
+
+  for (
+    let index = 1;
+    index <= uniqueVehicleIds.length;
+    index++
+  ) {
+    requireRun(
+      results[index]
+    );
+  }
+
+  requireRun(
+    results[
+      results.length - 1
+    ]
+  );
+
   return {
     submitted:
-      count === 1
+      true
   };
 }
+
