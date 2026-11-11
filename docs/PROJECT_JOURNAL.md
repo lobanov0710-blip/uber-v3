@@ -309,3 +309,22 @@ Regression:
   `abb787ddd1017c0b7e0a20ca68b62a530f8eea44`.
 
 Production deploy и merge не выполнялись.
+
+## 2026-11-11 — D3 support ownership negative SQLite test
+
+В `tests/supportCaseLifecycle.sqlite.test.mjs` добавлен
+`another driver cannot read, list or mutate a private support case`.
+Синтетический второй driver с отдельным аккаунтом проверяет:
+- собственный список не раскрывает чужой support case;
+- чтение чужого case возвращает 404;
+- попытка отправить сообщение в чужой case отклоняется 403/404;
+- `chat_messages` и `support_cases.revision` не меняются.
+
+Коммит `57ef55cf9f10f77ff9f58bf4da8acab9e3dff626`.
+Backend CI:
+https://github.com/lobanov0710-blip/uber-v3/actions/runs/43024693830
+— на момент записи **ещё выполняется**, PASS не подтверждён.
+
+Тест запускается на ephemeral SQLite/D1 fixture без обращения к
+реальному STAGING, production или R2. Не подтверждает
+HTTP authentication layer end-to-end. Merge/deploy не выполнялись.
