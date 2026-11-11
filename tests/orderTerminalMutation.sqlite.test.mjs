@@ -658,6 +658,11 @@ test(
     });
 
     const otherDriver = { id: "staff_driver_foreign", role: "driver" };
+    insertStaff(DB, {
+      id: otherDriver.id,
+      role: "driver",
+      login: "foreign-terminal-driver"
+    });
     const foreignDone = await transitionOrderTerminal(
       { DB }, otherDriver, orderId,
       { status: "done", expectedRevision: 1 },
