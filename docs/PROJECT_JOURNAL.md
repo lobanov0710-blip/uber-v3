@@ -328,3 +328,24 @@ https://github.com/lobanov0710-blip/uber-v3/actions/runs/43024693830
 Тест запускается на ephemeral SQLite/D1 fixture без обращения к
 реальному STAGING, production или R2. Не подтверждает
 HTTP authentication layer end-to-end. Merge/deploy не выполнялись.
+
+## 2026-11-11 — D3 terminal mutation authorization negative test
+
+В `tests/orderTerminalMutation.sqlite.test.mjs` добавлен
+`foreign driver and driver cancellation cannot change terminal state or audit`.
+Проверяет на ephemeral SQLite fixture:
+- чужой driver не может завершить назначенную другому поездку;
+- driver не может отменить поездку (`canceled` требует admin permission);
+- отклонённые операции не меняют `orders.status/revision`,
+  `order_assignments.state/revision` и не создают success audit.
+
+Коммит `f3f8c8a22a1a83a0097a1a74095a19dc93f0d162`.
+CI: https://github.com/lobanov0710-blip/uber-v3/actions/runs/43031396321
+— на момент записи ожидается, PASS не подтверждён.
+
+Ранее существующие SQLite-тесты уже покрывают успешные
+done/canceled, replay, idempotency-key reuse, stale revision,
+lost claim и rollback при ошибке audit. Этот тест добавляет
+отдельную проверку запрета чужого driver и driver cancellation.
+
+Production/STAGING/R2/D4 не затронуты; merge/deploy не выполнялись.
