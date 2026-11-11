@@ -645,6 +645,50 @@ test(
 
 
 test(
+  "foreign driver and driver cancellation cannot change terminal state or audit",
+  async t => {
+    const DB = setup(t);
+    const orderId = "order_foreign_done_123";
+    const assignmentId = "assignment_foreign_done_123";
+    insertOrder(DB, {
+      id: orderId, status: "in_progress", driverId: DRIVER.id
+    });
+    insertActiveAssignment(DB, {
+      id: assignmentId, orderId
+    });
+
+    const otherDriver = { id: "staff_driver_foreign", role: "driver" };
+    const foreignDone = await transitionOrderTerminal(
+      { DB }, otherDriver, orderId,
+      { status: "done", expectedRevision: 1 },
+      { idempotencyKey: "foreign-driver-done-key", nowMs: TIME + 20 }
+    );
+    assert.equal(foreignDone.ok, false);
+    assert.ok(foreignDone.status === 403 || foreignDone.status === 409);
+
+    const driverCancel = await transitionOrderTerminal(
+      { DB }, DRIVER, orderId,
+      { status: "canceled", expectedRevision: 1 },
+      { idempotencyKey: "driver-cancel-denied-key", nowMs: TIME + 21 }
+    );
+    assert.equal(driverCancel.status, 403);
+
+    const order = DB.sqlite.prepare(`
+      SELECT status, revision FROM orders WHERE id = ?
+    `).get(orderId);
+    assert.equal(order.status, "in_progress");
+    assert.equal(Number(order.revision), 1);
+    const assignment = DB.sqlite.prepare(`
+      SELECT state, revision FROM order_assignments WHERE id = ?
+    `).get(assignmentId);
+    assert.equal(assignment.state, "active");
+    assert.equal(Number(assignment.revision), 1);
+    assert.equal(auditCount(DB, orderId), 0);
+  }
+);
+
+
+test(
   "terminal mutation rejects missing idempotency key and missing expected revision",
   async t => {
     const DB =
