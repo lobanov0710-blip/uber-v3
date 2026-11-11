@@ -323,7 +323,7 @@ Production deploy и merge не выполнялись.
 Коммит `57ef55cf9f10f77ff9f58bf4da8acab9e3dff626`.
 Backend CI:
 https://github.com/lobanov0710-blip/uber-v3/actions/runs/43024693830
-— на момент записи **ещё выполняется**, PASS не подтверждён.
+— **PASS**, verified 2026-11-11.
 
 Тест запускается на ephemeral SQLite/D1 fixture без обращения к
 реальному STAGING, production или R2. Не подтверждает
