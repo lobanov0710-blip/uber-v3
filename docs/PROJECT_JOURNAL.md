@@ -349,3 +349,21 @@ lost claim и rollback при ошибке audit. Этот тест добавл
 отдельную проверку запрета чужого driver и driver cancellation.
 
 Production/STAGING/R2/D4 не затронуты; merge/deploy не выполнялись.
+
+## 2026-11-11 — D3 terminal test fixture correction
+
+CI https://github.com/lobanov0710-blip/uber-v3/actions/runs/43031396321
+— FAIL: новый foreign-driver negative test завершился
+`FOREIGN KEY constraint failed` в idempotency SQL, потому что
+synthetic `staff_driver_foreign` не был создан в `staff_accounts`.
+Остальные 7 terminal tests — PASS. Причина в fixture, не
+подтверждённая production-уязвимость.
+
+В `tests/orderTerminalMutation.sqlite.test.mjs` добавлен
+`insertStaff(DB, ...)` перед запросом чужого водителя.
+Коммит `1f9a263d40f06122ea301951c397c2c53c077b05`.
+Повтор CI:
+https://github.com/lobanov0710-blip/uber-v3/actions/runs/43032988844
+— на момент записи PENDING, результат ещё не подтверждён.
+
+Без production, STAGING, R2, D4, merge/deploy.
