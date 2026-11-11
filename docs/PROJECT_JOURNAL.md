@@ -494,3 +494,50 @@ Package подтверждён только как `ru.transferservis.driver`.
 
 Production Worker, production D1/KV и production traffic не изменялись.
 D4–D7 не затрагивались.
+
+
+## 2026-11-11 — Продолжение D3 STAGING gate и помощь владельцу с Firebase
+
+Сверены актуальные ветки: Driver `8b99ad9d8522aeed900a1f89dbe53f695ce1bc8c`,
+backend `8cc860443f43c25f5f4edf312f5934dfd1949c11`. Ранее завершённые terminal,
+photo-control, support и Android этапы не выполнялись заново.
+
+Владелец подтвердил в текущем сеансе:
+- R2 права ещё не добавлены, согласованный private bucket не создан;
+- существующий Firebase-проект есть, но требуется помощь найти его настройки;
+- реальные Project ID / project number / Android app ID пока не получены.
+
+Даны конкретные инструкции Firebase Console → проект → шестерёнка →
+Project settings → General, затем Android-приложение ru.transferservis.driver.
+Публичные identifiers не заменяются package name или CI fixtures.
+Руководство владельца: `uber-v3/docs/D3_STAGING_OWNER_SETUP.md`.
+
+Выполнено без remote writes:
+- свежий baseline: 61 набор npm test PASS, 17 migrations smoke PASS;
+- GET /v1/driver/me, /photo-checks, /support-cases, /uploads на STAGING — HTTP 404;
+- воспроизведены 9 отрицательных subcases в 5 новых preflight regression tests;
+- закрыты singular route, nested env overrides, дополнительные resource bindings,
+  другой staging-named bucket и несовместимый Firebase app/project number;
+- preflight теперь принимает только ранее согласованный private bucket;
+- все 12 preflight tests PASS, git diff --check PASS;
+- добавлены ignore-правила для Python __pycache__/pyc, без включения build artifacts.
+
+Firebase Basics применена для подготовки получения настоящего SDK config:
+официальная CLI 15.35.0 проверена, login:list не вернул авторизованных аккаунтов.
+Никакой проект/приложение Firebase автоматически не выбирались и не создавались.
+Правило skill: “If no Project ID was provided, you MUST pause”; владелец выбрал
+существующий проект, дальнейший выбор ожидает его подтверждённый Project ID.
+Секреты и SMS-коды у владельца не запрашивались.
+
+Cloud desktop capability enabled/unknown, но browser-control tools отсутствуют:
+не доступны cua_repl.js и open_in_codex. Проверенная среда:
+ccarenv_b64_Y2NhcmVudl9lNDkzYjZiZTVjNDg4MTkxYTVjYzA0YTBlMDExN2NmYg.
+Владелец получил путь к настройкам в своём браузере; автоматическое открытие
+Firebase Console не объявлялось успешным.
+
+Данные о применении STAGING migrations 0005–0017 взяты из последнего backend
+журнала; repeat apply не запускался. R2 create, config binding, STAGING deploy
+и authenticated E2E в этом сеансе не выполнялись. Production не изменялся.
+Текущий gate требует реальных Firebase identifiers и прав/ресурса R2;
+после них продолжается уже согласованный staging-only preflight/deploy/E2E.
+D4–D7 остаются неутверждёнными.

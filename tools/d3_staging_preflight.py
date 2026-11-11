@@ -20,6 +20,7 @@ STAGING_DB_ID = "66474481-a123-47f9-81b4-12af7565ec8d"
 STAGING_KV_ID = "b8fdeb74fda8415ab06b3b1c86c78e8f"
 
 R2_BINDING = "DRIVER_PRIVATE_FILES"
+STAGING_PRIVATE_BUCKET = "transfer-servis52-driver-private-staging"
 UPLOAD_LIMIT_VAR = "DRIVER_UPLOAD_MAX_BYTES"
 
 MIN_UPLOAD_BYTES = 1 * 1024 * 1024
@@ -168,9 +169,18 @@ def verify(
     if staging.get("workers_dev") is not True:
         raise PreflightError("staging Worker must remain workers.dev-only")
 
+    if staging.get("env"):
+        raise PreflightError("staging config must not contain environment overrides")
+
     routes = staging.get("routes")
-    if routes not in (None, []):
+    if routes not in (None, []) or staging.get("route") not in (None, ""):
         raise PreflightError("staging custom routes are not allowed")
+
+    # This gate approves one known DB/KV/R2 tuple, not unrelated resources.
+    for section in ("d1_databases", "kv_namespaces", "r2_buckets"):
+        rows = staging.get(section, [])
+        if not isinstance(rows, list) or len(rows) != 1:
+            raise PreflightError(f"exactly one staging resource required in {section}")
 
     triggers = staging.get("triggers", {})
     crons = triggers.get("crons", []) if isinstance(triggers, dict) else []
@@ -235,13 +245,13 @@ def verify(
             "FIREBASE_PROJECT_NUMBER is required and invalid"
         )
 
-    if (
-        len(firebase_driver_app_id) < 10
-        or len(firebase_driver_app_id) > 200
-        or ":android:" not in firebase_driver_app_id
-    ):
+    firebase_app = re.fullmatch(
+        r"1:([0-9]{6,20}):android:[0-9a-fA-F]{8,64}",
+        firebase_driver_app_id,
+    )
+    if not firebase_app or firebase_app.group(1) != firebase_project_number:
         raise PreflightError(
-            "FIREBASE_DRIVER_APP_ID is required and invalid"
+            "FIREBASE_DRIVER_APP_ID must match the configured Firebase project number"
         )
 
     staging_db = single_binding(
@@ -299,15 +309,9 @@ def verify(
         )
     ).strip()
 
-    if (
-        not bucket_name
-        or "staging" not in bucket_name.lower()
-        or "replace" in bucket_name.lower()
-        or "<" in bucket_name
-        or ">" in bucket_name
-    ):
+    if bucket_name != STAGING_PRIVATE_BUCKET:
         raise PreflightError(
-            "private R2 bucket must be explicitly staging-scoped"
+            "private R2 bucket must match the owner-approved staging bucket"
         )
 
     audit_migrations(

@@ -274,6 +274,43 @@ class D3StagingPreflightTest(
                     path
                 )
 
+    def test_firebase_app_must_belong_to_the_configured_project(self):
+        for app_id in (
+            "1:999999999999:android:0123456789abcdef",
+            "1:123456789012:android:not-a-valid-app-id",
+            "prefix:android:0123456789abcdef",
+        ):
+            config = staging_config()
+            config["vars"]["FIREBASE_DRIVER_APP_ID"] = app_id
+            with self.subTest(app_id=app_id), self.assertRaises(MODULE.PreflightError):
+                MODULE.verify(config, production_config(), ROOT / "migrations")
+
+    def test_singular_route_cannot_escape_the_staging_workers_dev_gate(self):
+        config = staging_config()
+        config["route"] = "production.example/*"
+        with self.assertRaises(MODULE.PreflightError):
+            MODULE.verify(config, production_config(), ROOT / "migrations")
+
+    def test_only_the_owner_approved_private_bucket_is_allowed(self):
+        config = staging_config()
+        config["r2_buckets"][0]["bucket_name"] = "other-project-staging"
+        with self.assertRaises(MODULE.PreflightError):
+            MODULE.verify(config, production_config(), ROOT / "migrations")
+
+    def test_additional_bindings_cannot_smuggle_production_resources(self):
+        for section in ("d1_databases", "kv_namespaces", "r2_buckets"):
+            config = staging_config()
+            config[section].append({"binding": "OTHER", "database_id": "production",
+                                    "id": "production", "bucket_name": "production"})
+            with self.subTest(section=section), self.assertRaises(MODULE.PreflightError):
+                MODULE.verify(config, production_config(), ROOT / "migrations")
+
+    def test_environment_overrides_cannot_change_a_verified_target(self):
+        config = staging_config()
+        config["env"] = {"production": production_config()}
+        with self.assertRaises(MODULE.PreflightError):
+            MODULE.verify(config, production_config(), ROOT / "migrations")
+
 
 if __name__ == "__main__":
     unittest.main()

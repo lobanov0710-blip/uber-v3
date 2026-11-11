@@ -39,18 +39,22 @@ Read-only Cloudflare audit подтвердил:
 до любого deploy:
 
 - exact Worker name `uber-v3-staging`;
-- `workers_dev=true`, custom routes запрещены;
+- `workers_dev=true`, custom `route` и `routes` запрещены;
+- nested `[env.*]` overrides запрещены: проверяется один явно выбранный STAGING target;
 - `APP_ENV=staging`;
 - exact staging D1/KV identities выше;
 - production D1/KV использовать нельзя;
 - обязательный private R2 binding `DRIVER_PRIVATE_FILES`;
-- bucket должен быть явно staging-scoped;
+- bucket должен быть именно согласованным
+  `transfer-servis52-driver-private-staging`;
+- дополнительные D1/KV/R2 bindings не допускаются этим gate;
 - `DRIVER_UPLOAD_MAX_BYTES` обязателен и должен находиться в безопасном диапазоне
   1–20 MiB;
 - обязательны публичные Firebase identifiers:
   `FIREBASE_PROJECT_ID`, `FIREBASE_PROJECT_NUMBER`,
   `FIREBASE_DRIVER_APP_ID`; они должны быть подтверждены из реальной
   Firebase Android-конфигурации, а не придуманы;
+- Android app ID должен иметь корректный формат и содержать тот же project number;
 - hourly D3 cron `0 * * * *` обязателен;
 - credentials/secrets в `[vars]` запрещены;
 - migration chain `0001`–`0017` должна быть полной;
@@ -89,3 +93,21 @@ python3 tools/d3_staging_preflight.py \
    support message/history.
 
 Production Worker/D1/KV/R2 в этот gate не изменяются.
+
+## Checkpoint 2026-11-11
+
+Владелец подтвердил: R2 permissions ещё не добавлены, bucket не создан.
+Firebase public identifiers пока неизвестны; владельцу даны шаги их получения
+и задан выбор существующего/нового проекта. Значения не подставлялись из CI fixtures.
+
+Unauthenticated route probe 2026-11-11:
+`/v1/driver/me`, `/v1/driver/photo-checks`, `/v1/driver/support-cases`,
+`GET /v1/driver/uploads` — все HTTP 404. Рабочий D3 deployment ещё не подтверждён.
+
+Локальный preflight усилен против одиночного route, environment overrides,
+дополнительных bindings, неподтверждённого bucket и несовместимых Firebase IDs.
+12 regression tests и 17 migrations smoke проходят.
+
+Создание R2 bucket, повторный migration apply и deploy не выполнялись.
+Локальный PASS не заменяет реальные R2 privacy/permission checks, Firebase
+Phone/App Check и authenticated photo/support E2E.
