@@ -302,6 +302,50 @@ test(
 
 
 test(
+  "another driver cannot read, list or mutate a private support case",
+  async t => {
+    const DB = setup(t);
+    const supportCase = await createCase(DB, {
+      key: "support-cross-driver-create"
+    });
+
+    const beforeMessages = Number(DB.sqlite.prepare(`
+      SELECT COUNT(*) AS n FROM chat_messages WHERE support_case_id = ?
+    `).get(supportCase.id).n);
+    const beforeRevision = Number(DB.sqlite.prepare(`
+      SELECT revision FROM support_cases WHERE id = ?
+    `).get(supportCase.id).revision);
+
+    const foreignList = await getDriverSupportCases({ DB }, OTHER_DRIVER);
+    assert.equal(foreignList.ok, true);
+    assert.equal(foreignList.supportCases.some(item => item.id === supportCase.id), false);
+
+    const foreignDetail = await getDriverSupportCase(
+      { DB }, OTHER_DRIVER, supportCase.id, { nowMs: time + 1 }
+    );
+    assert.equal(foreignDetail.status, 404);
+
+    const foreignWrite = await postDriverSupportMessage(
+      { DB }, OTHER_DRIVER, supportCase.id,
+      { body: "Unauthorized write", expectedRevision: beforeRevision },
+      { idempotencyKey: "cross-driver-denied", nowMs: time + 2 }
+    );
+    assert.equal(foreignWrite.ok, false);
+    assert.ok(foreignWrite.status === 403 || foreignWrite.status === 404);
+
+    const afterMessages = Number(DB.sqlite.prepare(`
+      SELECT COUNT(*) AS n FROM chat_messages WHERE support_case_id = ?
+    `).get(supportCase.id).n);
+    const afterRevision = Number(DB.sqlite.prepare(`
+      SELECT revision FROM support_cases WHERE id = ?
+    `).get(supportCase.id).revision);
+    assert.equal(afterMessages, beforeMessages);
+    assert.equal(afterRevision, beforeRevision);
+  }
+);
+
+
+test(
   "driver support message requires revision and idempotency and stores no chat body in replay result",
   async t => {
     const DB =
