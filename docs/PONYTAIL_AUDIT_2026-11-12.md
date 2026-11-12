@@ -59,7 +59,7 @@ Ponytail применён к сложности; ошибки корректно
 - git diff --check — PASS.
 - Для новых Android regression tests (Keystore, delayed rotation/logout/new login,
   account switch recovery, EXIF corners) добавлен API 35 emulator в canonical CI.
-  Итоговые CI build/runtime результаты фиксируются отдельной записью журнала.
+  Итоговые CI build/runtime результаты — PASS, ссылки приведены ниже.
 - Полный Firebase/Phone Auth/App Check/R2 E2E остаётся BLOCKED: владелец ещё не
   подтвердил Firebase identifiers и R2 create/list права/bucket. CI compile fixture
   не доказывает реальный вход. Безопасность и App Check не отключались.
@@ -68,4 +68,23 @@ Ponytail применён к сложности; ошибки корректно
 аудит, private upload validation, TLS/host locks, Android Keystore/backup policy.
 D4–D7 и границы production не изменены. Merge/deploy не выполняются этим аудитом.
 
-net: -937 lines, -0 deps (code/tests/CI после исправлений, без этого отчёта и журнала).
+
+## Итоговая проверка CI — 2026-11-12
+
+- Android code `3273bfc25316e790f26286ba5477c7037f710014`:
+  [run 43224019792](https://github.com/lobanov0710-blip/TransferDriver/actions/runs/43224019792)
+  — SUCCESS. testDebugUnitTest, assembleDebug, assembleRelease,
+  assembleDebugAndroidTest, 6 source guards, variant endpoint locks и
+  Play Integrity policy — PASS. connectedDebugAndroidTest на API 35 — PASS.
+- Backend final code/CI `ea1109107b479e33b914aec047aeaa8f3daae76f`:
+  [run 43224400939](https://github.com/lobanov0710-blip/uber-v3/actions/runs/43224400939)
+  — SUCCESS. Locked install, npm audit (0 vulnerabilities), 17 migrations,
+  12 preflight checks, 61 npm suites, local workerd/D1 и Worker dry-run — PASS.
+- Первый backend run 43224042256 также PASS. Предупреждение Node20 runtime
+  checkout/setup-node устранено обновлением до SHA с Node24 runtime;
+  повторный run больше его не содержит. Node приложения 22, npm 11.9.0,
+  disabled lifecycle scripts и pinned actions сохранены.
+- Реального authenticated D3 STAGING E2E не было: Firebase identifiers и
+  private staging R2 ещё не предоставлены. Deploy/merge не выполнялись.
+
+net: -936 lines, -0 deps (code/tests/CI после исправлений, без этого отчёта и журнала).

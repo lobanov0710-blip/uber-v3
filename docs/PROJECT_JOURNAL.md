@@ -588,3 +588,31 @@ Node для приложения остаётся 22, npm — 11.9.0, lifecycle 
 Автоматический package-manager cache явно отключён. Повторный CI ожидается.
 Android `3273bfc25316e790f26286ba5477c7037f710014`: build/JVM/endpoint/App Check
 steps PASS; runtime emulator tests на момент этой записи ещё выполняются.
+
+
+### 2026-11-12 — Ponytail: итог всех доступных проверок
+
+Android code head `3273bfc25316e790f26286ba5477c7037f710014`:
+https://github.com/lobanov0710-blip/TransferDriver/actions/runs/43224019792
+— SUCCESS. JVM tests; debug/release/AndroidTest APK; 6 source security checks;
+STAGING/production endpoint locks; Play Integrity policy; API 35
+connectedDebugAndroidTest (в APK включены regression tests Keystore,
+stale rotation/logout/new login/account switch и 8 EXIF orientations) — PASS.
+
+Backend code/CI head `ea1109107b479e33b914aec047aeaa8f3daae76f`:
+https://github.com/lobanov0710-blip/uber-v3/actions/runs/43224400939
+— SUCCESS. npm ci без lifecycle scripts, audit 0 vulnerabilities, 17 migrations,
+12 preflight tests, 61 suites, local workerd/D1 и Worker dry-run — PASS.
+Лог workerd: first=success, loser=existing_idempotency, stale=conflict,
+auditRows=1, result=PASS. Node20 warning после обновления actions отсутствует.
+Первый backend run 43224042256 также PASS; обновление действий не меняет backend.
+
+Оба отчёта синхронизированы. Итог code/tests/CI относительно baseline:
+-936 строк (-8 Android, -928 backend), 0 новых dependencies; документация
+в подсчёт не включена. git diff --check — PASS. Все подтверждённые замечания
+этого аудита исправлены. Исторические записи до финального CI остаются в журнале.
+
+Эта финальная публикация меняет только отчёт/журнал; результаты выше относятся
+к указанным code heads. Не выполнен и не объявляется PASS реальный Firebase/R2
+E2E: требуется участие владельца с Firebase identifiers и R2 permissions/bucket.
+Production, STAGING deployment, migration apply, merge и D4–D7 не изменялись.
