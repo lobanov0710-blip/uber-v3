@@ -13,3 +13,8 @@ node_modules/
 # Python preflight test artifacts.
 __pycache__/
 *.py[cod]
+
+# Firebase client configuration and local credential artifacts.
+.firebase/
+**/google-services.json
+**/service-account*.json

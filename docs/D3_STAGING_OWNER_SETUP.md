@@ -1,86 +1,85 @@
 # Действия владельца перед STAGING E2E
 
-Checkpoint: 2026-11-11. Проект Firebase уже существует, но его identifiers
-пока не сообщены. Права R2 ещё не добавлены, bucket не создан — подтверждено
-владельцем в текущем сеансе.
+Checkpoint: 2026-11-12. Владелец сообщил существующий Firebase-проект и выбрал
+получение настоящего SDK-конфига на своём компьютере. R2 permissions/bucket
+по последнему подтверждению владельца ещё не готовы.
 
-## 1. Найти существующий Firebase-проект
+## 1. Подтверждённые владельцем Firebase identifiers
 
-Откройте https://console.firebase.google.com/ в своём браузере и нажмите
-карточку нужного тестового проекта. Firebase Studio — другой интерфейс;
-для этих настроек нужна именно Firebase Console.
+| Поле | Значение |
+|---|---|
+| Project name / App nickname | Transfer Driver |
+| Project ID / FIREBASE_PROJECT_ID | transfer-driver-1590d |
+| Project number / FIREBASE_PROJECT_NUMBER | 502279442547 |
+| Android App ID / FIREBASE_DRIVER_APP_ID | 1:502279442547:android:0cfc722af33b476bc41a06 |
+| Android package | ru.transferservis.driver |
 
-Слева, рядом с **Обзор проекта / Project Overview**, нажмите шестерёнку,
-затем **Настройки проекта / Project settings → Общие / General**.
+Формат проверен: номер проекта совпадает с номером в App ID, package совпадает
+с applicationId Android. Источник — сообщение владельца 2026-11-12; независимая
+проверка принадлежности App ID проекту и получение SDK config через Firebase API
+ещё не выполнены. Это публичные identifiers, они не заменяют SDK API key,
+Phone Auth, SHA fingerprints, App Check setup или доступ к Google-аккаунту.
+Новый Firebase-проект или дубликат Android-приложения создавать не нужно.
 
-На этой странице нужны:
+## 2. Получить настоящий google-services.json на компьютере владельца
 
-| Что прислать | Где находится | Имя настройки backend |
-|---|---|---|
-| Идентификатор проекта / Project ID | Верхний блок «Ваш проект» | FIREBASE_PROJECT_ID |
-| Номер проекта / Project number | Там же; число, не отображаемое название | FIREBASE_PROJECT_NUMBER |
-| Идентификатор приложения / App ID | Ниже, «Ваши приложения»: Android с package ru.transferservis.driver | FIREBASE_DRIVER_APP_ID |
-
-App ID имеет форму `1:<тот же номер проекта>:android:<идентификатор>`.
-Package `ru.transferservis.driver`, название карточки и App ID — разные значения.
-Если Android-приложения с таким package нет, его нужно зарегистрировать в
-выбранном тестовом проекте. Это отдельное действие владельца; автоматически
-приложение/проект в текущем сеансе не создавались.
-
-Эти три identifiers публичные. Пароль Google, SMS-код, API token Cloudflare,
-service-account private key и полный конфигурационный файл в чат не нужны.
-
-## 2. Настоящая Android-конфигурация
-
-После выбора подтверждённого Project ID и авторизации используется официальная
-Firebase CLI. В авторизованной локальной среде владельца/сборки:
+Нужен Node.js LTS с официального https://nodejs.org/ (если ещё не установлен).
+В терминале выполнить последовательно:
 
 ```sh
-npx -y firebase-tools@latest apps:sdkconfig ANDROID <APP_ID> \
-  --project <PROJECT_ID> --out app/google-services.json
+npx -y firebase-tools@latest login
+npx -y firebase-tools@latest apps:sdkconfig ANDROID "1:502279442547:android:0cfc722af33b476bc41a06" --project "transfer-driver-1590d" --out "google-services.json"
 ```
 
-Команда приведена для последующего выполнения с реальными значениями.
-`app/google-services.json` уже исключён из Git. Вывод конфигурации не направляется
-в логи CI или чат. Наличие файла подтверждает конфигурацию сборки, но не
-Phone Auth/App Check: их ещё нужно проверить для реального тестового канала.
-Play Integrity и backend App Check verification не отключаются ради E2E.
+Первая команда открывает официальный Google login. Вход выполняется владельцем
+в браузере, без передачи пароля, OAuth-кодов или refresh token в чат.
+Вторая команда получает зарегистрированное Android-приложение по точному App ID,
+не создаёт новые project/app и сохраняет JSON в текущую папку. Не перенаправлять
+SDK config в stdout/CI logs и не заменять его самодельным файлом.
 
-В текущей облачной среде установлена Firebase CLI 15.35.0; `login:list` не
-вернул авторизованных аккаунтов. Project ID не выбран. Инструменты управления
-общим Chrome отсутствуют, поэтому учётная запись владельца здесь не подключалась.
+Владелец может передать полученный google-services.json файлом; содержимое
+не нужно вставлять в сообщение. После проверки project_info/client package/App ID
+он будет размещён в gitignored TransferDriver/app/google-services.json.
+Service-account JSON и private keys для этого шага не требуются.
+
+В облачной среде проверена Firebase CLI 15.36.0. login:list сообщил
+No authorized accounts; Firebase MCP tools отсутствуют. Поэтому автоматическая
+загрузка отсюда пока недоступна. Project/app в Firebase не создавались/не менялись.
+
+Получение JSON само по себе не подтверждает Phone Auth/App Check: далее нужно
+проверить разрешённый тестовый канал, fingerprints сертификата и Play Integrity.
+App Check и backend verification не отключаются ради E2E.
 
 ## 3. Разрешить создание отдельного R2 bucket
 
-Cloudflare credential, передаваемый GitHub Actions в `CLOUDFLARE_API_TOKEN`,
-должен иметь право создания/просмотра R2 buckets в **нужном конкретном аккаунте**.
-В Cloudflare API token permissions это account-level **Workers R2 Storage → Edit**.
+Cloudflare credential, передаваемый GitHub Actions в CLOUDFLARE_API_TOKEN,
+должен иметь право создания/просмотра R2 buckets в нужном конкретном аккаунте.
+Требуемое permission: account-level Workers R2 Storage → Edit.
 Object-only/S3 credentials для этого шага недостаточно.
 
-Обновите соответствующий GitHub Actions secret через настройки репозитория;
-секрет не должен попадать в исходники или чат. Альтернатива — владелец сам
-создаёт private bucket в Cloudflare Dashboard и сообщает подтверждённое имя:
+Обновить credential через защищённые настройки GitHub Actions; секрет не должен
+попадать в исходники/чат. Альтернатива — создать private bucket в Cloudflare
+Dashboard и подтвердить точное имя:
 
 `transfer-servis52-driver-private-staging`
 
-Не включать public access/custom public domain. Не использовать production bucket.
-После готовности отдельно проверяются фактическое существование, приватность,
-доступ credential и binding `DRIVER_PRIVATE_FILES`.
+Public access/custom public domain не включаются. Production bucket не используется.
+Затем отдельно проверяются существование, приватность, доступ credential и
+binding DRIVER_PRIVATE_FILES. По последнему ответу владельца bucket не создан.
 
-## 4. Что выполнит следующий STAGING checkpoint
+## 4. Следующий STAGING checkpoint
 
-Уже применённые migrations `0005–0017` повторно не применяются по догадке:
-перед действиями проверяется remote pending set. Затем:
+Уже применённые migrations 0005–0017 не применяются повторно по догадке;
+сначала сверяется remote pending set. После готовности инфраструктуры:
 
-1. проверить подтверждённые Firebase identifiers и private R2;
-2. сформировать staging-only Wrangler config;
-3. пройти `tools/d3_staging_preflight.py`;
-4. выполнить ранее разрешённый staging-only deploy;
-5. проверить `/v1/driver/me`, `/photo-checks`, `/support-cases` без авторизации:
-   ожидается 401, а GET `/v1/driver/uploads` — 405;
-6. только затем выполнять настоящий Phone Auth/App Check → staff session →
-   photo upload → backend refresh → support chat E2E с тестовыми данными.
+1. получить и сверить настоящий Firebase SDK config, проверить Phone/App Check;
+2. подтвердить private R2 и нужные права;
+3. сформировать staging-only Wrangler config с подтверждёнными identifiers;
+4. пройти tools/d3_staging_preflight.py и выполнить ранее разрешённый staging-only deploy;
+5. проверить /v1/driver/me, /photo-checks, /support-cases без авторизации: ожидается
+   401, а GET /v1/driver/uploads — 405;
+6. выполнить Phone Auth/App Check → staff session → photo upload → refresh → support E2E.
 
-На 2026-11-11 все четыре route probes ещё дают 404. Локальный preflight PASS
-не означает, что инфраструктура создана или что authenticated E2E пройден.
-Production и неутверждённые решения D4–D7 этим checkpoint не изменяются.
+Последний live route probe 2026-11-11 вернул 404. Новый probe, deploy, R2 create,
+remote migration apply и authenticated E2E в текущем checkpoint не выполнялись.
+Production и неутверждённые D4–D7 не изменяются.

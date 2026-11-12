@@ -674,3 +674,37 @@ Workerd: first=success, loser=existing_idempotency, stale=conflict, auditRows=1.
 Финальная запись меняет только документацию; проверены указанные code SHA.
 Реальный Firebase/Phone Auth/App Check/R2 E2E всё ещё BLOCKED внешней настройкой;
 production, deployment, merge и remote migration apply не выполнялись.
+
+
+## 2026-11-12 — Владелец предоставил Firebase project/app identifiers
+
+Источник — сообщение владельца в текущем сеансе:
+- Project name / App nickname: Transfer Driver;
+- Project ID / FIREBASE_PROJECT_ID: transfer-driver-1590d;
+- Project number / FIREBASE_PROJECT_NUMBER: 502279442547;
+- Android App ID / FIREBASE_DRIVER_APP_ID: 1:502279442547:android:0cfc722af33b476bc41a06;
+- package: ru.transferservis.driver.
+
+Локально подтверждены корректный формат, одинаковый project number в App ID
+и совпадение package с Android applicationId. Это данные владельца; независимая
+проверка Firebase API и настоящий SDK config ещё ожидаются. API key не придумывался,
+CI compile fixture не выдавался за рабочую конфигурацию.
+
+Применён Firebase Basics. Node 24.22.1 и официальная Firebase CLI 15.36.0 проверены.
+CLI login:list: No authorized accounts. Firebase MCP tools не обнаружены.
+Владелец выбрал вариант 1: получить SDK config на своём компьютере. Подготовлены
+точные официальные CLI login/apps:sdkconfig команды с указанными project/app ID.
+Пароли, OAuth-коды и service-account private keys не запрашивались.
+Обновлено руководство backend docs/D3_STAGING_OWNER_SETUP.md и preflight checkpoint.
+Добавлены ignore-правила для Firebase local/debug artifacts и SDK config.
+
+Существующий проект/приложение не создавались повторно; удалённые настройки
+Firebase/Cloudflare не изменялись. R2 rights/bucket ещё не готовы по последнему
+подтверждению. Phone Auth/App Check, настоящая SDK-сборка и authenticated E2E
+пока не объявляются PASS. Сохранены production/D4–D7 ограничения.
+
+Проверки checkpoint: identifiers приняты существующим fail-closed preflight
+в локальном candidate config (только совместимость формата; существование R2
+или привязка Firebase API этим не подтверждаются); 12 preflight regression tests
+PASS; git check-ignore для SDK config/Firebase cache/debug logs PASS;
+git diff --check PASS. Application source и реальные backend bindings не менялись.

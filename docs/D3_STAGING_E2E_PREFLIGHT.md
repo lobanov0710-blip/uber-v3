@@ -111,3 +111,18 @@ Unauthenticated route probe 2026-11-11:
 Создание R2 bucket, повторный migration apply и deploy не выполнялись.
 Локальный PASS не заменяет реальные R2 privacy/permission checks, Firebase
 Phone/App Check и authenticated photo/support E2E.
+
+
+## Checkpoint 2026-11-12 — Firebase identifiers получены от владельца
+
+FIREBASE_PROJECT_ID=transfer-driver-1590d;
+FIREBASE_PROJECT_NUMBER=502279442547;
+FIREBASE_DRIVER_APP_ID=1:502279442547:android:0cfc722af33b476bc41a06;
+package=ru.transferservis.driver. Project name/App nickname: Transfer Driver.
+Формат и согласованность номера проекта/App ID/package проверены локально.
+Независимая сверка с Firebase API ещё не выполнена; настоящий google-services.json
+ещё отсутствует. Официальная CLI 15.36.0 проверена; login:list — No authorized accounts.
+Владелец выбрал получение SDK config через CLI на своём компьютере;
+точные команды приведены в D3_STAGING_OWNER_SETUP.md.
+R2 permission/bucket блокер сохраняется. Эти identifiers не означают готовность
+Phone Auth/App Check, SDK-сборки или authenticated E2E. CI fixtures не заменялись.
