@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createHmac } from 'node:crypto';
 import { json } from '../src/core/utils.js';
-import { fetchJSON } from '../src/core/http.js';
 import worker from '../src/index.js';
 import router from '../src/router.js';
 
@@ -46,19 +45,4 @@ test('signed calculation does not log passenger addresses', async t => {
   });
   assert.ok(!logs.toLowerCase().includes('privatepickupaddress'));
   assert.ok(!logs.toLowerCase().includes('privatedestinationaddress'));
-});
-
-test('HTTP failures never log URL tokens, upstream bodies or exception messages', async t => {
-  const originalFetch = globalThis.fetch;
-  const logs = await captureLogs(t, async () => {
-    try {
-      globalThis.fetch = async () => new Response('TEST_UPSTREAM_PASSENGER', { status: 503 });
-      await assert.rejects(fetchJSON('https://upstream.invalid/?token=TEST_QUERY_SECRET', {}, 0));
-      globalThis.fetch = async () => { throw new Error('TEST_NETWORK_SECRET'); };
-      await assert.rejects(fetchJSON('https://upstream.invalid/?token=TEST_QUERY_SECRET', {}, 0));
-    } finally { globalThis.fetch = originalFetch; }
-  });
-  for (const secret of ['TEST_UPSTREAM_PASSENGER', 'TEST_QUERY_SECRET', 'TEST_NETWORK_SECRET']) {
-    assert.ok(!logs.includes(secret), 'Sensitive value reached logs');
-  }
 });

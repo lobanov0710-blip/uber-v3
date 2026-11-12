@@ -146,3 +146,11 @@ assert.equal(
 console.log(
   "✓ MUTATION IDEMPOTENCY TESTS PASSED"
 );
+
+const digest = async body => (await createMutationIdempotency({
+  key: "canonical-edge-123", operation: "test.canonical", target: "test", body
+})).requestDigest;
+assert.notEqual(await digest(JSON.parse('{"__proto__":{"a":1}}')), await digest({}),
+  "own __proto__ data must not disappear from the request digest");
+assert.notEqual(await digest({ nested: JSON.parse('{"__proto__":{"a":1}}') }),
+  await digest({ nested: {} }), "nested keys must survive canonicalization");

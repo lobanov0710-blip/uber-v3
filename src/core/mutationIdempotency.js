@@ -142,24 +142,10 @@ function canonicalize(
       "object"
   ) {
 
-    const output = {};
+    return Object.fromEntries(
+      Object.keys(value).sort().map(key => [key, canonicalize(value[key])])
+    );
 
-
-    for (
-      const key of Object.keys(
-        value
-      )
-        .sort()
-    ) {
-
-      output[key] =
-        canonicalize(
-          value[key]
-        );
-    }
-
-
-    return output;
   }
 
 

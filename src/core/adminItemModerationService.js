@@ -682,6 +682,27 @@ export async function reviewAdminRegistrationItem(
     );
   }
 
+  // Replay follows current authorization and input validation, before mutable state checks.
+  const idempotency =
+    await prepareIdempotency(
+      env,
+      resolved.access,
+      {
+        key:
+          options.idempotencyKey,
+        operation:
+          `admin.registration.item.${type}`,
+        target:
+          `${clean(driverId)}:${clean(targetId)}`,
+        body:
+          input
+      }
+    );
+
+  if (!idempotency.ok) {
+    return idempotency.response;
+  }
+
   const bundle =
     await getAdminRegistrationReviewBundle(
       env,
@@ -862,26 +883,6 @@ export async function reviewAdminRegistrationItem(
     }
   }
 
-  const idempotency =
-    await prepareIdempotency(
-      env,
-      resolved.access,
-      {
-        key:
-          options.idempotencyKey,
-        operation:
-          `admin.registration.item.${type}`,
-        target:
-          `${clean(driverId)}:${clean(targetId)}`,
-        body:
-          input
-      }
-    );
-
-  if (!idempotency.ok) {
-    return idempotency.response;
-  }
-
   const now =
     Number.isSafeInteger(
       options.nowMs
@@ -1035,6 +1036,27 @@ export async function completeAdminRegistrationReview(
     return invalid();
   }
 
+  // Replay follows current authorization and input validation, before mutable state checks.
+  const idempotency =
+    await prepareIdempotency(
+      env,
+      resolved.access,
+      {
+        key:
+          options.idempotencyKey,
+        operation:
+          "admin.registration.review.complete",
+        target:
+          clean(driverId),
+        body:
+          input
+      }
+    );
+
+  if (!idempotency.ok) {
+    return idempotency.response;
+  }
+
   const bundle =
     await getAdminRegistrationReviewBundle(
       env,
@@ -1131,26 +1153,6 @@ export async function completeAdminRegistrationReview(
         "approved_vehicle_required"
       );
     }
-  }
-
-  const idempotency =
-    await prepareIdempotency(
-      env,
-      resolved.access,
-      {
-        key:
-          options.idempotencyKey,
-        operation:
-          "admin.registration.review.complete",
-        target:
-          clean(driverId),
-        body:
-          input
-      }
-    );
-
-  if (!idempotency.ok) {
-    return idempotency.response;
   }
 
   const now =

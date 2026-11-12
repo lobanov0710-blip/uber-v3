@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { startAdminRegistrationReview, reviewAdminRegistrationItem, completeAdminRegistrationReview } from '../src/core/adminItemModerationService.js';
 import { fixture, driver, vehicle, otherVehicle, time } from './helpers/driverPlatformFixture.mjs';
 import { assignOrderByAdmin, reassignOrderByAdmin } from '../src/core/orderAssignmentService.js';
 import { changeDriverAssignmentPhase, createDriverTripVerificationChallenge } from '../src/core/driverTripOperationalService.js';
@@ -111,4 +112,83 @@ test('a cached assignment result never bypasses current admin permissions', asyn
   // Removing the OWNER binding makes this account a dispatcher with no permissions.
   DB.sqlite.exec('DELETE FROM staff_owner_binding');
   assert.equal((await assign(DB)).status, 403);
+});
+
+// A successful moderation changes the very status/revision supplied in the retry.
+// Authorization must still run before returning the original acknowledgement.
+for (const type of ['document', 'vehicle_photo', 'vehicle']) {
+  test('moderation replay for ' + type + ' survives status and revision changes', async t => {
+    const DB = setup(t);
+    DB.sqlite.prepare("UPDATE driver_profiles SET registration_status='under_review' WHERE staff_account_id=?")
+      .run(driver.id);
+    DB.sqlite.prepare("UPDATE vehicles SET status='pending_review' WHERE id=?").run(vehicle);
+    const id = type === 'vehicle' ? vehicle : type + '_12345678';
+    if (type === 'document') {
+      DB.sqlite.prepare(`INSERT INTO document_resources
+        (id,owner_driver_id,kind,private_object_key,created_at,updated_at)
+        VALUES (?,?,'passport_main','test/private-document',1,1)`).run(id, driver.id);
+    }
+    if (type === 'vehicle_photo') {
+      DB.sqlite.prepare(`INSERT INTO vehicle_photos
+        (id,vehicle_id,kind,private_object_key,created_at,updated_at)
+        VALUES (?,?,'front','test/private-photo',1,1)`).run(id, vehicle);
+    }
+    const input = { decision: 'rejected', expectedRevision: 1, note: 'Test review' };
+    const options = { idempotencyKey: 'moderation-' + type, nowMs: time };
+    const run = () => reviewAdminRegistrationItem({ DB }, admin, driver.id, type, id, input, options);
+    const original = await run();
+    assert.equal(original.ok, true, JSON.stringify(original));
+    const count = auditCount(DB);
+    assert.deepEqual(await run(), original);
+    assert.equal(auditCount(DB), count);
+    assert.equal((await reviewAdminRegistrationItem({ DB }, admin, driver.id, type, id,
+      { ...input, note: 'Different request' }, options)).code, 'idempotency_key_reused');
+    DB.sqlite.exec('DELETE FROM staff_owner_binding');
+    assert.equal((await run()).status, 403);
+  });
+}
+
+test('final registration moderation replays after leaving under_review', async t => {
+  const DB = setup(t);
+  DB.sqlite.prepare("UPDATE driver_profiles SET registration_status='under_review' WHERE staff_account_id=?")
+    .run(driver.id);
+  const input = { decision: 'rejected', expectedRevision: 1, note: 'Test final review' };
+  const options = { idempotencyKey: 'moderation-complete', nowMs: time };
+  const run = () => completeAdminRegistrationReview({ DB }, admin, driver.id, input, options);
+  const original = await run();
+  assert.equal(original.ok, true, JSON.stringify(original));
+  const count = auditCount(DB);
+  assert.deepEqual(await run(), original);
+  assert.equal(auditCount(DB), count);
+  DB.sqlite.exec('DELETE FROM staff_owner_binding');
+  assert.equal((await run()).status, 403);
+});
+
+test('starting moderation writes one profile audit and replays exactly once', async t => {
+  const DB = setup(t);
+  DB.sqlite.prepare("UPDATE driver_profiles SET registration_status='submitted' WHERE staff_account_id=?")
+    .run(driver.id);
+  const run = () => startAdminRegistrationReview({ DB }, admin, driver.id, { expectedRevision: 1 },
+    { idempotencyKey: 'moderation-start', nowMs: time });
+  const original = await run();
+  assert.equal(original.ok, true);
+  assert.equal(auditCount(DB), 1);
+  assert.equal(DB.sqlite.prepare('SELECT target_type FROM audit_events').get().target_type, 'driver_profile');
+  assert.deepEqual(await run(), original);
+  assert.equal(auditCount(DB), 1);
+});
+
+test('failed moderation audit rolls back profile, review and idempotency together', async t => {
+  const DB = setup(t);
+  DB.sqlite.prepare("UPDATE driver_profiles SET registration_status='submitted' WHERE staff_account_id=?")
+    .run(driver.id);
+  DB.sqlite.exec(`CREATE TRIGGER fail_moderation_audit BEFORE INSERT ON audit_events
+    BEGIN SELECT RAISE(ABORT, 'test audit failure'); END`);
+  await assert.rejects(startAdminRegistrationReview({ DB }, admin, driver.id, { expectedRevision: 1 },
+    { idempotencyKey: 'moderation-rollback', nowMs: time }));
+  assert.deepEqual({ ...DB.sqlite.prepare('SELECT registration_status, revision FROM driver_profiles').get() },
+    { registration_status: 'submitted', revision: 1 });
+  assert.equal(DB.sqlite.prepare('SELECT count(*) AS n FROM moderation_reviews').get().n, 0);
+  assert.equal(DB.sqlite.prepare('SELECT count(*) AS n FROM mutation_idempotency').get().n, 0);
+  assert.equal(auditCount(DB), 0);
 });

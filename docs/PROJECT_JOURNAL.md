@@ -541,3 +541,36 @@ Firebase Console не объявлялось успешным.
 Текущий gate требует реальных Firebase identifiers и прав/ресурса R2;
 после них продолжается уже согласованный staging-only preflight/deploy/E2E.
 D4–D7 остаются неутверждёнными.
+
+
+## 2026-11-11–12 — Аудит всего проекта по Ponytail с немедленным исправлением
+
+Запрос владельца: проверить весь проект по Ponytail, сразу исправить замечания
+и зафиксировать каждое в журнале. Применены entry-ponytail, ponytail и ponytail-audit;
+правило skill «report only» переопределено явным поручением владельца исправлять.
+Полный перечень, пути и метод проверки: [PONYTAIL_AUDIT_2026-11-12.md](PONYTAIL_AUDIT_2026-11-12.md).
+
+Baseline: Driver `7a8fe6c8faa33b458a79569a80faaacdb4847503`, backend
+`868e940cb4ac7e6ad96c28c42c7aecc695620f1a`. Обе feature ветки сверены с GitHub.
+Удалены недостижимая старая модерация, её SQL fake, unused HTTP helper, массовое
+уведомление, шаблонный экран/тест и сломанный ручной JVM runner. Canonical digest
+переведён на Object.fromEntries; native notification tag/Intent.data заменяют hash ID.
+
+Дополнительный review подтвердил и исправил: digest collision для __proto__,
+несовпадение FCM контрактов, неатомарные IV/ciphertext и stale session rotation/clear,
+повтор запроса под другим водителем после смены login, moderation replay после
+смены revision/status, несовпадение audit/review target type, зеркальные EXIF
+ориентации, необработанное отсутствие camera Activity и устаревшие source guards.
+Каждое замечание раскрыто в отчёте. Итог code/tests/CI: -937 строк, 0 новых deps.
+
+Проверено локально: 61 backend suite PASS, 17 migrations PASS, 12 staging preflight
+PASS, npm audit 0 vulnerabilities, 14 mutationReplay SQLite tests PASS,
+moderation policy PASS, 6 Android security configuration checks PASS,
+git diff --check PASS. Android regression tests добавлены в API 35 emulator CI.
+Итоговая debug/release/AndroidTest сборка, runtime Keystore/EXIF и backend CI
+проверяются после публикации; они не объявляются выполненными этой записью.
+Попытки локального workerd/dry-run были прерваны; свежий PASS для них ожидается в CI.
+
+R2 bucket/permissions и Firebase identifiers по-прежнему требуют владельца.
+Authenticated D3 E2E не выполнен; CI Firebase fixture — только compile fixture.
+Production, deploy, migrations apply, merge и неутверждённые D4–D7 не изменялись.

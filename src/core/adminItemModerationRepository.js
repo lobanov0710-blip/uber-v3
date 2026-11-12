@@ -168,6 +168,7 @@ function auditStatement(
     actorAccountId,
     action,
     targetType,
+    reviewTargetType = targetType,
     targetId,
     requestId,
     createdAt,
@@ -202,7 +203,7 @@ function auditStatement(
         FROM moderation_reviews
         WHERE id = ?8
           AND actor_account_id = ?2
-          AND target_type = ?4
+          AND target_type = ?9
           AND target_id = ?5
       )
     `)
@@ -237,6 +238,10 @@ function auditStatement(
       requireText(
         reviewId,
         "reviewId"
+      ),
+      requireText(
+        reviewTargetType,
+        "reviewTargetType"
       )
     );
 }
@@ -254,8 +259,7 @@ function idempotencyCompleteStatement(
     reviewId
   }
 ) {
-  const statement =
-    prepareMutationIdempotencyComplete(
+  prepareMutationIdempotencyComplete(
       db,
       {
         actorAccountId,
@@ -274,21 +278,7 @@ function idempotencyCompleteStatement(
       }
     );
 
-  // The helper generates the safe UPDATE.
-  // Add exact review binding so success can
-  // only be persisted when this request's
-  // moderation record exists.
-  const originalSql =
-    statement.sql;
-
-  if (
-    typeof originalSql === "string"
-  ) {
-    // D1 prepared statements do not expose
-    // mutable SQL in production; this branch
-    // is only relevant to simple test fakes.
-  }
-
+  // Validate bounded result and status above; bind completion to this exact review below.
   return db
     .prepare(`
       UPDATE mutation_idempotency
@@ -1909,6 +1899,8 @@ export async function finalizeDriverRegistrationModeration(
             actorAccountId,
             action:
               "admin.registration_review_completed",
+            reviewTargetType:
+              "driver_registration",
             targetType:
               "driver_profile",
             targetId:
@@ -2096,6 +2088,8 @@ export async function startRegistrationReviewIdempotent(
             actorAccountId,
             action:
               "admin.registration_review_started",
+            reviewTargetType:
+              "driver_registration",
             targetType:
               "driver_profile",
             targetId:
