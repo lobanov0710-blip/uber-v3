@@ -126,3 +126,29 @@ package=ru.transferservis.driver. Project name/App nickname: Transfer Driver.
 точные команды приведены в D3_STAGING_OWNER_SETUP.md.
 R2 permission/bucket блокер сохраняется. Эти identifiers не означают готовность
 Phone Auth/App Check, SDK-сборки или authenticated E2E. CI fixtures не заменялись.
+
+
+## Checkpoint 2026-11-12 — SDK config получен, требования к тестовому каналу
+
+Переданный владельцем настоящий google-services.json проверен: project ID/number,
+Android app ID/package совпадают с указанными выше. Он хранится только локально
+в gitignored Android app/google-services.json; API key в Git/журнал не включается.
+Локальная первая сборка с этим config: 29 JVM tests и 7 guards PASS;
+debug/release APK, release AAB и AndroidTest APK собраны. Authenticated E2E и
+runtime instrumentation с реальным Firebase config пока НЕ выполнялись.
+
+Владелец подтвердил Phone enabled / App Check not configured; выбрал Google Play
+и прямую раздачу APK. Play Console/внутренний канал не подтверждены, release/upload
+key пока отсутствует. Подготовлена инструкция создания ключа у владельца и
+настройки App Check для обоих каналов; см. D3_STAGING_OWNER_SETUP.md.
+Для тестового Play канала Android добавляет отдельный non-debug staging buildType:
+STAGING backend при той же applicationId, без отключения Play Integrity.
+Обычный release использует PRODUCTION и не подменяет STAGING E2E.
+R2 permission/private bucket блокер сохраняется; deploy/migration apply и remote
+Firebase changes в этом checkpoint не выполнялись.
+
+Android non-debug staging variant и session backend binding проверены:
+source 5cd807568b7b84b9e151867eb930cfbadad4c086, CI run 43314469461 SUCCESS:
+87 JVM + 12 API 35 runtime + 7 source guards. Локальные staging APK/AAB собраны
+с настоящим SDK config; unsigned до owner upload key. Реальный authenticated
+Phone/App Check и R2/photo/support E2E остаётся заблокирован владельческими gate.

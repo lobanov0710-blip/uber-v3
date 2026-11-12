@@ -708,3 +708,122 @@ Firebase/Cloudflare не изменялись. R2 rights/bucket ещё не го
 или привязка Firebase API этим не подтверждаются); 12 preflight regression tests
 PASS; git check-ignore для SDK config/Firebase cache/debug logs PASS;
 git diff --check PASS. Application source и реальные backend bindings не менялись.
+
+
+## 2026-11-12 — Получен настоящий Firebase SDK config, первая локальная сборка
+
+Владелец передал google-services.json файлом (696 bytes) после официальной CLI
+загрузки на Windows. Несмотря на последующий libuv Assertion failed в Windows,
+JSON корректен и совпадает с ранее подтверждёнными project ID/number/app ID/package:
+transfer-driver-1590d / 502279442547 /
+1:502279442547:android:0cfc722af33b476bc41a06 / ru.transferservis.driver.
+Проверены схема, формат client API key и отсутствие service-account/private-key полей.
+Файл размещён только в gitignored app/google-services.json с mode 0600. Содержимое
+и API key не включаются в Git, journal или tool output.
+
+Владелец подтвердил: Authentication Phone включён; App Check не настроен;
+Google Play Console/внутренний тестовый канал пока не подтверждены. Выбраны ОБА
+канала: Google Play и прямая установка APK. Release/upload-ключа нет; владелец
+попросил безопасную инструкцию. Подготовлен Android docs/RELEASE_SIGNING_OWNER_SETUP.md:
+ключ генерируется у владельца; пароли/private keystore в чат не запрашиваются.
+
+В managed workspace установлен официальный Android SDK Platform 37.0 и Build Tools
+37.0.0. Command-line tools ZIP проверен по checksum официального Google repository;
+новый Android CLI использован с no-metrics. TLS/proxy trust сохранены.
+Первый запуск Gradle wrapper без execute bit завершился exit 126; далее запуск
+через bash без изменения mode/source. SDK/Firebase/App Check обходы не применялись.
+
+Первый build с РЕАЛЬНЫМ SDK config PASS: testDebugUnitTest, assembleDebug,
+assembleRelease, assembleDebugAndroidTest; отдельно bundleRelease/signingReport PASS.
+Фактические JUnit XML: 29 JVM tests, failures/errors/skips 0; 7 security guards PASS.
+Проверено совпадение Firebase resources в debug APK, release APK и release AAB
+с полученным JSON, включая API key (значение не логируется). Debug APK signature
+v2 PASS; merged manifest: package, allowBackup=false, usesCleartextTraffic=false,
+networkSecurityConfig PASS. Release APK/AAB пока unsigned, не объявляются готовыми
+для публикации. Runtime instrumentation с этой конфигурацией и authenticated E2E
+ещё не выполнялись. Хеши первых артефактов — Android docs/REAL_FIREBASE_BUILD_2026-11-12.json.
+
+При подготовке Play test channel выявлен отсутствующий вариант: debug использует
+STAGING, но не подходит для Play release; обычный release использует PRODUCTION.
+Добавляется native staging buildType на основе release: DEBUG=false,
+STAGING endpoint, та же applicationId и Play Integrity provider; versionName suffix
+-staging, без придумывания production ключа или смены существующих endpoint locks.
+Проверки новой staging сборки и соответствующий CI ещё НЕ объявлены PASS.
+Первый testStagingUnitTest: task отсутствовал; в текущем AGP по умолчанию создаётся
+только debug JVM test component. Добавляется явное включение host tests для вариантов.
+
+R2 permission/private bucket и remote STAGING readiness всё ещё требуют владельца.
+Firebase/Cloudflare remote writes, deploy/merge/migration apply и D4–D7 не изменялись.
+
+
+### 2026-11-12 — Изоляция сессий при смене подписанной сборки
+
+Staging variant локально собран: testDebugUnitTest/testStagingUnitTest/
+testReleaseUnitTest и assembleStaging/bundleStaging PASS. Изначально два теста
+staging упали из-за предположения DEBUG=false → PRODUCTION. Исправлено ожидание
+по BUILD_TYPE с отказом для неизвестных вариантов; DEBUG проверяется отдельно.
+
+Проверка обновления между одинаково подписанными staging/production пакетами
+выявила риск: старый AES-GCM blob не был привязан к адресу backend. AAD теперь
+v2 + ApiEndpointPolicy.BASE_URL. При смене среды или чтении legacy v1 сессия
+удаляется и требуется новый вход. Не добавлены зависимости, debug provider или
+настраиваемые пользователем endpoints. Добавлены два Android runtime regression
+tests: чужой backend AAD и legacy AAD при сохранённых preferences/Keystore;
+положительный round-trip и очистка проверяются тем же тестом.
+Повторная сборка всех артефактов после security fix и новый CI ещё выполняются;
+результат runtime до завершения CI не объявляется PASS.
+
+
+### 2026-11-12 — Финальная локальная сборка после security fix
+
+Code/workflow опубликованы в Android feature branch commit
+5cd807568b7b84b9e151867eb930cfbadad4c086; Draft PR остаётся без merge.
+С реальным Firebase config после AAD fix прошли 87 JVM tests (29 debug + 29
+staging + 29 release), failures/errors/skips 0. Повторно собраны debug/staging/
+release APK, staging/release AAB и debug AndroidTest APK; Gradle PASS, 189 tasks.
+7 source security guards и git diff --check PASS; staging/release lintVital PASS.
+Полный дополнительный lintStaging не выполнен: запрос запуска отменён пользователем,
+лог запуска не создан. Это не включается в перечень успешных проверок.
+
+Проверены все три APK manifests: package, allowBackup=false,
+usesCleartextTraffic=false, networkSecurityConfig; staging/release non-debug.
+Firebase project ID/app ID/API key совпали с реальным config во всех APK/AAB;
+значение API key не логировалось. Debug APK v2 signature PASS; staging/release
+APK и AAB подтверждённо unsigned. Endpoint locks: debug/staging → STAGING,
+release → PRODUCTION. Скомпилированный AndroidTest APK содержит обе новые regression
+проверки. APK/AAB сохранены вне Git; SHA-256 и source file hashes — Android
+REAL_FIREBASE_BUILD_2026-11-12.json. Встроенный AGP VCS metadata сообщает
+NO_VALID_GIT_FOUND; точная ссылка на опубликованный source и хеши записаны отдельно.
+Первоначальные артефакты сохранены отдельно как first-build; актуальные имеют
+новые хеши после security fix. Инструкция подписи содержит хеш staging AAB.
+
+GitHub Actions run 43314469461 запущен; runtime результат ещё ожидается.
+Он использует synthetic config только для compile/runtime security tests;
+локальные артефакты используют настоящий SDK config. Реальный Phone/App Check
+E2E не выполнен. Owner signing/App Check/Play setup и private R2 остаются gate.
+
+
+### 2026-11-12 — CI security regressions подтверждены
+
+Android source commit 5cd807568b7b84b9e151867eb930cfbadad4c086:
+https://github.com/lobanov0710-blip/TransferDriver/actions/runs/43314469461
+job 131518735357, conclusion SUCCESS. Логи проверены: JVM_TESTS=PASS count=29,
+STAGING_JVM_TESTS=PASS count=29, RELEASE_JVM_TESTS=PASS count=29,
+ANDROID_TESTS=PASS count=12 (API 35); 7 source guards, endpoint locks,
+Play Integrity provider policy и сборки всех вариантов PASS. CI report guard
+подтверждает выполнение новых tests sessionFromAnotherBackendRequiresLogin и
+legacySessionWithoutBackendBindingRequiresLogin, а также прежней HTTP 401/session
+race regression. Пропусков/failures/errors в test XML нет. CI использует synthetic
+Firebase config, authenticated E2E не подменяется этими результатами.
+
+Итог: non-debug STAGING APK/AAB готовы к подписи владельцем; сессия привязана
+к backend через AES-GCM AAD v2. Локальные APK/AAB собраны с настоящим Firebase
+config и имеют отдельный receipt с хешами; debug APK предназначен для проверки UI,
+staging/release unsigned не предназначены для установки/публикации до подписи.
+Пользователю передаются артефакты и безопасная инструкция создания upload key
+у себя. Private keystore/пароли не запрашиваются и не создавались в workspace.
+Следующий gate: owner signing/Play App Signing + App Check для обоих каналов,
+private R2 permissions/bucket, затем проверка STAGING deployment и реальный E2E.
+Backend source неизменён; повтор 61 backend suites только из-за docs не требуется.
+Финальная публикация этого checkpoint меняет только документацию/журналы;
+production/deploy/merge/migrations и D4–D7 не изменялись.

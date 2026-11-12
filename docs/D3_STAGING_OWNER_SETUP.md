@@ -1,8 +1,9 @@
 # Действия владельца перед STAGING E2E
 
-Checkpoint: 2026-11-12. Владелец сообщил существующий Firebase-проект и выбрал
-получение настоящего SDK-конфига на своём компьютере. R2 permissions/bucket
-по последнему подтверждению владельца ещё не готовы.
+Checkpoint: 2026-11-12. Настоящий SDK-конфиг получен файлом и проверен;
+локальные debug/release APK и release AAB собраны. Phone включён по ответу
+владельца; App Check, подпись и канал тестирования ещё требуют настройки.
+R2 permissions/bucket по последнему подтверждению владельца ещё не готовы.
 
 ## 1. Подтверждённые владельцем Firebase identifiers
 
@@ -15,40 +16,29 @@ Checkpoint: 2026-11-12. Владелец сообщил существующий
 | Android package | ru.transferservis.driver |
 
 Формат проверен: номер проекта совпадает с номером в App ID, package совпадает
-с applicationId Android. Источник — сообщение владельца 2026-11-12; независимая
-проверка принадлежности App ID проекту и получение SDK config через Firebase API
-ещё не выполнены. Это публичные identifiers, они не заменяют SDK API key,
+с applicationId Android. Источники — сообщение владельца и переданный им
+SDK config 2026-11-12; identifiers совпали. Прямой доступ к Firebase API
+из managed workspace не авторизован. Это публичные identifiers, они не заменяют SDK API key,
 Phone Auth, SHA fingerprints, App Check setup или доступ к Google-аккаунту.
 Новый Firebase-проект или дубликат Android-приложения создавать не нужно.
 
-## 2. Получить настоящий google-services.json на компьютере владельца
+## 2. SDK получен; следующий шаг — подпись и App Check
 
-Нужен Node.js LTS с официального https://nodejs.org/ (если ещё не установлен).
-В терминале выполнить последовательно:
+Настоящий google-services.json получен файлом, проверен и хранится только в
+локальном gitignored Android app/google-services.json с mode 0600. API key,
+содержимое JSON и приватные ключи в исходники/журнал/CI не включаются.
+Повторная загрузка SDK config от владельца сейчас не требуется.
+Локальные JVM-тесты/debug/release сборки с реальным config прошли;
+это ещё не подтверждает рабочий Phone Auth/App Check E2E.
 
-```sh
-npx -y firebase-tools@latest login
-npx -y firebase-tools@latest apps:sdkconfig ANDROID "1:502279442547:android:0cfc722af33b476bc41a06" --project "transfer-driver-1590d" --out "google-services.json"
-```
-
-Первая команда открывает официальный Google login. Вход выполняется владельцем
-в браузере, без передачи пароля, OAuth-кодов или refresh token в чат.
-Вторая команда получает зарегистрированное Android-приложение по точному App ID,
-не создаёт новые project/app и сохраняет JSON в текущую папку. Не перенаправлять
-SDK config в stdout/CI logs и не заменять его самодельным файлом.
-
-Владелец может передать полученный google-services.json файлом; содержимое
-не нужно вставлять в сообщение. После проверки project_info/client package/App ID
-он будет размещён в gitignored TransferDriver/app/google-services.json.
-Service-account JSON и private keys для этого шага не требуются.
-
-В облачной среде проверена Firebase CLI 15.36.0. login:list сообщил
-No authorized accounts; Firebase MCP tools отсутствуют. Поэтому автоматическая
-загрузка отсюда пока недоступна. Project/app в Firebase не создавались/не менялись.
-
-Получение JSON само по себе не подтверждает Phone Auth/App Check: далее нужно
-проверить разрешённый тестовый канал, fingerprints сертификата и Play Integrity.
-App Check и backend verification не отключаются ради E2E.
+Владелец выбрал Google Play и прямую установку APK. Release/upload-ключа пока нет;
+Google Play Console и внутренний канал не подтверждены. Подробная инструкция
+создания ключа НА КОМПЬЮТЕРЕ ВЛАДЕЛЬЦА, подписи staging AAB, получения signed
+universal APK с той же подписью и регистрации App Check находится в
+[Android signing guide](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/RELEASE_SIGNING_OWNER_SETUP.md).
+Пароли и .p12 не передаются в чат. Публичный upload certificate не заменяет
+app signing certificate, используемый Firebase/Play Integrity.
+App Check и backend verification сохраняются; debug provider не добавляется.
 
 ## 3. Разрешить создание отдельного R2 bucket
 
@@ -72,7 +62,8 @@ binding DRIVER_PRIVATE_FILES. По последнему ответу владе�
 Уже применённые migrations 0005–0017 не применяются повторно по догадке;
 сначала сверяется remote pending set. После готовности инфраструктуры:
 
-1. получить и сверить настоящий Firebase SDK config, проверить Phone/App Check;
+1. настроить подпись/тестовый канал и App Check; сверить app signing SHA-1/SHA-256
+   для Phone Auth и SHA-256 для App Check;
 2. подтвердить private R2 и нужные права;
 3. сформировать staging-only Wrangler config с подтверждёнными identifiers;
 4. пройти tools/d3_staging_preflight.py и выполнить ранее разрешённый staging-only deploy;
