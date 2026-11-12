@@ -647,3 +647,30 @@ Production source -78 строк, tests/guards/CI +115; общий diff +37, dep
 
 Firebase/R2 owner blockers сохраняются: реальный E2E не запускался, credential
 bypass не применялся. Production/deploy/merge/remote migrations/D4–D7 не менялись.
+
+
+### 2026-11-12 — Второй Ponytail audit: итоговые CI результаты
+
+Android code `9fde9e363f42dc21fb58824bfed0237535a6b5a8`:
+https://github.com/lobanov0710-blip/TransferDriver/actions/runs/43229116512
+— SUCCESS. Debug/release/AndroidTest APK, 7 source/config security checks,
+endpoint variant locks и Play Integrity provider policy — PASS.
+Фактические JUnit XML подтверждены CI: JVM_TESTS=PASS count=29,
+ANDROID_TESTS=PASS count=10 (API 35), failures/errors/skips отсутствуют.
+Новый delayedHttpUnauthorizedPreservesTheSubsequentLogin найден в реальных
+runtime testcases; его отсутствие теперь проваливает CI.
+
+Backend code `fe8bcb60f0ca0af9138ea1ceedc9fc3cac3f8580`:
+https://github.com/lobanov0710-blip/uber-v3/actions/runs/43229194856
+— SUCCESS. npm ci без lifecycle scripts, npm audit 0 vulnerabilities,
+61 test suite (включая 6 privacy regressions), 17 migrations, 12 staging
+preflight tests, local workerd/D1 atomic audit и Worker dry-run — PASS.
+Workerd: first=success, loser=existing_idempotency, stale=conflict, auditRows=1.
+
+Изменения опубликованы в существующих arch/spec-v1-* ветках, PR #6 и #28
+остаются open/draft. Все подтверждённые замечания текущего прохода исправлены;
+данные о возможном фактическом раскрытии production credentials не получены,
+аудит подтверждает устранение дефектов кода, не историческое отсутствие утечек.
+Финальная запись меняет только документацию; проверены указанные code SHA.
+Реальный Firebase/Phone Auth/App Check/R2 E2E всё ещё BLOCKED внешней настройкой;
+production, deployment, merge и remote migration apply не выполнялись.

@@ -52,11 +52,26 @@ Production source сокращён на 78 строк. Regression tests/config g
 - 17 migrations smoke PASS, 12 staging preflight tests PASS;
 - 7 Android security configuration/source guards PASS; git diff --check PASS;
 - Android build/JVM/API 35 runtime и backend clean-install/audit/workerd/dry-run
-  выполняются в GitHub Actions; точные code SHA и ссылки фиксируются в журнале.
+  завершены в GitHub Actions; точные code SHA и ссылки приведены ниже и в журнале.
 
 Это не объявление абсолютной безопасности или полноценного Firebase E2E.
 Authenticated staging E2E по-прежнему требует подтверждённых Firebase identifiers
 и private staging R2 bucket/permissions. CI Firebase config — compile fixture.
 D4–D7, production, remote migration apply, deploy и merge не изменялись.
+
+
+## Итоговые CI результаты
+
+- [Android run 43229116512](https://github.com/lobanov0710-blip/TransferDriver/actions/runs/43229116512)
+  — SUCCESS, code `9fde9e363f42dc21fb58824bfed0237535a6b5a8`.
+  29 JVM tests, 10 API 35 runtime tests, 7 security guards, debug/release/AndroidTest
+  сборки, endpoint/App Check policy — PASS. JUnit XML проверены: failures/errors/skips
+  отсутствуют, новый HTTP/session regression действительно выполнен.
+- [Backend run 43229194856](https://github.com/lobanov0710-blip/uber-v3/actions/runs/43229194856)
+  — SUCCESS, code `fe8bcb60f0ca0af9138ea1ceedc9fc3cac3f8580`.
+  Locked install, npm audit 0 vulnerabilities, 61 suite, 17 migrations,
+  12 preflight tests, local workerd/D1 и Worker dry-run — PASS.
+- Все подтверждённые замечания текущего прохода исправлены; полный Firebase/R2
+  staging E2E по-прежнему не выполнялся из-за ранее зафиксированных owner blockers.
 
 net: -78 lines, -0 deps (production source; тесты и CI учтены выше отдельно).
