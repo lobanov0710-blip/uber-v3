@@ -574,3 +574,17 @@ git diff --check PASS. Android regression tests добавлены в API 35 emu
 R2 bucket/permissions и Firebase identifiers по-прежнему требуют владельца.
 Authenticated D3 E2E не выполнен; CI Firebase fixture — только compile fixture.
 Production, deploy, migrations apply, merge и неутверждённые D4–D7 не изменялись.
+
+
+### 2026-11-12 — Ponytail: результаты backend CI и замечание к runtime действий
+
+Backend code `59f2dfd7f730ec0014f2661b13d3a573d304445a`, run
+https://github.com/lobanov0710-blip/uber-v3/actions/runs/43224042256 — PASS:
+61 suite, 17 migrations, 12 preflight checks, npm audit 0 vulnerabilities,
+local workerd/D1 atomic audit PASS и Worker bundle dry-run PASS.
+CI также сообщил Node.js 20 deprecation для checkout/setup-node v4.
+Оба действия обновлены до проверенных SHA с native Node24 runtime;
+Node для приложения остаётся 22, npm — 11.9.0, lifecycle scripts отключены.
+Автоматический package-manager cache явно отключён. Повторный CI ожидается.
+Android `3273bfc25316e790f26286ba5477c7037f710014`: build/JVM/endpoint/App Check
+steps PASS; runtime emulator tests на момент этой записи ещё выполняются.
