@@ -996,11 +996,8 @@ export async function createOrder(
           order
         )
       );
-    } catch (error) {
-      console.error(
-        "ORDER TELEGRAM ERROR:",
-        error
-      );
+    } catch {
+      console.error("ORDER TELEGRAM ERROR");
     }
   }
 

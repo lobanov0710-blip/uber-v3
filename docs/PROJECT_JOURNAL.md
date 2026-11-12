@@ -616,3 +616,34 @@ auditRows=1, result=PASS. Node20 warning после обновления actions
 к указанным code heads. Не выполнен и не объявляется PASS реальный Firebase/R2
 E2E: требуется участие владельца с Firebase identifiers и R2 permissions/bucket.
 Production, STAGING deployment, migration apply, merge и D4–D7 не изменялись.
+
+
+## 2026-11-12 — Ponytail: второй проход по всему коду
+
+Явное поручение владельца: повторно проверить весь код, исправить найденные баги.
+Baseline GitHub: Driver 7b5cb03312bf5822eeef0d444e39fdac8f9db2fe,
+backend 50d14fc1cb2a03f8acd89421b449f6ef69c319a8. Перед работой подтверждено
+точное совпадение локальных git tree с опубликованными. Оригинальные checkout
+и чужие ветки не изменялись. Применены Ponytail entry/audit/full; исправления
+разрешены прямым поручением пользователя, включая bugs/security review.
+
+Исправлены: JWT parse exceptions с фрагментами входа в logs; Telegram network
+errors с bot URL, upstream description/statusText и chat ID в logs/исключениях;
+raw Error.name в двух Mapbox transport catch; безусловная очистка сессии из шести
+Android экранов после stale authenticationRequired. Авторитетная условная очистка
+в auth/session слое сохранена. Удалены повторяющиеся UI clear wrappers.
+
+Red → green: новые privacy tests и Android source guard воспроизвели дефекты
+до исправления. Добавлен HTTP interceptor runtime regression для смены A → B
+перед ответом 401. CI теперь проверяет реальные JUnit XML, ненулевые counts,
+отсутствие failures/errors/skips и запуск этой новой проверки.
+
+Локально PASS: 61 npm suite; 6 privacy checks; 17 migrations; 12 preflight tests;
+127 JS/MJS syntax checks; 25 Android XML; 7 Android security guards; diff --check.
+Итоговая Android debug/release/AndroidTest сборка, JVM, API 35 instrumentation,
+backend clean-install/audit/local workerd/dry-run ещё ожидаются в CI; эта запись
+не объявляет их PASS. Детали: [PONYTAIL_AUDIT_2026-11-12_FOLLOWUP.md](PONYTAIL_AUDIT_2026-11-12_FOLLOWUP.md).
+Production source -78 строк, tests/guards/CI +115; общий diff +37, dependencies +0.
+
+Firebase/R2 owner blockers сохраняются: реальный E2E не запускался, credential
+bypass не применялся. Production/deploy/merge/remote migrations/D4–D7 не менялись.
