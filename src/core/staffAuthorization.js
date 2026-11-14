@@ -432,10 +432,7 @@ export async function authenticateStaffRequest(
     error
   ) {
 
-    console.error(
-      "STAFF AUTHORIZATION ERROR:",
-      error
-    );
+    console.error("STAFF AUTHORIZATION ERROR:");
 
 
     return authorizationFailure();

@@ -45,10 +45,29 @@ function clean(
 }
 
 
-export async function listActiveDriverPushTargets(
+export async function listActiveDriverPushTargetsForAccount(
   env,
+  accountId,
   now = Date.now()
 ) {
+
+  const account =
+    clean(
+      accountId
+    );
+
+
+  if (
+    !account
+    ||
+    account.length > 100
+  ) {
+
+    throw new Error(
+      "Invalid push delivery account"
+    );
+  }
+
 
   const timestamp =
     Number(
@@ -90,7 +109,8 @@ export async function listActiveDriverPushTargets(
         INNER JOIN staff_accounts a
           ON a.id = p.account_id
 
-        WHERE p.platform = 'android'
+        WHERE p.account_id = ?1
+          AND p.platform = 'android'
           AND a.role = 'driver'
           AND a.status = 'active'
 
@@ -103,10 +123,11 @@ export async function listActiveDriverPushTargets(
               AND s.family_id = p.session_family_id
               AND s.revoked_at IS NULL
               AND s.replaced_by_session_id IS NULL
-              AND s.expires_at > ?1
+              AND s.expires_at > ?2
           )
       `)
       .bind(
+        account,
         timestamp
       )
       .all();
@@ -154,7 +175,7 @@ export async function listActiveDriverPushTargets(
       target =>
         target.installationId.length === 36
         &&
-        target.accountId.length > 0
+        target.accountId === account
         &&
         target.sessionFamilyId.length > 0
         &&

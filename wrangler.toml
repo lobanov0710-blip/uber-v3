@@ -3,6 +3,9 @@ main = "src/index.js"
 compatibility_date = "2026-06-01"
 workers_dev = true
 
+[triggers]
+crons = ["0 * * * *"]
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["SocketHub"]
