@@ -1,3 +1,5 @@
+import { startOwnerMfaEnrollment, confirmOwnerMfaEnrollment, verifyOwnerMfa } from './core/ownerMfaService.js';
+import { boundedAuthJson } from './core/ownerMfaTransport.js';
 import {
   json,
   cors,
@@ -412,6 +414,24 @@ export default async function router(
   }
 
 
+  const mfaHandlers = {
+    '/v1/admin/mfa/enrollment/start': startOwnerMfaEnrollment,
+    '/v1/admin/mfa/enrollment/confirm': confirmOwnerMfaEnrollment,
+    '/v1/admin/mfa/totp/verify': (env, body, context) => verifyOwnerMfa(env, body, context, 'totp'),
+    '/v1/admin/mfa/recovery/verify': (env, body, context) => verifyOwnerMfa(env, body, context, 'recovery')
+  };
+  if (Object.hasOwn(mfaHandlers, path)) {
+    if (req.method !== 'POST') return safeError('method not allowed', 405);
+    try {
+      const requestId = 'req_' + crypto.randomUUID();
+      const result = await mfaHandlers[path](env, await boundedAuthJson(req), {ip:req.headers.get('CF-Connecting-IP'),requestId});
+      return json({...result,...(!result.ok?{code:result.status===429?'mfa_rate_limited':'mfa_authentication_failed'}:{}),requestId}, result.ok ? 200 : result.status || 401, {...cors, 'Cache-Control':'no-store'});
+    } catch {
+      console.error('OWNER MFA REQUEST ERROR');
+      return safeError('authentication unavailable', 503);
+    }
+  }
+
   // =========================
   // ADMIN SELF / AUTHORIZATION V1
   // =========================
@@ -494,7 +514,8 @@ export default async function router(
             role:
               access.role,
             permissions:
-              access.permissions
+              access.permissions,
+            mfa: auth.mfa
           },
           requestId
         },
@@ -4634,10 +4655,9 @@ export default async function router(
     }
 
 
-    const body =
-      await safeJson(
-        req
-      );
+    let body;
+    try { body = await boundedAuthJson(req); }
+    catch { return safeError('invalid request', 400); }
 
 
     try {
@@ -4645,7 +4665,8 @@ export default async function router(
       const result =
         await loginStaff(
           env,
-          body
+          body,
+          {ip:req.headers.get('CF-Connecting-IP'),requestId:'req_'+crypto.randomUUID()}
         );
 
 
@@ -4666,7 +4687,7 @@ export default async function router(
       return json(
         result,
         200,
-        cors
+        {...cors, 'Cache-Control':'no-store'}
       );
 
     } catch (

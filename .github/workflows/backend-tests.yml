@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'fix/**'
+      - 'arch/g2-owner-totp-mfa'
   pull_request:
     branches:
       - main
@@ -42,5 +43,7 @@ jobs:
         run: npm test
       - name: Verify audit transaction with local workerd and D1
         run: node tools/check_availability_d1.mjs
+      - name: Verify OWNER MFA transactions with local workerd and D1
+        run: node tools/check_owner_mfa_d1.mjs
       - name: Bundle Worker without deploying
         run: npm exec -- wrangler deploy --dry-run --outdir /tmp/worker-audit-bundle

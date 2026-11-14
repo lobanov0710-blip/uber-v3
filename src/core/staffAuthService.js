@@ -53,11 +53,10 @@ import {
 // TOKEN LIFETIMES
 // =========================================
 
-export const STAFF_ACCESS_TTL_SECONDS =
-  15 * 60;
-
-export const STAFF_REFRESH_TTL_MS =
-  30 * 24 * 60 * 60 * 1000;
+import { STAFF_ACCESS_TTL_SECONDS, STAFF_REFRESH_TTL_MS } from './staffAuthPolicy.js';
+export { STAFF_ACCESS_TTL_SECONDS, STAFF_REFRESH_TTL_MS } from './staffAuthPolicy.js';
+import { isOwnerAccount, ownerSessionEvidence } from './ownerMfaRepository.js';
+import { beginOwnerMfaLogin } from './ownerMfaService.js';
 
 
 // =========================================
@@ -373,7 +372,8 @@ async function issueStaffAccessToken(
 
 export async function loginStaff(
   env,
-  credentials
+  credentials,
+  context = {}
 ) {
 
   const parsed =
@@ -501,6 +501,10 @@ export async function loginStaff(
     return invalidCredentials();
   }
 
+
+  if (authenticatedAccount.role === 'admin' && await isOwnerAccount(env, authenticatedAccount.id)) {
+    return beginOwnerMfaLogin(env, authenticatedAccount, context);
+  }
 
   // =======================================
   // SESSION IDENTIFIERS
@@ -732,6 +736,9 @@ export async function refreshStaff(
     return invalidRefreshToken();
   }
 
+
+  const mfa = await ownerSessionEvidence(env, account, currentSession, now);
+  if (mfa.required && !mfa.verified) return invalidRefreshToken();
 
   // =======================================
   // REPLACEMENT SESSION

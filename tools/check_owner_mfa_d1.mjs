@@ -1,0 +1,50 @@
+// Local workerd/D1 only. Synthetic fixtures; no remote D1 or account credentials.
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { Miniflare,convertV4MiniflareOptions } from 'miniflare';
+import { sqliteD1 } from '../tests/helpers/sqliteD1.mjs';
+import { hashStaffPassword } from '../src/core/staffAuthCrypto.js';
+import { loginStaff,refreshStaff } from '../src/core/staffAuthService.js';
+import { authenticateStaffRequest } from '../src/core/staffAuthorization.js';
+import { provisionOwnerBootstrap } from '../src/core/ownerMfaControlPlane.js';
+import { startOwnerMfaEnrollment,confirmOwnerMfaEnrollment,verifyOwnerMfa } from '../src/core/ownerMfaService.js';
+import { unbase32,totp } from '../src/core/ownerMfaCrypto.js';
+const fixtureSecrets={JWT_SECRET:'fixture-jwt-key-012345678901234567890123',ADMIN_MFA_ENCRYPTION_KEY:Buffer.alloc(32,7).toString('base64')};
+const bundle=await build({entryPoints:[new URL('../src/index.js',import.meta.url).pathname],bundle:true,write:false,format:'esm',target:'es2022',platform:'browser'});
+const local=sqliteD1(),mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'mfa-audit',modules:true,script:bundle.outputFiles[0].text,bindings:fixtureSecrets,d1Databases:['DB'],compatibilityDate:'2026-08-20'}]}));
+try{
+ const DB=await mf.getD1Database('DB','mfa-audit');
+ for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all())await DB.prepare(row.sql).run();
+ for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL").all())await DB.prepare(row.sql).run();
+ const password='Fixture-Owner-Password-123!',v=await hashStaffPassword(password),id='fixture-owner';
+ await DB.prepare(`INSERT INTO staff_accounts(id,login,display_name,role,status,password_algorithm,password_iterations,password_salt,password_hash,password_changed_at,created_at,updated_at)
+ VALUES(?1,'owner.fixture','Fixture OWNER','admin','active',?2,?3,?4,?5,1,1,1)`).bind(id,v.passwordAlgorithm,v.passwordIterations,v.passwordSalt,v.passwordHash).run();
+ await DB.prepare('INSERT INTO staff_owner_binding(singleton,account_id,created_at) VALUES(1,?1,1)').bind(id).run();
+ const env={DB,...fixtureSecrets},ctx={ip:'203.0.113.10'};
+ const login=()=>loginStaff(env,{login:'owner.fixture',password},ctx);
+ const bootstrap=await provisionOwnerBootstrap(env,id),initial=await login();assert.equal(initial.accessToken,undefined);
+ const pending=await startOwnerMfaEnrollment(env,{challengeId:initial.challengeId,bootstrapCode:bootstrap.bootstrapCode},ctx);assert.equal(pending.ok,true);
+ const seed=unbase32(pending.secret),step=Math.floor(Date.now()/30000);
+ const enrolled=await confirmOwnerMfaEnrollment(env,{enrollmentId:pending.enrollmentId,code:await totp(seed,step)},ctx);assert.equal(enrolled.ok,true);
+ const challenges=await Promise.all([login(),login()]),code=await totp(seed,step+1);
+ const attempts=await Promise.all(challenges.map(c=>verifyOwnerMfa(env,{challengeId:c.challengeId,code},ctx)));
+ assert.equal(attempts.filter(x=>x.ok).length,1);
+ const recoveryChallenges=await Promise.all([login(),login()]);
+ const recoveries=await Promise.all(recoveryChallenges.map(c=>verifyOwnerMfa(env,{challengeId:c.challengeId,recoveryCode:enrolled.recoveryCodes[0]},ctx,'recovery')));
+ assert.equal(recoveries.filter(x=>x.ok).length,1);
+ const session=attempts.find(x=>x.ok),request=token=>new Request('https://fixture.invalid/v1/admin/me',{headers:{Authorization:'Bearer '+token}});
+ const before=await authenticateStaffRequest(request(session.accessToken),env);assert.equal(before.mfa.verified,true);
+ const rotated=await refreshStaff(env,session.refreshToken);assert.equal(rotated.ok,true);
+ const after=await authenticateStaffRequest(request(rotated.accessToken),env);assert.equal(after.mfa.expiresAt,before.mfa.expiresAt);
+ await provisionOwnerBootstrap(env,id,{reset:true});assert.equal((await authenticateStaffRequest(request(rotated.accessToken),env)).ok,false);
+ const post=async(path,body)=>{const response=await mf.dispatchFetch('https://fixture.invalid'+path,{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':ctx.ip},body:JSON.stringify(body)});return {status:response.status,body:await response.json()};};
+ const secondBootstrap=await provisionOwnerBootstrap(env,id),first=await post('/staff/login',{login:'owner.fixture',password});
+ assert.equal(first.status,200);assert.equal(first.body.accessToken,undefined);assert.equal(first.body.enrollmentRequired,true);
+ const start=await post('/v1/admin/mfa/enrollment/start',{challengeId:first.body.challengeId,bootstrapCode:secondBootstrap.bootstrapCode});assert.equal(start.status,200);
+ const confirmed=await post('/v1/admin/mfa/enrollment/confirm',{enrollmentId:start.body.enrollmentId,code:await totp(unbase32(start.body.secret),Math.floor(Date.now()/30000))});assert.equal(confirmed.status,200);
+ const fresh=await post('/staff/login',{login:'owner.fixture',password});
+ const actualLogin=await post('/v1/admin/mfa/recovery/verify',{challengeId:fresh.body.challengeId,recoveryCode:confirmed.body.recoveryCodes[0]});assert.equal(actualLogin.status,200);
+ const actualMe=await mf.dispatchFetch('https://fixture.invalid/v1/admin/me',{headers:{Authorization:'Bearer '+actualLogin.body.accessToken}});assert.equal(actualMe.status,200);assert.equal((await actualMe.json()).admin.mfa.verified,true);
+ assert.equal((await post('/v1/admin/mfa/recovery/verify',{challengeId:fresh.body.challengeId,recoveryCode:confirmed.body.recoveryCodes[0]})).status,401);
+ console.log(JSON.stringify({engine:'local workerd HTTP/D1',httpEnrollmentLoginProfileVerified:true,totpWinners:1,recoveryWinners:1,refreshMfaExpiryPreserved:true,resetRevoked:true,result:'PASS'}));
+}finally{local.sqlite.close();await mf.dispose();}

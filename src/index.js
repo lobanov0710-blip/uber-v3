@@ -1,3 +1,4 @@
+import { purgeOwnerMfaEphemera } from './core/ownerMfaRepository.js';
 import router from "./router.js";
 import { json } from "./core/utils.js";
 
@@ -27,6 +28,7 @@ export default {
   ) {
     const task =
       Promise.all([
+        purgeOwnerMfaEphemera(env).catch(() => { console.error('OWNER MFA CLEANUP ERROR'); }),
         runMonthlyPhotoControlDueGeneration(
           env
         )

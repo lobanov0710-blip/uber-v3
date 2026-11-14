@@ -5,7 +5,7 @@
 > только варианты для владельца; зависящие действия ждут его явного решения. [Правило для работы](../AGENTS.md).
 
 > **Текущая работа:** по решению владельца G1 приостановлен; начат G2 / отдельный Transfer Admin.
-> TOTP выбран для подготовки предложения; параметры/контракт MFA ещё не утверждены.
+> Параметры/API TOTP MFA OWNER утверждены; реализация в arch/g2-owner-totp-mfa и Android arch/g2-transfer-admin. Локальные проверки PASS; новый CI ожидается.
 > **Актуальный индекс: 2026-11-14.** [План и матрица ТЗ](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/PROJECT_PLAN_V1_0.md) · [Текущий аудит](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/AUDIT_SPEC_PLAN_JOURNAL_2026-11-14.md)
 > Реализация частичная; production-выпуск не готов. SDK config/локальные сборки получены;
 > подпись/Play/App Check/private R2 и живой E2E ещё не подтверждены. D1–D3 утверждены, D4–D7 нет.
@@ -1009,3 +1009,56 @@ TOTP выбран для подготовки предложения, но ADMIN
 явного утверждения параметров/API; server MFA не реализована. Client OWNER gate
 не подменяет server enforcement. G2 завершён только в описанном первом срезе;
 остальные Admin/Driver функции плана не объявляются готовыми.
+
+
+## 2026-11-14 — Параметры и API TOTP OWNER утверждены; начата реализация
+
+Прямое решение владельца: «Предложение параметров и API TOTP утверждаю».
+Утверждён ADMIN_MFA_TOTP_PROPOSAL.md: RFC 6238 SHA-1/6 digits/30s ±1, 20-byte seed,
+AES-256-GCM server encryption, одноразовые counters/challenges/recovery, TTL/limits,
+protected control-plane bootstrap/reset, evidence для OWNER sessions и legacy paths.
+Это отдельное подтверждение MFA к D1; D4–D7 не утверждаются этим решением.
+G1 остаётся приостановлен. Merge/deploy/remote migration apply не разрешены.
+
+Backend MFA разрабатывается в новой arch/g2-owner-totp-mfa от
+731e313c9e5caa116c8a092729f6fef79e119407. Android остаётся в arch/g2-transfer-admin.
+План: добавить local-only миграцию/crypto/transactions/enforcement и отрицательные
+SQL/workerd tests, затем подключить Admin login/enrollment/recovery без сохранения
+seed/кодов в Android persisted state. Реальный OWNER key/seed/credentials не создаются
+и не запрашиваются в чате. Новые проверки пока не объявляются PASS.
+
+
+### 2026-11-14 — G2: реализация утверждённого OWNER MFA и локальные проверки
+
+Добавлены серверные password challenge без session, enrollment через защищённый
+local control plane, TOTP/recovery login, централизованное evidence enforcement
+для всех OWNER staff paths, включая legacy, и сохранение предела MFA при refresh.
+Новая additive migration 0018 применяется только к локальным тестовым DB.
+Одноразовый proof/challenge, session, evidence и audit фиксируются атомарно;
+сбой audit откатывает выдачу. Bootstrap/reset не имеют public HTTP endpoint.
+
+Admin подключён к утверждённым API: challenge/enrollment/recovery находятся только
+в volatile state; seed/коды не сохраняются в Bundle/preferences/clipboard/logs,
+очищаются при уходе в фон. OWNER доступен только после typed server MFA profile.
+Отмена/поздний ответ не восстанавливает старую session; dispatcher auth сохранена.
+
+В проверках исправлены: привязка количества numbered SQL bindings к native D1;
+неподходящий запуск unbundled Worker в harness; фиксированные rate buckets заменены
+скользящими интервалами с проверкой календарной границы. Старые router mocks явно
+содержат действующее server evidence; отсутствие/просрочка отдельно отклоняются
+на настоящих SQLite и public HTTP тестах. Защита не отключалась.
+
+Локально PASS: 65 backend test scripts, включая 18 новых MFA scenarios;
+local workerd HTTP/D1 (enrollment/login/profile, concurrent TOTP/recovery — один
+победитель, refresh expiry/reset); Worker dry-run без deployment.
+Admin: 23 JVM test на каждом debug/staging/release = 69 PASS, failures/errors/skips 0;
+194 Gradle tasks, debug/staging/release APK, staging/release AAB и AndroidTest APK
+собраны; полный lint трёх variants — 0 issues. Новые 20 Admin runtime tests пока
+только скомпилированы: их выполнение и полный source CI ещё ожидаются.
+
+Диагностика среды: CLI child process и local workerd первоначально получили sandbox
+EPERM при loopback; повторены через штатное дополнительное разрешение сети.
+Первый dry-run не смог создать Wrangler config вне workspace; XDG_CONFIG_HOME
+перенесён в доступный workspace, повторный dry-run PASS. Никаких remote действий.
+G1 приостановлен, реального OWNER encryption key/seed/credentials нет; live E2E,
+production deployment, merge и remote migration apply не выполнялись.

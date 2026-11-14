@@ -1058,6 +1058,12 @@ function createTransitionDatabase(
 
         async first() {
 
+          // Business-route fixtures represent an already MFA-verified OWNER session.
+          // Missing/expired MFA is exercised against real SQLite in ownerMfa.sqlite.test.mjs.
+          if (sql.includes('FROM admin_mfa_session_families')) {
+            return { verified_at: Date.now() - 1000, expires_at: Date.now() + 3600000, method: 'totp' };
+          }
+
           // =========================
           // IDEMPOTENCY LOOKUP
           // =========================
