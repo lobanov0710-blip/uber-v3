@@ -364,6 +364,6 @@ synthetic `staff_driver_foreign` не был создан в `staff_accounts`.
 Коммит `1f9a263d40f06122ea301951c397c2c53c077b05`.
 Повтор CI:
 https://github.com/lobanov0710-blip/uber-v3/actions/runs/43032988844
-— на момент записи PENDING, результат ещё не подтверждён.
+— **PASS** на SHA `1f9a263d40f06122ea301951c397c2c53c077b05`, проверено 2026-11-14.
 
 Без production, STAGING, R2, D4, merge/deploy.
