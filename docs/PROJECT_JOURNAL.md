@@ -4,6 +4,8 @@
 > Любые самовольные отклонения и решения за владельца запрещены. При неопределённости —
 > только варианты для владельца; зависящие действия ждут его явного решения. [Правило для работы](../AGENTS.md).
 
+> **Текущая работа:** по решению владельца G1 приостановлен; начат G2 / отдельный Transfer Admin.
+> TOTP выбран для подготовки предложения; параметры/контракт MFA ещё не утверждены.
 > **Актуальный индекс: 2026-11-14.** [План и матрица ТЗ](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/PROJECT_PLAN_V1_0.md) · [Текущий аудит](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/AUDIT_SPEC_PLAN_JOURNAL_2026-11-14.md)
 > Реализация частичная; production-выпуск не готов. SDK config/локальные сборки получены;
 > подпись/Play/App Check/private R2 и живой E2E ещё не подтверждены. D1–D3 утверждены, D4–D7 нет.
@@ -910,3 +912,61 @@ application code и статусы утверждения D1–D7 не меня�
 remote migrations и изменения инфраструктуры не выполняются.
 Отдельный инструмент постоянной памяти ChatGPT в текущем наборе инструментов
 не доступен; постоянная проектная запись обеспечена файлами репозиториев.
+
+
+## 2026-11-14 — G1 приостановлен владельцем; начало G2 / Transfer Admin
+
+Прямое решение владельца: «G1 пока приостановим. Начни с G2».
+G1 и его live probe не продолжаются. Предыдущий запрос запуска read-only probe
+отменён пользователем; файл результата отсутствует, новый HTTP статус не утверждается.
+Разрешено начало G2 в рамках D1–D3: отдельный Admin Java + XML, package
+ru.transferservis.admin, раздельные app data/Keystore/session/signing.
+
+Выявлено, что D1 относит MFA OWNER к первому этапу Admin, но backend метода ещё
+не имеет. На вопрос «какой вариант подготовить для отдельного технического
+утверждения» владелец выбрал вариант 1 — TOTP + backup codes. Это выбор направления
+подготовки предложения, не утверждение ещё не представленных API/параметров.
+Готовится ADMIN_MFA_TOTP_PROPOSAL.md. До утверждения/реализации MFA рабочие разделы
+OWNER в новом клиенте не открываются. Независимая часть: отдельная сборка,
+защищённая staff-сессия, авторитетный /v1/admin/me и read-only очередь регистрации
+для dispatcher с drivers.read; новые backend контракты не придумываются.
+D4–D7, production, merge/deploy/migration apply не разрешены и не меняются.
+
+
+### 2026-11-14 — G2: первый функциональный срез Admin подготовлен
+
+Добавлен native :admin Java + XML / ru.transferservis.admin. Отдельные app data,
+prefs admin_secure_session_v1, Keystore alias transfer_admin_session_key_v1 и debug
+signing identity (.local-signing/admin-debug.keystore, gitignored). Release/upload
+keys не создаются. Firebase Driver конфиг и зависимости не используются Admin.
+
+Текущий контракт без изменений backend: POST /staff/login, /staff/refresh,
+/staff/logout; GET /v1/admin/me и /v1/admin/registrations?limit=50. Legacy auth role
+admin не превращается в OWNER. Profile accountId должен совпадать с staff session;
+operational role/permissions загружаются с backend и не сохраняются как grants.
+OWNER видит собственный profile, но operational UI/queue закрыт до MFA. Dispatcher
+получает только read-only очередь при актуальном drivers.read; backend повторно
+проверяет права. Модерация, документы, назначения и остальные разделы ещё впереди.
+
+Сессия AES-256-GCM/AAD с Admin package и backend origin; отдельный ключ, backup/
+transfer запрещены, system CA only, redirects/retry запрещены, response body bounded
+1 MiB. FLAG_SECURE, login/password/PII не сохраняются в View state; application logs
+и внешняя телеметрия не добавлены. Logout очищает storage/ключ; stale refresh и
+поздний 401 не переходят в новую учётную запись. Не подходящая legacy роль не
+сохраняется; выданная отклонённая сессия отзывается best-effort.
+
+Локальные Admin JVM tests: 17 debug + 17 staging + 17 release PASS. Полный lint
+всех трёх вариантов — 0 issues. MissingApplicationIcon устранён platform icon;
+для durable logout синхронный commit сохранён, точечная ApplySharedPref performance
+подсказка помечена с причиной, не отключением security check. Тема — существующая
+Material3 base Driver, без утверждения нового фирменного дизайна. Source guards:
+5 Admin + прежние 7 Driver PASS. Debug/staging/release APK/AAB собираются, AndroidTest
+APK с 13 новыми проверками подготовлен; финальные runtime/CI результаты ещё ожидаются.
+В CI добавлены проверки разных packages/debug certificates и runtime UID isolation,
+positive dispatcher queue/refresh/logout, revoke/role/MFA-gate/session races.
+
+ADMIN_MFA_TOTP_PROPOSAL.md содержит конкретные RFC 6238 параметры, bootstrap/
+recovery, challenge/API и server evidence policy. Статус НЕ УТВЕРЖДЕНО: выбор
+TOTP для подготовки не означает согласие со всеми деталями. Backend MFA не внедрена,
+его прежние OWNER endpoints этим клиентским ограничением не защищены — это остаётся
+серверной задачей после отдельного решения владельца. G1 остаётся приостановлен.
