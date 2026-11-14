@@ -970,3 +970,42 @@ recovery, challenge/API и server evidence policy. Статус НЕ УТВЕР�
 TOTP для подготовки не означает согласие со всеми деталями. Backend MFA не внедрена,
 его прежние OWNER endpoints этим клиентским ограничением не защищены — это остаётся
 серверной задачей после отдельного решения владельца. G1 остаётся приостановлен.
+
+
+### 2026-11-14 — Выделена ветка Admin и подтверждён первый срез G2
+
+Владелец спросил о создании отдельной GitHub ветки для Admin; ветка создана:
+https://github.com/lobanov0710-blip/TransferDriver/tree/arch/g2-transfer-admin
+Начальная точка c33baab21acb6f57700a14bcda4d0fffff8de5c9 — уже опубликованный
+текущий код Admin после исправления parser apksigner. История общей ветки не
+переписана, первые Admin commits c9b144f3/c33baab2 в ней сохранены. Дальнейшая
+работа Admin ведётся в arch/g2-transfer-admin; общая ветка получает только запись
+журнала со ссылкой. Локальная работа переключена на новую ветку без потери изменений.
+
+Проверенный CI того же точного source SHA (перед выделением ветки):
+https://github.com/lobanov0710-blip/TransferDriver/actions/runs/43587414797
+job 132424791093, SUCCESS. Логи JUnit/guards сверены:
+Admin JVM 17 debug + 17 staging + 17 release = 51 PASS; API 35 runtime 13 PASS;
+Driver JVM 29+29+29 = 87 PASS, runtime 12 PASS. Failures/errors/skips отсутствуют.
+5 Admin + 7 Driver source guards PASS. Full Admin lint debug/staging/release —
+0 issues. Проверены разные packages и debug certificates; runtime подтвердил разные
+UID, encrypted round-trip/logout, foreign AAD, driver prefs isolation, OWNER UI gate,
+positive dispatcher queue/refresh/logout, permission revoke и stale refresh/401.
+Backend docs-only checkpoint 2128ce18 / run 43587101473 SUCCESS; backend source
+и auth/MFA API не изменялись. Локальная финальная Admin сборка: PASS, 194 tasks.
+
+Локальные debug/staging/release APK, staging/release AAB и AndroidTest APK проверены:
+Admin package, no shared UID, backup/cleartext disabled, network config, debug flag;
+в Admin APK нет Driver/Firebase classes. Debug v2 signature verified; Admin debug
+SHA-256 ea4f14836b45719946857ce90a3fd8399a088b6ecca76f0a82db26cfa9c71a8b
+отличается от Driver. Staging/release APK/AAB unsigned. Хеши и внешняя source
+provenance — docs/ADMIN_BUILD_2026-11-14.json; бинарные артефакты вне Git.
+
+Незавершённые проверки не объявляются PASS: дополнительный runtime dependency
+inventory command отменён пользователем при вопросе о ветке; лог не создан,
+свежего OSV/advisory scan нет. Реальный backend E2E не выполнялся. G1 остаётся
+приостановлен; Cloudflare/Firebase/remote migration apply/deploy/merge не выполнялись.
+TOTP выбран для подготовки предложения, но ADMIN_MFA_TOTP_PROPOSAL.md ещё требует
+явного утверждения параметров/API; server MFA не реализована. Client OWNER gate
+не подменяет server enforcement. G2 завершён только в описанном первом срезе;
+остальные Admin/Driver функции плана не объявляются готовыми.
