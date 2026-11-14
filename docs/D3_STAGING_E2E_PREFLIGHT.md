@@ -1,5 +1,9 @@
 # D3 STAGING E2E preflight
 
+> **Индекс 2026-11-14:** SDK config и identifiers получены; подпись/App Check/Play/private R2/E2E
+> ещё не подтверждены. Старые наблюдения ниже относятся к их датам, не к новому live probe.
+> [Полный аудит](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/AUDIT_SPEC_PLAN_JOURNAL_2026-11-14.md) · [актуальный план](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/PROJECT_PLAN_V1_0.md).
+
 Статус: подготовка к D3 Driver E2E. Этот документ и preflight **не выполняют**
 Cloudflare deploy, D1 migration apply, создание R2 bucket или иные remote writes.
 

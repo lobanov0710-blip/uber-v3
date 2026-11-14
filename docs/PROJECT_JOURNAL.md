@@ -1,5 +1,10 @@
 # Журнал backend-аудита — 2026-11-07
 
+> **Актуальный индекс: 2026-11-14.** [План и матрица ТЗ](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/PROJECT_PLAN_V1_0.md) · [Текущий аудит](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/AUDIT_SPEC_PLAN_JOURNAL_2026-11-14.md)
+> Реализация частичная; production-выпуск не готов. SDK config/локальные сборки получены;
+> подпись/Play/App Check/private R2 и живой E2E ещё не подтверждены. D1–D3 утверждены, D4–D7 нет.
+> Ниже сохранена история: слова «текущий»/«отсутствует» внутри старого checkpoint относятся к его дате.
+
 Канонический журнал проекта:
 https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/PROJECT_JOURNAL.md
 
@@ -827,3 +832,57 @@ private R2 permissions/bucket, затем проверка STAGING deployment и
 Backend source неизменён; повтор 61 backend suites только из-за docs не требуется.
 Финальная публикация этого checkpoint меняет только документацию/журналы;
 production/deploy/merge/migrations и D4–D7 не изменялись.
+
+
+## 2026-11-14 — Аудит ТЗ, плана и журналов проекта
+
+Основание: владелец поручил проверить ТЗ, план и записи, провести аудит и записать
+результат. Проверены утверждённые §1–40, решения D1–D7, исторические review/audit,
+checkpoint обоих журналов, owner/signing/preflight документы и ключевые code paths.
+Базы GitHub: Driver 0c7777025c7c58231efaedbb2b8d82c335807ce4;
+backend 905c6ebe86907056f0d8be8f6f6edaff07b135e4. Локальные checkpoint tree SHA
+совпали с опубликованными. PR #6/#28 открыты, Draft, merged=false.
+ТЗ неизменно: blob 7434dc0b1548b4f2c5382f12d6cc5399f93d0a84 совпал, 40 разделов.
+
+Результат: частичная реализация; не готово к полному production-выпуску.
+A1 (high): нет отдельного Admin и ряда Driver UI, GPS/passenger chat/VoIP/ranking.
+A2 (high): реальный Firebase/App Check/R2 E2E и подпись не подтверждены; D4 provider
+отсутствует, guard движения без verified сохранён. Owner сведения о ключе/App Check/
+Play/R2 — последние подтверждения 2026-11-12, а не новая remote проверка сегодня.
+A3 (high): openRoute в OrderDetailsActivity строит pickup→destination независимо
+от фазы; не соответствует ТЗ §22. Открыто как функциональная задача G3.
+A4 (medium): рабочий обзор/план и вход в историю устарели. Исправлено документально:
+создан текущий PROJECT_PLAN_V1_0.md с матрицей всех 40 разделов и этапами G0–G5;
+добавлены индекс/исторические указатели, прежние события не переписаны.
+A5 (medium): Android OSV inventory 129 debug components не включает добавленные
+Auth/App Check; полный lint не подтверждён. Новой CVE не установлено; это пробел
+release coverage, который нельзя закрывать npm audit или source guards.
+A6 (low): embedded AGP provenance NO_VALID_GIT_FOUND; внешние receipt/source/artifact
+hashes есть и совпали. Улучшение release provenance включено в G5.
+
+Новые локальные результаты: 61 backend suite PASS (все test chain commands),
+17 migration smoke PASS, 12 preflight tests PASS; 7 Android source/config guards,
+25 XML parse, проверка 5 receipt source hashes и 6 artifact SHA-256 PASS.
+Проверены существующие CI базовых head commits: Android run 43316231722 /
+job 131524852748 SUCCESS, JVM 29+29+29 и API 35 runtime 12, build/endpoint/provider
+checks PASS; backend run 43316251413 / job 131524919923 SUCCESS, npm audit 0,
+17 migrations, 12 preflight, suites/workerd/dry-run PASS. Логи/step results сверены;
+это ранее выполненные CI, не новые прогоны от 2026-11-14.
+
+Создан AUDIT_SPEC_PLAN_JOURNAL_2026-11-14.md с доказательствами и ограничениями.
+SDK config/идентификаторы и локальные сборки больше не являются открытым блокером.
+Следующий gate: owner signing/Play/App Check/private R2 → D3 STAGING E2E;
+далее недостающие Driver/Admin сценарии и отдельные D4–D7 перед соответствующими
+функциями. Реальные документы/биометрия/VoIP не собирались; verified не имитировался.
+
+Изменения этого аудита — только документация. Новый APK build/full lint/Android
+advisory scan/live Firebase/R2 checks/authenticated E2E/pentest не запускались.
+Секреты, конфиги и бинарные артефакты в Git не добавляются. ТЗ, product code,
+remote migrations, deploy, merge и production не меняются. D4–D7 не утверждены.
+
+Документальные проверки завершены PASS: матрица содержит каждый §1–40 ровно один
+раз, локальные Markdown-ссылки разрешаются, исходный ТЗ не изменён, кандидаты Git
+содержат только Markdown и не содержат Firebase API key; git diff --check PASS.
+PR mergeability на базовом snapshot clean: Android master
+501481c20168c496e11ea21b7a7e82d047523788; backend main
+7fad96a63ac963e6c28bf03f21d52b90e5cb69ff. Это не разрешение на merge.
