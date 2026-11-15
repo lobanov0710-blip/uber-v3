@@ -49,5 +49,7 @@ jobs:
         run: node tools/check_admin_moderation_d1.mjs
       - name: Verify OWNER-only phone scope with local workerd and D1
         run: node tools/check_owner_phone_d1.mjs
+      - name: Verify protected OWNER CLI with actual Wrangler import output
+        run: python3 tools/check_owner_phone_provisioning.py
       - name: Bundle Worker without deploying
         run: npm exec -- wrangler deploy --dry-run --outdir /tmp/worker-audit-bundle

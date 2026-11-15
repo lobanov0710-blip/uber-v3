@@ -122,7 +122,9 @@ try{
    try{
     const file=path.join(temporary,'owner.sql');await writeFile(file,plan.sql,{flag:'wx',mode:0o600});
     // Pinned Wrangler --file uses Cloudflare's atomic D1 import with rollback on failure.
-    await client.run(['d1','execute','DB','--remote','--file',file,'--yes','--json'],{json:true});
+    // Wrangler 4.125.0 emits import progress before JSON. Verify the committed
+    // digest/expiry below rather than parsing this write command's stdout.
+    await client.run(['d1','execute','DB','--remote','--file',file,'--yes','--json']);
     const id=account.id.replaceAll("'","''");const verified=await query("SELECT b.digest,b.expires_at FROM admin_mfa_bootstrap b JOIN staff_owner_binding o ON o.account_id=b.account_id AND o.singleton=1 JOIN staff_accounts a ON a.id=b.account_id WHERE b.account_id='"+id+"' AND a.role='admin' AND a.status='active' AND b.expires_at>CAST(strftime('%s','now') AS INTEGER)*1000");
     if(verified.length!==1||verified[0].digest!==digestValue||verified[0].expires_at!==plan.expiresAt)throw new Error('Bootstrap not confirmed; no code shown');
    }finally{await rm(temporary,{recursive:true,force:true});}

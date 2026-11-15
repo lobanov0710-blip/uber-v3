@@ -1628,3 +1628,56 @@ Remote миграции/isolation/keys на ПК владельца не пер�
 достигнут PROVISION/import, действует прежнее правило: не повторять запись
 вслепую, сначала read-only plan. Утверждение STAGING остаётся действующим, G1
 на паузе; production/merge/reset этим исправлением не выполнялись.
+
+
+## 2026-11-15 — Сбой OWNER после PROVISION: запись появилась, bootstrap не выдан
+
+Владелец прислал сообщение FAILED at owner уже после точной фразы PROVISION
+STAGING OWNER <private account ID>. ID/логин/пароль/коды в журнал не копируются.
+Сразу предписан только read-only plan, без слепого повтора provisioning.
+Получен новый admin-phone-plan.public.json, SHA256
+9c0aeca6ae4f33f46b79967cbd2d11d28c790e3e9440f1d33270ea3ca5b4fbe7.
+Данные разобраны как JSON, не как инструкции. Source 01bbcc8a соответствует
+выданному v2 пакету; target прежний STAGING. По отчёту: pending=[], ownerExists=true,
+ownerFactorCount=0, оба JWT/MFA secret names present, ADMIN_PHONE_TEST_ONLY binding
+присутствует, G1 на паузе. remoteWritesPerformed=false относится к самому plan,
+не означает отсутствия записей предыдущего owner/schema/key action. Значения
+секретов и flag не раскрываются JSON, их guards выполняет ранее проверенный CLI.
+
+Найдена и воспроизведена ошибка control plane: pinned Wrangler 4.125.0 SQL file
+import с --json пишет progress строки из отдельного CLI logger/spinner до JSON.
+OwnerPhoneWrangler.run(...,{json:true}) пытается JSON.parse всего stdout и
+отклоняет успешно завершённый import до postcondition query/выдачи bootstrap.
+Отдельный опыт с настоящим Wrangler и локальным synthetic API подтвердил:
+strict JSON parsing отвергает ответ completed import; та же команда с проверкой
+exit status без разбора write stdout завершается успешно. Реальных Cloudflare
+запросов/секретов в опыте нет, fixture SQL SELECT 1. Это согласуется с ownerExists
+после сообщения об ошибке; сырые provider logs владельца не запрашивались.
+
+Исправлен только вызов write command: stdout import не используется как
+доказательство. Exit status по-прежнему проверяется; отдельный strict-JSON D1
+SELECT обязан подтвердить текущий active OWNER, новый bootstrap digest и exact
+unexpired expiry. Лишь после этого код показывается в private TTY. Все read
+commands сохраняют строгий JSON parsing. Атомарный D1 import/rollback, factor
+guards, пароли и permissions не изменены. Для текущего состояния после проверки
+исправления используется существующий OWNER, без создания второй учётной записи,
+смены пароля или сброса TOTP. Выдаётся новый bootstrap через прежний утверждённый
+control plane, исходный потерянный plaintext по digest не восстанавливается.
+
+Добавлена полноценная regression проверка реального CLI/private PTY/реального
+Wrangler с локальным synthetic SQLite/D1 HTTP boundary: old committed failure,
+новый и existing OWNER success, wrong postcondition и import rollback. Проводится
+локальный запуск; результаты/CI пока не объявляются успешными. При подготовке
+fixture первый запуск не достиг owner prompt из-за отсутствующей служебной
+таблицы d1_migrations в mock DB; tracking table добавлена только в тестовую
+среду, production schema не менялась. APK/Worker runtime/миграции/зависимости
+не меняются. Утверждение STAGING действует, G1 остаётся на паузе.
+
+Локальный protected-CLI regression теперь PASS для всех 5 сценариев: legacy
+committed failure (owner/bootstrap записаны, код не выдан, postcondition read
+ещё не вызван), new_success, existing_success без второй account,
+wrong_postcondition без выдачи кода, import_failure с rollback. Используется
+реальный Wrangler 4.125.0 и локальный SQLite/D1 API; real Cloudflare requests 0,
+raw terminal output не раскрывается, hidden synthetic password не echo. Existing
+ownerPhoneSetup 15 tests PASS, syntax/whitespace checks PASS. Новый regression
+добавлен в CI после native OWNER phone check; финальный полный CI ещё ожидается.
