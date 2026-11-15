@@ -1571,3 +1571,60 @@ route-isolation guards. Сначала schema (единственная допу
 При ошибке остановка и безопасная диагностика без вывода credentials.
 Фактические изменения на Cloudflare выполняет владелец в private PowerShell,
 а не среда ассистента. G1 остаётся на паузе. Код/пакет не менялись.
+
+
+## 2026-11-15 — OWNER остановился на строчном n; причина установлена
+
+Владелец сообщил generic OWNER PHONE SETUP FAILED at owner, затем уточнил:
+ошибка до PROVISION, последним заполнен только выбор N/E. В присланном тексте
+видно `...? n`, после чего failure. В первоначальном CLI choice сравнивался
+строго с 'N'/'E'; строчная n попадала в Explicit account choice required.
+На этом участке owner provisioning не отправлял import SQL, account/binding/
+bootstrap не создавались. Это относится к данному запуску owner, не отрицает
+ранее выполненные приватные schema/isolation/key шаги; их итог отдельно не получен.
+
+Немедленное безопасное продолжение текущим проверенным пакетом: повторить owner
+и ввести один символ N латиницей, без кавычек. После этой подтверждённой ранней
+ошибки неоднозначного provisioning write не было, поэтому такой повтор допустим.
+Пароли/логин/ID/seed/bootstrap не запрашивались в чат. Роль выбирает сам владелец.
+
+Исправление подготовки: explicit choice нормализуется toUpperCase после existing
+trim. Принимаются n/N/e/E; другие значения по-прежнему отклоняются. Default
+account choice, bypass TTY/config/source/schema/scope/confirmation и reset не
+добавлены. Критерии логина, пароля, MFA и атомарный import не изменялись.
+
+Локальная проверка actual CLI через pseudo-TTY с synthetic read-only Cloudflare
+boundary: старый n воспроизвёл исходную ошибку; исправленные n/N открывают
+New OWNER login, e/E — Exact existing active admin account ID, x отклоняется.
+Всего 6 terminal scenarios; password не вводился, PROVISION/import не достигнуты,
+реальных запросов/секретов/записей нет. Existing ownerPhoneSetup 15 tests — PASS;
+node --check/git diff --check — PASS. Свежий backend CI ожидается. APK/Worker
+runtime/миграции/зависимости не меняются; remote success на ПК владельца не
+выдаётся за проверенный факт. Утверждение STAGING этапа действует, G1 на паузе.
+
+
+### 2026-11-15 — Исправление регистра OWNER choice проверено и упаковано
+
+Итоговый source 5f07f1f5bbdbe7ec0324ed7586394afd8b8d5634, backend
+CI 43724115538 / job 132842190133 — SUCCESS: 67 test scripts, 15 phone setup
+tests, 18 migrations, 12 D3 preflight tests, четыре native workerd/D1 harnesses,
+Worker dry-run, npm audit 0 vulnerabilities. Manual actual-CLI pseudo-TTY checks:
+6 scenarios, original n failure, fixed n/N/e/E allowed to their respective next
+prompt, invalid x denied; Cloudflare boundary synthetic/read-only, passwords
+не вводились, provisioning SQL/confirmation не достигнуты.
+
+Исправленный архив отдельно: transfer-admin-owner-phone-choice-2026-11-15/
+owner-phone-setup.zip, 179 файлов, 96 protected hashes. Проверены manifest hashes,
+private TTY init с synthetic public Account ID, rejection подменённого source
+до network/config и отсутствие загруженного Firebase SDK key Driver в ZIP.
+Receipt OWNER_PHONE_CHOICE_FIX_2026-11-15.json; архив SHA256:
+6baf6e894cb6b680c3457e85a2be1c6b3ad9ac9a886f38c308b799578566ae61.
+Прежние пакеты сохранены. Для немедленного продолжения исходным проверенным
+пакетом достаточно заглавной N; новое развёртывание Worker/пересборка APK/
+отключение checks/редактирование private config или source manifest не нужны.
+
+Remote миграции/isolation/keys на ПК владельца не перепроверялись ассистентом.
+Сбой данного owner наступил до записи, поэтому предписан повтор с N. Если уже
+достигнут PROVISION/import, действует прежнее правило: не повторять запись
+вслепую, сначала read-only plan. Утверждение STAGING остаётся действующим, G1
+на паузе; production/merge/reset этим исправлением не выполнялись.
