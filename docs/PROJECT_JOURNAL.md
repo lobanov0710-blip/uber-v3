@@ -1307,3 +1307,59 @@ Draft PR #7 TransferDriver / #29 uber-v3 обновлены под итогов�
 vehicles UI на синтетических данных с серверными статусами и revisions.
 D4–D7 не утверждены. G1 приостановлен. Реальные документы/биометрия, storage/OWNER
 secrets, live server E2E, remote migrations, merge и deploy не выполнялись.
+
+
+## 2026-11-15 — Подготовка OWNER phone test на STAGING по решению владельца
+
+Владелец поручил подготовить настройку для тестирования на телефоне и уточнил:
+«Только Admin/OWNER на STAGING; Driver G1 оставить на паузе»; приватные действия
+выполняются на его Windows PowerShell. Полный Driver G1 не возобновляется.
+Отдельно утверждён TOTP на том же телефоне: в RAM можно удерживать только служебные
+challenge/enrollment IDs до их исходного срока в 5 минут; seed/введённые коды
+очищаются, сохранения на диск нет, незавершённые сетевые операции отменяются.
+Это явное уточнение владельца к прежнему полному сбросу transient MFA flow в фоне.
+
+Cloudflare CLI этой среды: not authenticated. Текущий backend STAGING независимо
+не подтверждён: два unauthenticated GET получили HTTP 403 text/plain от envoy,
+а не JSON Worker; это не свидетельство состояния deployed API/БД.
+Remote DB/account/secrets не читаются по догадке и не изменялись.
+
+Подготовка: отдельный fail-closed OWNER-only STAGING scope (без Driver/public/legacy
+операций), защищённый local Windows CLI control plane без public bootstrap/reset
+endpoint, точные target guards и проверяемый deployment plan. Общий D3 preflight
+не ослабляется; отсутствие R2/Firebase не объявляется готовностью Driver E2E.
+До отдельного подтверждения выполняются только локальная подготовка и тесты.
+
+
+### 2026-11-15 — OWNER phone: реализация и локальные проверки
+
+Выполнено утверждённое уточнение same-phone TOTP: opaque IDs/исходный TTL
+сохраняются только в RAM, seed/поля ввода очищаются, сохранение view state
+отключено. Срок контролируется также monotonic clock, переключение его не
+продлевает; таймер/возврат в foreground очищает просроченные IDs. Pending auth
+отменяется через OkHttp, generation исключает позднее сохранение сессии.
+Recovery-коды по-прежнему не удерживаются при уходе в фон.
+
+OWNER-only STAGING закрывает Driver/public/legacy/private-resource routes,
+non-OWNER login/refresh/authorization и Driver/support cron jobs. Существующие
+регистрации скрыты. Fixture/data upload не создаются. Публичного bootstrap/reset
+нет. Windows CLI закреплён за известными STAGING DB/KV/host, вывод провайдера
+не печатается; секрет передаётся через stdin, password verifier/bootstrap digest
+записываются атомарным D1 import с audit. TTL bootstrap берётся по часам БД.
+Существующий OWNER/factor/key не заменяется. Подготовлен Windows runbook; первый
+этап — read-only plan. До разбора фактического плана remote writes не разрешены.
+
+Локально: Admin debug/staging/release сборки, JVM 31×3, три lint — PASS; guard
+проверки Admin 5 и Driver 7 — PASS. Backend полный npm test (67 test scripts),
+миграции 18, неизменённый D3 preflight 12 tests, native workerd/D1 availability,
+OWNER MFA, moderation и новый OWNER phone flow — PASS; npm audit 0 vulnerabilities;
+Worker bundle dry-run PASS. Новый ownerPhoneSetup: 8 tests PASS (exact target,
+route/role/data isolation, atomic provisioning/audit rollback, no factor reset,
+scheduler isolation, private CLI non-TTY, unexpected bindings).
+
+В ходе проверки child-process CLI test сначала не выполнился: sandbox EPERM при
+spawnSync; повтор с разрешённым network capability выполнил реальный subprocess
+и прошёл. Исправлен scheduler test: вместо проглатываемого mock batch error
+проверяется успешный batch ровно четырёх MFA-only SQL statements. Android runtime
+ещё требует свежего CI; локальная компиляция AndroidTest не выдаётся за его запуск.
+Remote migrations, secrets, account provisioning, deployment и merge не выполнялись.

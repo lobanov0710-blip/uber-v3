@@ -1,6 +1,7 @@
 // =========================================
 // ADMIN ITEM MODERATION SERVICE
 // =========================================
+import { phoneFixtureAllowed } from './adminPhoneTestScope.js';
 
 import {
   adminCan,
@@ -447,6 +448,7 @@ export async function startAdminRegistrationReview(
   input,
   options = {}
 ) {
+  if(!await phoneFixtureAllowed(env,driverId))return notFound();
   const resolved =
     await requireAccess(
       env,

@@ -1,6 +1,7 @@
 // =========================================
 // ADMIN ITEM MODERATION REPOSITORY
 // =========================================
+import { phoneFixtureAllowed } from './adminPhoneTestScope.js';
 
 import {
   prepareMutationIdempotencyClaim,
@@ -546,6 +547,7 @@ export async function getAdminRegistrationReviewBundle(
   env,
   driverId
 ) {
+  if(!await phoneFixtureAllowed(env,driverId))return null;
   const driver =
     requireText(
       driverId,

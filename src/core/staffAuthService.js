@@ -1,3 +1,4 @@
+import { ownerPhoneTestEnabled } from './adminPhoneTestScope.js';
 // =========================================
 // STAFF AUTH SERVICE
 // =========================================
@@ -414,6 +415,10 @@ export async function loginStaff(
   }
 
 
+  if(ownerPhoneTestEnabled(env) && (account.role !== 'admin' || !await isOwnerAccount(env,account.id))){
+    await consumeDummyPasswordWork(parsed.password);return invalidCredentials();
+  }
+
   // =======================================
   // ACCOUNT STATUS
   // =======================================
@@ -658,6 +663,8 @@ export async function refreshStaff(
   }
 
 
+  if(ownerPhoneTestEnabled(env) && !await isOwnerAccount(env,currentSession.accountId))return invalidRefreshToken();
+
   // =======================================
   // REPLAY / REVOKED TOKEN
   // =======================================
@@ -897,6 +904,11 @@ export async function logoutStaff(
     };
   }
 
+
+  if(ownerPhoneTestEnabled(env)){
+    const session=await getStaffSessionByRefreshTokenHash(env,hash);
+    if(!session || !await isOwnerAccount(env,session.accountId))return {ok:true};
+  }
 
   await revokeStaffSession(
     env,

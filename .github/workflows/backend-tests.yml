@@ -47,5 +47,7 @@ jobs:
         run: node tools/check_owner_mfa_d1.mjs
       - name: Verify Admin moderation workflow with local workerd and D1
         run: node tools/check_admin_moderation_d1.mjs
+      - name: Verify OWNER-only phone scope with local workerd and D1
+        run: node tools/check_owner_phone_d1.mjs
       - name: Bundle Worker without deploying
         run: npm exec -- wrangler deploy --dry-run --outdir /tmp/worker-audit-bundle

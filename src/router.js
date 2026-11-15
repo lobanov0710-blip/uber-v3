@@ -1,3 +1,4 @@
+import { ownerPhoneTestEnabled } from './core/adminPhoneTestScope.js';
 import { startOwnerMfaEnrollment, confirmOwnerMfaEnrollment, verifyOwnerMfa } from './core/ownerMfaService.js';
 import { boundedAuthJson } from './core/ownerMfaTransport.js';
 import {
@@ -515,7 +516,8 @@ export default async function router(
               access.role,
             permissions:
               access.permissions,
-            mfa: auth.mfa
+            mfa: auth.mfa,
+            ...(ownerPhoneTestEnabled(env)?{testScope:'owner_phone'}:{})
           },
           requestId
         },
