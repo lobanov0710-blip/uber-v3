@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-15",
+  "purpose": "OWNER account choice letter-case correction",
+  "sourceCommit": "5f07f1f5bbdbe7ec0324ed7586394afd8b8d5634",
+  "ci": {
+    "runId": 43724115538,
+    "jobId": 132842190133,
+    "status": "success",
+    "testScripts": 67,
+    "ownerPhoneTests": 15,
+    "migrationFiles": 18,
+    "d3PreflightTests": 12,
+    "nativeD1Harnesses": 4,
+    "dependencyVulnerabilities": 0,
+    "workerDryRun": true
+  },
+  "terminalChecks": {
+    "originalLowercaseFailureReproduced": true,
+    "acceptedChoices": [
+      "n",
+      "N",
+      "e",
+      "E"
+    ],
+    "invalidChoiceDenied": true,
+    "scenarios": 6,
+    "syntheticReadonlyProviderBoundary": true,
+    "passwordsEntered": false,
+    "provisioningReached": false
+  },
+  "approvalForStagingAlreadyRecorded": true,
+  "remoteWritesPerformedByAssistant": false,
+  "archive": {
+    "name": "owner-phone-setup.zip",
+    "bytes": 384470,
+    "sha256": "6baf6e894cb6b680c3457e85a2be1c6b3ad9ac9a886f38c308b799578566ae61",
+    "files": 179,
+    "protectedSourceFiles": 96
+  },
+  "unchanged": [
+    "Worker runtime",
+    "migrations",
+    "dependencies",
+    "Admin APK",
+    "account/MFA policies"
+  ],
+  "currentPackageCanContinueUsingUppercaseN": true,
+  "privateWindowsRuntimeNotExecutedHere": true
+}
