@@ -1133,3 +1133,38 @@ docs/OWNER_MFA_VERIFICATION_2026-11-15.json в ветке Admin. Дальней�
 не создавались и не публиковались. Миграция 0018 применена только к эфемерным
 локальным test DB. Remote migration apply, deployment, merge и live E2E
 не выполнялись. Полный G2 и production-выпуск не объявляются готовыми.
+
+
+
+## 2026-11-15 — Среда выполнения восстановлена; отложенные отчёты доступны
+
+После повторного подключения exec_command снова работает. Тот же cloud environment
+имеет running/connected; workspace /workspace доступен для чтения/записи.
+Проверены Node 24.22.1, Python 3.12.14, сохранённый JDK 25.0.3. Gradle 9.6.0
+успешно запускается с ранее установленными project env paths; SDK platform
+android-37.0 и Build Tools 37.0.0 присутствуют. Первый запуск без GRADLE_USER_HOME
+попытался создать wrapper lock в недоступном /home/agent/.gradle; повтор с
+/workspace/.gradle-transferdriver PASS. Первоначальная диагностическая проверка
+ожидала android-37; фактический установленный SDK называется android-37.0.
+Это уточнения команд проверки среды, продуктовый код не менялся. Оба audit checkout,
+SDK/cache и старые логи/артефакты сохранились; права, secrets и конфигурация среды
+не менялись. Повторная проверка SHA-256/размеров всех 6 новых Admin artifacts и
+35 исходных файлов из build receipt — PASS. Старый набор артефактов сохранён.
+
+Восстановлены подготовленные до потери среды полные документы Android ветки:
+- docs/ADMIN_MFA_BUILD_2026-11-14.json — все 6 файлов, размеры, SHA-256, source
+  provenance, debug certificates и результаты CI; копия receipt рядом с бинарными файлами.
+- docs/ADMIN_DRIVER_RUNTIME_AUDIT_2026-11-15.json — полный разрешённый inventory
+  6 app/admin runtime configurations, 152 уникальных Maven components, OSV 0 advisories
+  на дату исходного запроса. Новый OSV-запрос при восстановлении не выполнялся.
+- docs/OWNER_MFA_VERIFICATION_2026-11-15.json и план обновлены: блокер execution
+  environment снят; опубликованы ссылки на полный receipt и inventory.
+
+Сверена актуальная GitHub документация после прошлого docs-only checkpoint;
+её история сохранена. Непубликованные локальные варианты документов перед сверкой
+сохранены в /workspace/scratch/pre-recovery-docs-2026-11-15/. Функциональный код
+после успешных source CI c6badd3a / 1598dff3 не изменялся; повторные полные тесты
+только из-за восстановления среды не запускались. Эта запись не является новым E2E.
+G1 остаётся приостановлен. Merge, deploy, remote migration apply и создание
+реальных OWNER keys/credentials не выполнялись. Локальная фиксация исходников
+и сверка дерева выполняются отдельно от изменения удалённых рабочих веток.
