@@ -1409,3 +1409,86 @@ Live server E2E, private storage/реальные материалы и тест
 не утверждены. ТЗ не менялось (blob 7434dc0b1548b4f2c5382f12d6cc5399f93d0a84).
 Публикуются только рабочие feature ветки и journal-only baseline updates; merge,
 remote migrations/secrets/OWNER provisioning и deployment не выполнялись.
+
+
+## 2026-11-15 — Получен и разобран OWNER phone public plan
+
+Владелец передал admin-phone-plan.public.json, SHA256
+1ee6fadc8b3a3f375c66f5d15a48a84a528ed23515beaf20dbf715bffdc41726.
+Файл разобран как данные без выполнения содержимого. Source 550d2dda8f86242a8608b9daaee2c64bff0e9c49,
+Worker/host/D1 совпадают с утверждённым STAGING; единственная pending migration
+0018_owner_totp_mfa.sql. По отчёту OWNER binding отсутствует, MFA factors 0,
+JWT_SECRET и ADMIN_MFA_ENCRYPTION_KEY отсутствуют; remoteWritesPerformed=false,
+G1 остаётся приостановленным. Отчёт не подтверждает отсутствие staff accounts.
+KV ID/value APP_ENV не входят в public JSON, exact check выполняет ранее выданный
+CLI; независимое live чтение из среды ассистента не проводилось.
+
+Обнаружен пробел setup: deploy правильно блокируется без JWT_SECRET, но нет
+отдельного безопасного action создания. Подготовлен jwt-key с независимыми
+CSPRNG 32 bytes через Wrangler stdin; значения не выводятся/не сохраняются и
+не передаются в argv. Существующие JWT/MFA keys не ротируются, чужие secret names
+запрещены, без reviewed schema/typed confirmation записи невозможны, MFA factors
+без исходного key не сбрасываются. Remote записи не выполнялись.
+
+Предложен конкретный этап для утверждения: 0018 → jwt-key → mfa-key → plan →
+OWNER-only deploy → приватная настройка выбранного владельцем OWNER account/TOTP.
+Подробный разбор: OWNER_PHONE_PLAN_REVIEW_2026-11-15.md. Передача файла сама по
+себе не разрешает этот этап; прежняя read-only граница сохраняется. APK/Android
+код и контракт API не меняются. Production/G1/R2/Firebase/merge вне объёма.
+
+Локально ownerPhoneSetup — 11 tests PASS: добавлены crypto roundtrip JWT/MFA
+для независимых ключей, stdin-only transport, сохранение existing secrets,
+pending schema/unknown name/factor guards, denied confirmation и отсутствие
+автоповтора ambiguous provider failure. При подготовке нового теста сначала
+перепутан порядок аргументов signJWT/verifyJWT; исправлен вызов теста по существующей
+сигнатуре, код JWT не изменялся. Свежий backend CI ещё ожидается; прежний Android
+CI остаётся применим к неизменённому APK/source.
+
+Уточнение безопасности порядка: установленный Wrangler 4.125.0 secret put
+использует PUT /workers/scripts/.../secrets, относится к действующему Worker и
+предупреждает о риске accidental deployment при работе с versions. Чтобы новый
+JWT не активировал прежние маршруты до ограничения scope, предыдущая предложенная
+последовательность заменена на 0018 → isolate → jwt-key → mfa-key → plan → owner.
+Это исправление подготовки, удалённые действия не выполнялись. `isolate` требует
+OWNER=null, factors=0, обоих отсутствующих ключей и applied schema; обычный deploy
+сохраняет ключевые readiness guards. Перед каждым новым secret put проверяются
+HTTP scope header/закрытые Driver routes. Дополнительные tests проверяют оба
+варианта deploy, запрещённые initial states и отсутствие secret writes при
+неподтверждённой изоляции; локально 13 tests PASS. В ходе правки test source
+исправлена лишняя закрывающая скобка, найденная node --check; production JWT код
+и Worker runtime не изменялись.
+
+
+### 2026-11-15 — Разбор плана и обновлённая OWNER setup подготовка завершены
+
+Итоговый setup source 01bbcc8acf5228ba7735969a8fbbf0cb4e8671ba, backend
+CI 43719538291 / job 132828305901 — SUCCESS: 67 test scripts, ownerPhoneSetup
+15 tests, 18 migrations, 12 unchanged D3 preflight tests, четыре native workerd/D1
+harnesses, Worker dry-run и npm audit 0 vulnerabilities. Предшествующий source
+6ec22a78 / CI 43719298434 (14 phone tests) тоже прошёл; последняя правка дополнительно
+принудительно включает WRANGLER_LOG_SANITIZE=true. Реальный child-process test
+подтверждает sanitization даже при inherited false. Raw provider output не
+выдаётся пользователю; временный private log удаляется.
+
+Обновлённый архив хранится отдельно: transfer-admin-owner-phone-jwt-2026-11-15/
+owner-phone-setup.zip, 179 файлов, 96 protected source hashes. Проверен после
+распаковки: private TTY init создаёт exact STAGING config только локально с
+синтетическим Account ID; подмена source блокируется до config/network. ZIP
+не содержит production config/credentials/.git/node_modules или загруженный
+Driver Firebase SDK key. SHA256 и tested-source provenance —
+OWNER_PHONE_SETUP_BUILD_2026-11-15.json и SHA256SUMS. Предыдущий пакет сохранён.
+Исходный Admin APK не менялся (source 8a948591, CI 43714614881). Worker src,
+миграции и зависимости также не изменялись; исправления только control plane/tests/docs.
+
+Итоговый предложенный порядок после явного утверждения: schema(0018) → isolate
+(подтверждённое пустое OWNER/key state) → jwt-key → mfa-key → plan → owner.
+Ни secret put, ни Owner provision не выполняются без проверки OWNER-only scope.
+Точный account/пароль выбирает владелец в приватном терминале. Cloudflare remote
+write/deploy/merge не выполнялись; реальный Windows run этого обновления, live
+server E2E и телефон владельца ещё не проверены. G1 на паузе.
+
+Прерванный пользовательским сообщением командный вызов не применил правку
+документов; это проверено по состоянию файлов и запись повторена. Команда
+«продолжаем» обработана как продолжение текущей подготовки; remote этап остаётся
+на отдельной границе подтверждения из выданного runbook. В journals сохраняется
+история промежуточного порядка, актуальная последовательность указана выше.
