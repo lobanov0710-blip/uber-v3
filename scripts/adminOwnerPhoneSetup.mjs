@@ -4,17 +4,17 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { makeConfig,checkConfig,checkRemoteVersion,bootstrapStatements,TARGET } from './lib/adminPhoneSetupPolicy.mjs';
+import { makeConfig,checkConfig,checkRemoteVersion,bootstrapStatements,phoneDeployPhrase,TARGET } from './lib/adminPhoneSetupPolicy.mjs';
 import { OwnerPhoneWrangler } from './lib/ownerPhoneWrangler.mjs';
 import { privateTerminal,ask,hidden,confirm } from './lib/ownerTerminal.mjs';
 import { putMissingPhoneSecret } from './lib/ownerPhoneSecrets.mjs';
 import { createAdminBootstrapAccount } from '../src/core/staffProvisioning.js';
 import { randomToken,digest } from '../src/core/ownerMfaCrypto.js';
 const root=fileURLToPath(new URL('../',import.meta.url)),configPath=path.join(root,'wrangler.admin-phone.staging.json'),privateDir=path.join(root,'.owner-phone');
-const actions=new Set(['init','plan','schema','jwt-key','mfa-key','deploy','owner']);
+const actions=new Set(['init','plan','schema','isolate','jwt-key','mfa-key','deploy','owner']);
 const args=process.argv.slice(2),action=actions.has(args[0])?args[0]:'invalid_action';
 if(args.length===0||(args.length===1&&args[0]==='--help')){
- console.log('Usage: node scripts/adminOwnerPhoneSetup.mjs init|plan|schema|jwt-key|mfa-key|deploy|owner');
+ console.log('Usage: node scripts/adminOwnerPhoneSetup.mjs init|plan|schema|isolate|jwt-key|mfa-key|deploy|owner');
  console.log('STAGING OWNER only. Private TTY required. init writes only a local config; plan is remote read-only.');
  console.log('Other actions require separate exact typed confirmation. No password/token arguments, CI, redirection, production or public reset.');
  process.exit(0);
@@ -85,14 +85,14 @@ try{
    else{await confirm('APPLY 0018 TO transfer-servis52-staging');await client.run(['d1','migrations','apply','DB','--remote']);if((await state()).pending.length)throw new Error('Migration not confirmed');console.log('STAGING migration 0018 confirmed.');}
   }else if(action==='jwt-key'||action==='mfa-key'){
    const jwt=action==='jwt-key',name=jwt?'JWT_SECRET':'ADMIN_MFA_ENCRYPTION_KEY';
-   const created=await putMissingPhoneSecret(client,current,name,confirm);
+   const created=await putMissingPhoneSecret(client,current,name,confirm,probe);
    if(created){
     const verified=await state();if(!(jwt?verified.jwtPresent:verified.mfaKeyPresent))throw new Error('Secret name not confirmed');
     console.log(name+' set through stdin; no key printed or saved.');
    }else console.log(name+' already present; never rotated by this setup.');
-  }else if(action==='deploy'){
-   if(current.pending.length||!current.jwtPresent||!current.mfaKeyPresent)throw new Error('Schema and required secret names must be ready');
-   await confirm('DEPLOY uber-v3-staging OWNER ONLY');await client.run(['deploy']);await probe();console.log('STAGING OWNER-only deployment and closed Driver routes confirmed.');
+  }else if(action==='isolate'||action==='deploy'){
+   await confirm(phoneDeployPhrase(current,action==='isolate'));await client.run(['deploy']);await probe();
+   console.log('STAGING OWNER-only route isolation confirmed. Login still requires both keys, OWNER and TOTP.');
   }else if(action==='owner'){
    if(current.pending.length||!current.jwtPresent||!current.mfaKeyPresent)throw new Error('Schema and secrets not ready');await probe();
    let account=current.owner,newAccount=false;

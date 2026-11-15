@@ -14,6 +14,15 @@ export function checkConfig(config){
  if(JSON.stringify(canonical(config))!==JSON.stringify(canonical(expected)))throw new Error('Exact OWNER phone-test configuration required');
  return expected;
 }
+export function phoneDeployPhrase(current,isolate=false){
+ if(!Array.isArray(current.pending)||current.pending.length)throw new Error('Reviewed migration must be applied first');
+ if(isolate){
+  if(current.owner!==null||current.factors!==0||current.jwtPresent!==false||current.mfaKeyPresent!==false)throw new Error('Initial isolation requires the reviewed empty OWNER/key state');
+  return 'ISOLATE uber-v3-staging OWNER ONLY';
+ }
+ if(current.jwtPresent!==true||current.mfaKeyPresent!==true)throw new Error('Required secret names must be ready');
+ return 'DEPLOY uber-v3-staging OWNER ONLY';
+}
 export function checkRemoteVersion(version){
  const bindings=version?.resources?.bindings;if(!Array.isArray(bindings))throw new Error('Worker bindings cannot be verified');
  const db=bindings.filter(b=>b.name==='DB'),kv=bindings.filter(b=>b.name==='DRIVERS');

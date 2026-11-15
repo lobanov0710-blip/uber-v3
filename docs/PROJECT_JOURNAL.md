@@ -1443,3 +1443,17 @@ pending schema/unknown name/factor guards, denied confirmation и отсутст
 перепутан порядок аргументов signJWT/verifyJWT; исправлен вызов теста по существующей
 сигнатуре, код JWT не изменялся. Свежий backend CI ещё ожидается; прежний Android
 CI остаётся применим к неизменённому APK/source.
+
+Уточнение безопасности порядка: установленный Wrangler 4.125.0 secret put
+использует PUT /workers/scripts/.../secrets, относится к действующему Worker и
+предупреждает о риске accidental deployment при работе с versions. Чтобы новый
+JWT не активировал прежние маршруты до ограничения scope, предыдущая предложенная
+последовательность заменена на 0018 → isolate → jwt-key → mfa-key → plan → owner.
+Это исправление подготовки, удалённые действия не выполнялись. `isolate` требует
+OWNER=null, factors=0, обоих отсутствующих ключей и applied schema; обычный deploy
+сохраняет ключевые readiness guards. Перед каждым новым secret put проверяются
+HTTP scope header/закрытые Driver routes. Дополнительные tests проверяют оба
+варианта deploy, запрещённые initial states и отсутствие secret writes при
+неподтверждённой изоляции; локально 13 tests PASS. В ходе правки test source
+исправлена лишняя закрывающая скобка, найденная node --check; production JWT код
+и Worker runtime не изменялись.

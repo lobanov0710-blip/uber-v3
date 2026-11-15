@@ -68,19 +68,28 @@ OWNER и не меняет secrets. CLI сверяет source manifest, точн
 
 ```powershell
 node .\scripts\adminOwnerPhoneSetup.mjs schema
+node .\scripts\adminOwnerPhoneSetup.mjs isolate
 node .\scripts\adminOwnerPhoneSetup.mjs jwt-key
 node .\scripts\adminOwnerPhoneSetup.mjs mfa-key
-node .\scripts\adminOwnerPhoneSetup.mjs deploy
+node .\scripts\adminOwnerPhoneSetup.mjs plan
 node .\scripts\adminOwnerPhoneSetup.mjs owner
 ```
 
 `schema`: только подтверждённая pending 0018, повторно не применяется.
+`isolate`: до создания ключей развернуть OWNER-only Worker с закрытыми Driver/
+public/legacy/private-file API. Допустимо только для подтверждённого первого
+запуска: OWNER отсутствует, factors 0, оба ключа отсутствуют, 0018 применена.
+Фраза: `ISOLATE uber-v3-staging OWNER ONLY`. CLI проверяет header и закрытые
+маршруты. Без ключей и OWNER вход остаётся недоступным.
+`secret put` меняет действующий Worker, поэтому сначала изоляция, затем ключи.
+Оба шага создания ключей повторно проверяют route isolation перед записью.
 `jwt-key`: отдельный CSPRNG 32 bytes → base64 → Wrangler stdin для JWT_SECRET;
 существующий secret не заменяется. Никаких значений в выводе/argv/файлах.
 `mfa-key`: другой независимый CSPRNG 32 bytes → Wrangler stdin, ни ключа в аргументах/файлах/выводе,
 ни автоматической ротации. Существующий ключ сохраняется; факторы без исходного
 ключа требуют отдельного восстановления, CLI их не сбрасывает.
-`deploy`: только фиксированный STAGING, проверка закрытых Driver routes и
+`deploy` остаётся отдельным действием для повторного развёртывания с уже готовыми
+ключами; в первом запуске выше его заменяет `isolate`. Только фиксированный STAGING, проверка закрытых Driver routes и
 `X-Transfer-Test-Scope: owner_phone`. Если после jwt-key JWT_SECRET всё ещё отсутствует или есть
 неожиданные bindings, остановка для отдельного разбора; production не затрагивается.
 

@@ -42,15 +42,27 @@ pending schema/неизвестном состоянии; MFA key не созд�
 факторов. Перед записью требуется точная фраза в private TTY. При неоднозначном
 сбое нет автоматического повтора: сначала новый plan. Остальные secrets не меняются.
 
+## Безопасный порядок активации
+
+Wrangler 4.125.0 `secret put` обращается к действующему Worker и может приводить
+к развёртыванию версии. Создание JWT до ограничения старых маршрутов могло бы
+активировать их авторизацию. Поэтому подготовлен отдельный `isolate`: сначала
+OWNER-only Worker без секретов, затем проверка закрытых маршрутов, затем ключи.
+Обычный `deploy` сохраняет прежнее требование наличия обоих ключей; исключение
+`isolate` возможно только для reviewed empty OWNER/key state и готовой schema.
+Секреты не создаются, если HTTP probe не подтверждает OWNER-only scope.
+
 ## Конкретный предложенный этап, ожидающий утверждения
 
 На приватном Windows PowerShell владельца, только для указанного STAGING:
 
 1. Применить единственную pending миграцию 0018.
-2. Создать отсутствующий JWT_SECRET (`jwt-key`).
-3. Создать отсутствующий ADMIN_MFA_ENCRYPTION_KEY (`mfa-key`).
-4. Повторить read-only `plan`, проверить readiness, затем развернуть OWNER-only Worker.
-5. В приватной процедуре выбрать новый OWNER account либо конкретный existing admin,
+2. Развернуть OWNER-only Worker (`isolate`) при ещё отсутствующих ключах/OWNER,
+   подтвердить закрытие Driver/public/legacy/private-file API.
+3. Создать отсутствующий JWT_SECRET (`jwt-key`) после проверки route isolation.
+4. Создать отсутствующий ADMIN_MFA_ENCRYPTION_KEY (`mfa-key`) после той же проверки.
+5. Повторить read-only `plan`, проверить readiness.
+6. В приватной процедуре выбрать новый OWNER account либо конкретный existing admin,
    создать binding/bootstrap; настроить TOTP и проверить вход на телефоне.
 
 Production, Driver G1, R2/Firebase, реальные материалы, merge, password/factor reset

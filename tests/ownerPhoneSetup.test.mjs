@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import worker from '../src/index.js';
-import { makeConfig,checkConfig,checkRemoteVersion,bootstrapStatements,TARGET } from '../scripts/lib/adminPhoneSetupPolicy.mjs';
+import { makeConfig,checkConfig,checkRemoteVersion,bootstrapStatements,phoneDeployPhrase,TARGET } from '../scripts/lib/adminPhoneSetupPolicy.mjs';
 import { ownerPhoneTestEnabled } from '../src/core/adminPhoneTestScope.js';
 import { createAdminBootstrapAccount } from '../src/core/staffProvisioning.js';
 import { digest } from '../src/core/ownerMfaCrypto.js';
@@ -80,7 +80,7 @@ test('missing JWT and MFA keys work with actual crypto and travel only through s
  const {encryptSeed,decryptSeed}=await import('../src/core/ownerMfaCrypto.js');
  const keys={},confirmed=[];const current={pending:[],jwtPresent:false,mfaKeyPresent:false,factors:0};
  const client={async run(args,{input}){assert.equal(args.length,3);assert.deepEqual(args.slice(0,2),['secret','put']);assert.ok(confirmed.length>Object.keys(keys).length);assert.equal(Buffer.from(input,'base64').length,32);assert.ok(!args.includes(input));keys[args[2]]=input;}};
- for(const name of ['JWT_SECRET','ADMIN_MFA_ENCRYPTION_KEY'])assert.equal(await putMissingPhoneSecret(client,current,name,async phrase=>confirmed.push(phrase)),true);
+ for(const name of ['JWT_SECRET','ADMIN_MFA_ENCRYPTION_KEY'])assert.equal(await putMissingPhoneSecret(client,current,name,async phrase=>confirmed.push(phrase),async()=>{}),true);
  assert.deepEqual(confirmed,['SET JWT KEY ON uber-v3-staging','SET MFA KEY ON uber-v3-staging']);assert.notEqual(keys.JWT_SECRET,keys.ADMIN_MFA_ENCRYPTION_KEY);
  const token=await signJWT(keys.JWT_SECRET,{sub:'synthetic-owner'},60);assert.equal((await verifyJWT(keys.JWT_SECRET,token)).sub,'synthetic-owner');
  const seed=new Uint8Array(20).fill(7),env={ADMIN_MFA_ENCRYPTION_KEY:keys.ADMIN_MFA_ENCRYPTION_KEY};assert.deepEqual(await decryptSeed(env,'synthetic-owner',await encryptSeed(env,'synthetic-owner',seed)),seed);
@@ -89,13 +89,33 @@ test('secret preparation never rotates existing keys and refuses pending schema,
  const {putMissingPhoneSecret}=await import('../scripts/lib/ownerPhoneSecrets.mjs');
  let writes=0,confirmations=0;const client={async run(){writes++;}},confirm=async()=>{confirmations++;};
  const ready={pending:[],jwtPresent:true,mfaKeyPresent:true,factors:1};
- for(const name of ['JWT_SECRET','ADMIN_MFA_ENCRYPTION_KEY'])assert.equal(await putMissingPhoneSecret(client,ready,name,confirm),false);
- for(const [state,name]of [[{...ready,pending:['0018_owner_totp_mfa.sql']},'JWT_SECRET'],[{...ready,mfaKeyPresent:false},'ADMIN_MFA_ENCRYPTION_KEY'],[ready,'PROXY_HMAC_SECRET'],[{...ready,jwtPresent:undefined},'JWT_SECRET']])await assert.rejects(putMissingPhoneSecret(client,state,name,confirm));
+ for(const name of ['JWT_SECRET','ADMIN_MFA_ENCRYPTION_KEY'])assert.equal(await putMissingPhoneSecret(client,ready,name,confirm,async()=>{}),false);
+ for(const [state,name]of [[{...ready,pending:['0018_owner_totp_mfa.sql']},'JWT_SECRET'],[{...ready,mfaKeyPresent:false},'ADMIN_MFA_ENCRYPTION_KEY'],[ready,'PROXY_HMAC_SECRET'],[{...ready,jwtPresent:undefined},'JWT_SECRET']])await assert.rejects(putMissingPhoneSecret(client,state,name,confirm,async()=>{}));
  assert.equal(writes,0);assert.equal(confirmations,0);
 });
 test('denied confirmation prevents a key write; uncertain provider failure is not automatically retried',async()=>{
  const {putMissingPhoneSecret}=await import('../scripts/lib/ownerPhoneSecrets.mjs');const current={pending:[],jwtPresent:false,mfaKeyPresent:false,factors:0};let writes=0;
  const client={async run(){writes++;throw new Error('synthetic uncertain result');}};
- await assert.rejects(putMissingPhoneSecret(client,current,'JWT_SECRET',async()=>{throw new Error('not approved');}));assert.equal(writes,0);
- await assert.rejects(putMissingPhoneSecret(client,current,'JWT_SECRET',async()=>{}));assert.equal(writes,1);
+ await assert.rejects(putMissingPhoneSecret(client,current,'JWT_SECRET',async()=>{throw new Error('not approved');},async()=>{}));assert.equal(writes,0);
+ await assert.rejects(putMissingPhoneSecret(client,current,'JWT_SECRET',async()=>{},async()=>{}));assert.equal(writes,1);
+});
+
+test('initial isolation is possible before keys only in reviewed empty state; regular deploy retains readiness guards',()=>{
+ const empty={pending:[],owner:null,factors:0,jwtPresent:false,mfaKeyPresent:false};assert.equal(phoneDeployPhrase(empty,true),'ISOLATE uber-v3-staging OWNER ONLY');assert.throws(()=>phoneDeployPhrase(empty));
+ for(const change of [{pending:['0018_owner_totp_mfa.sql']},{owner:{id:'existing'}},{factors:1},{jwtPresent:true},{mfaKeyPresent:true},{owner:undefined}])assert.throws(()=>phoneDeployPhrase({...empty,...change},true));
+ assert.equal(phoneDeployPhrase({...empty,jwtPresent:true,mfaKeyPresent:true}),'DEPLOY uber-v3-staging OWNER ONLY');
+});
+test('secret creation stops before confirmation/write when deployed route isolation is not verified',async()=>{
+ const {putMissingPhoneSecret}=await import('../scripts/lib/ownerPhoneSecrets.mjs');let writes=0,confirmations=0;
+ await assert.rejects(putMissingPhoneSecret({async run(){writes++;}},{pending:[],jwtPresent:false},'JWT_SECRET',async()=>{confirmations++;},async()=>{throw new Error('synthetic old Worker scope');}));
+ assert.equal(writes,0);assert.equal(confirmations,0);
+});
+
+test('initial OWNER-only Worker answers scope probes and denies login before either secret exists',async t=>{
+ const DB=sqliteD1();t.after(()=>DB.sqlite.close());const env={DB,APP_ENV:'staging',ADMIN_PHONE_TEST_ONLY:'true'};
+ for(const [route,status]of [['/v1/admin/me',401],['/v1/admin/mfa/totp/verify',405],['/v1/driver/me',404],['/orders',404]]){
+  const response=await worker.fetch(new Request('https://'+TARGET.host+route),env,{});assert.equal(response.status,status);assert.equal(response.headers.get('X-Transfer-Test-Scope'),'owner_phone');
+ }
+ const response=await worker.fetch(new Request('https://'+TARGET.host+'/staff/login',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'203.0.113.12'},body:JSON.stringify({login:'synthetic-unknown',password:'Synthetic-Password-123!'})}),env,{});
+ assert.equal(response.status,401);assert.equal((await response.json()).accessToken,undefined);
 });
