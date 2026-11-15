@@ -29,3 +29,6 @@
 - [Технические решения](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/TECHNICAL_DECISIONS_V1_0_PROPOSED.md)
 - [Журнал backend](docs/PROJECT_JOURNAL.md)
 - [Канонический журнал проекта](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/PROJECT_JOURNAL.md)
+
+- [Утверждённые параметры и API OWNER TOTP MFA](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/g2-transfer-admin/docs/ADMIN_MFA_TOTP_PROPOSAL.md)
+- [Реализованный MFA API и локальные процедуры](docs/OWNER_TOTP_MFA_API.md)

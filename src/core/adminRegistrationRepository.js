@@ -1,6 +1,7 @@
 // =========================================
 // ADMIN REGISTRATION MODERATION REPOSITORY
 // =========================================
+import { ownerPhoneTestEnabled, OWNER_PHONE_DRIVER, phoneFixtureAllowed } from './adminPhoneTestScope.js';
 
 function requireDatabase(env) {
   if (!env?.DB) {
@@ -112,6 +113,15 @@ export async function listRegistrationQueue(
       ),
       200
     );
+
+  if(ownerPhoneTestEnabled(env)){
+    if(!await phoneFixtureAllowed(env,OWNER_PHONE_DRIVER))return [];
+    const result=await db.prepare(`SELECT staff_account_id,full_name,region,registration_status,identity_status,revision,submitted_at,updated_at
+      FROM driver_profiles WHERE staff_account_id=?1 AND (?2='' AND registration_status IN ('submitted','under_review','changes_required') OR registration_status=?2) LIMIT ?3`)
+      .bind(OWNER_PHONE_DRIVER,normalizedStatus,safeLimit).all();
+    if(result?.success!==true||!Array.isArray(result.results))throw new Error('registration queue read failed');
+    return result.results.map(mapRegistration).filter(Boolean);
+  }
 
   const result =
     normalizedStatus

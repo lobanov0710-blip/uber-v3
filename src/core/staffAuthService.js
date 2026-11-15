@@ -1,3 +1,4 @@
+import { ownerPhoneTestEnabled } from './adminPhoneTestScope.js';
 // =========================================
 // STAFF AUTH SERVICE
 // =========================================
@@ -53,11 +54,10 @@ import {
 // TOKEN LIFETIMES
 // =========================================
 
-export const STAFF_ACCESS_TTL_SECONDS =
-  15 * 60;
-
-export const STAFF_REFRESH_TTL_MS =
-  30 * 24 * 60 * 60 * 1000;
+import { STAFF_ACCESS_TTL_SECONDS, STAFF_REFRESH_TTL_MS } from './staffAuthPolicy.js';
+export { STAFF_ACCESS_TTL_SECONDS, STAFF_REFRESH_TTL_MS } from './staffAuthPolicy.js';
+import { isOwnerAccount, ownerSessionEvidence } from './ownerMfaRepository.js';
+import { beginOwnerMfaLogin } from './ownerMfaService.js';
 
 
 // =========================================
@@ -373,7 +373,8 @@ async function issueStaffAccessToken(
 
 export async function loginStaff(
   env,
-  credentials
+  credentials,
+  context = {}
 ) {
 
   const parsed =
@@ -413,6 +414,10 @@ export async function loginStaff(
     return invalidCredentials();
   }
 
+
+  if(ownerPhoneTestEnabled(env) && (account.role !== 'admin' || !await isOwnerAccount(env,account.id))){
+    await consumeDummyPasswordWork(parsed.password);return invalidCredentials();
+  }
 
   // =======================================
   // ACCOUNT STATUS
@@ -501,6 +506,10 @@ export async function loginStaff(
     return invalidCredentials();
   }
 
+
+  if (authenticatedAccount.role === 'admin' && await isOwnerAccount(env, authenticatedAccount.id)) {
+    return beginOwnerMfaLogin(env, authenticatedAccount, context);
+  }
 
   // =======================================
   // SESSION IDENTIFIERS
@@ -654,6 +663,8 @@ export async function refreshStaff(
   }
 
 
+  if(ownerPhoneTestEnabled(env) && !await isOwnerAccount(env,currentSession.accountId))return invalidRefreshToken();
+
   // =======================================
   // REPLAY / REVOKED TOKEN
   // =======================================
@@ -732,6 +743,9 @@ export async function refreshStaff(
     return invalidRefreshToken();
   }
 
+
+  const mfa = await ownerSessionEvidence(env, account, currentSession, now);
+  if (mfa.required && !mfa.verified) return invalidRefreshToken();
 
   // =======================================
   // REPLACEMENT SESSION
@@ -890,6 +904,11 @@ export async function logoutStaff(
     };
   }
 
+
+  if(ownerPhoneTestEnabled(env)){
+    const session=await getStaffSessionByRefreshTokenHash(env,hash);
+    if(!session || !await isOwnerAccount(env,session.accountId))return {ok:true};
+  }
 
   await revokeStaffSession(
     env,

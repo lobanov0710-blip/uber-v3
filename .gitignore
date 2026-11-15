@@ -10,6 +10,10 @@ node_modules/
 # and must never be committed.
 .staff-bootstrap/
 
+# Owner-local phone test config and reports; no credentials in Git.
+.owner-phone/
+wrangler.admin-phone.staging.json
+
 # Python preflight test artifacts.
 __pycache__/
 *.py[cod]

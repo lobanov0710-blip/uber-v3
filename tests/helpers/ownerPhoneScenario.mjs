@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import { seedModeration,moderator,fixturePassword,driverId } from './adminModerationScenario.mjs';
+import { bootstrapStatements,TARGET } from '../../scripts/lib/adminPhoneSetupPolicy.mjs';
+import { createAdminBootstrapAccount } from '../../src/core/staffProvisioning.js';
+import { digest,totp,unbase32 } from '../../src/core/ownerMfaCrypto.js';
+export const phoneSecrets={JWT_SECRET:'synthetic-phone-jwt-key-01234567890123456789',ADMIN_MFA_ENCRYPTION_KEY:Buffer.alloc(32,9).toString('base64')};
+export async function ownerPhoneScenario(DB,send){
+ await seedModeration(DB);
+ const old=await send('/staff/login',{login:moderator,password:fixturePassword},null,false);assert.equal(old.status,200);
+ const account=await createAdminBootstrapAccount({login:'owner.phone.fixture',displayName:'Synthetic OWNER',password:fixturePassword});
+ const bootstrap='bootstrap_'+'a'.repeat(43),plan=bootstrapStatements({account,newAccount:true,digest:await digest('mfa-bootstrap',bootstrap)});
+ await DB.batch(plan.statements.map(sql=>DB.prepare(sql)));
+ const dispatcher=await send('/staff/login',{login:moderator,password:fixturePassword});assert.equal(dispatcher.status,401);assert.equal(dispatcher.body.accessToken,undefined);
+ assert.equal((await send('/staff/refresh',{refreshToken:old.body.refreshToken})).status,401);
+ assert.equal((await send('/v1/admin/me',undefined,old.body.accessToken)).status,401);
+ const first=await send('/staff/login',{login:account.login,password:fixturePassword});assert.equal(first.status,200);assert.equal(first.body.accessToken,undefined);
+ const start=await send('/v1/admin/mfa/enrollment/start',{challengeId:first.body.challengeId,bootstrapCode:bootstrap});assert.equal(start.status,200);
+ const confirmed=await send('/v1/admin/mfa/enrollment/confirm',{enrollmentId:start.body.enrollmentId,code:await totp(unbase32(start.body.secret),Math.floor(Date.now()/30000))});assert.equal(confirmed.status,200);assert.equal(confirmed.body.accessToken,undefined);
+ const challenge=await send('/staff/login',{login:account.login,password:fixturePassword});
+ const verified=await send('/v1/admin/mfa/recovery/verify',{challengeId:challenge.body.challengeId,recoveryCode:confirmed.body.recoveryCodes[0]});assert.equal(verified.status,200);
+ const token=verified.body.accessToken,me=await send('/v1/admin/me',undefined,token);assert.equal(me.status,200);assert.equal(me.body.admin.testScope,'owner_phone');assert.equal(me.body.admin.mfa.verified,true);
+ const queue=await send('/v1/admin/registrations',undefined,token);assert.equal(queue.status,200);assert.ok(!JSON.stringify(queue.body).includes(driverId));
+ for(const route of ['/v1/admin/registrations/'+driverId,'/v1/driver/me','/orders','/staff/accounts','/v1/admin/registrations/staff_owner_phone_fixture/resources/document/document_fixture001'])assert.equal((await send(route,undefined,token)).status,404);
+ assert.equal((await send('/v1/admin/registrations/staff_owner_phone_fixture',undefined,token)).status,404);
+ const refresh=await send('/staff/refresh',{refreshToken:verified.body.refreshToken});assert.equal(refresh.status,200);
+ assert.equal((await send('/v1/admin/me',undefined,refresh.body.accessToken)).status,200);
+ assert.equal((await send('/staff/logout',{refreshToken:refresh.body.refreshToken})).status,200);
+ assert.equal((await send('/v1/admin/me',undefined,refresh.body.accessToken)).status,401);
+ return {ownerMfa:true,dispatcherDenied:true,driverDenied:true,privateFilesDenied:true,realRegistrationsHidden:true,refreshLogout:true,target:TARGET.host};
+}

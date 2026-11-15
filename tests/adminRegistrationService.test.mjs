@@ -25,7 +25,11 @@ test('registration queue remains permission-controlled on real SQLite', async t 
   assert.equal(result.ok, true);
   assert.equal(result.count, 1);
   assert.equal(result.registrations[0].driverId, driver.id);
-  assert.equal((await getAdminRegistrationQueue({ DB }, admin, { status: 'approved' })).status, 400);
+  for (const status of ['approved', 'rejected']) {
+    DB.sqlite.prepare('UPDATE driver_profiles SET registration_status=?').run(status);
+    assert.equal((await getAdminRegistrationQueue({ DB }, admin, { status })).count, 1);
+    assert.equal((await getAdminRegistrationQueue({ DB }, admin)).count, 0);
+  }
   assert.equal((await getAdminRegistrationQueue({ DB }, admin, { limit: 0 })).status, 400);
 });
 

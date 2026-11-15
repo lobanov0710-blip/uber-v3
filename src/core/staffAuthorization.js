@@ -1,3 +1,5 @@
+import { ownerPhoneTestEnabled } from './adminPhoneTestScope.js';
+import { ownerSessionEvidence } from './ownerMfaRepository.js';
 // =========================================
 // STAFF AUTHORIZATION
 // =========================================
@@ -258,6 +260,7 @@ export async function authenticateStaffRequest(
 
   let account;
   let session;
+  let mfa;
 
 
   try {
@@ -428,6 +431,9 @@ export async function authenticateStaffRequest(
       return invalidStaffToken();
     }
 
+    mfa = await ownerSessionEvidence(env, account, session);
+    if ((mfa.required && !mfa.verified) || (ownerPhoneTestEnabled(env) && !mfa.required)) return invalidStaffToken();
+
   } catch (
     error
   ) {
@@ -473,6 +479,7 @@ export async function authenticateStaffRequest(
         session.id
     },
 
+    mfa,
     account,
     session
   };

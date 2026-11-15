@@ -141,6 +141,10 @@ export async function readAdminPrivateResource(
     return forbidden();
   }
 
+  if (type === "document" && !adminCan(access, "documents.read_sensitive")) {
+    return forbidden();
+  }
+
 
   const metadata =
     await getAdminPrivateResourceMetadata(

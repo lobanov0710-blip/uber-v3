@@ -1,6 +1,7 @@
 // =========================================
 // ADMIN ITEM MODERATION SERVICE
 // =========================================
+import { phoneFixtureAllowed } from './adminPhoneTestScope.js';
 
 import {
   adminCan,
@@ -154,6 +155,9 @@ function validRevision(value) {
 
 
 function normalizeNote(value) {
+  if (value !== null && value !== undefined && typeof value !== "string") {
+    return undefined;
+  }
   if (
     value === null ||
     value === undefined ||
@@ -444,6 +448,7 @@ export async function startAdminRegistrationReview(
   input,
   options = {}
 ) {
+  if(!await phoneFixtureAllowed(env,driverId))return notFound();
   const resolved =
     await requireAccess(
       env,
@@ -680,6 +685,10 @@ export async function reviewAdminRegistrationItem(
     return invalid(
       "invalid_moderation_decision"
     );
+  }
+
+  if ((decision === "changes_required" || decision === "rejected") && !note) {
+    return invalid("moderation_reason_required");
   }
 
   // Replay follows current authorization and input validation, before mutable state checks.
@@ -1034,6 +1043,10 @@ export async function completeAdminRegistrationReview(
     note === undefined
   ) {
     return invalid();
+  }
+
+  if ((decision === "changes_required" || decision === "rejected") && !note) {
+    return invalid("moderation_reason_required");
   }
 
   // Replay follows current authorization and input validation, before mutable state checks.

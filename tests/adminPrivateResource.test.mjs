@@ -324,7 +324,8 @@ const documentReviewer = {
 const docDb =
   createDb({
     permissions: [
-      "drivers.verify_documents"
+      "drivers.verify_documents",
+      "documents.read_sensitive"
     ],
     resource:
       passport
@@ -374,7 +375,8 @@ const identitySelfie = {
 const docsOnlyIdentityDb =
   createDb({
     permissions: [
-      "drivers.verify_documents"
+      "drivers.verify_documents",
+      "documents.read_sensitive"
     ],
     resource:
       identitySelfie
@@ -421,7 +423,8 @@ const identityReviewer = {
 const identityDb =
   createDb({
     permissions: [
-      "drivers.verify_identity"
+      "drivers.verify_identity",
+      "documents.read_sensitive"
     ],
     resource:
       identitySelfie
@@ -553,3 +556,12 @@ assert.equal(
 console.log(
   "✓ ADMIN PRIVATE RESOURCE TESTS PASSED"
 );
+
+// A moderation grant alone cannot read sensitive files, and refusal precedes R2/audit.
+for (const permissions of [['drivers.verify_documents'], ['documents.read_sensitive'], ['drivers.read']]) {
+  const DB = createDb({ permissions, resource: passport });
+  let reads = 0;
+  const denied = await readAdminPrivateResource({ DB, DRIVER_PRIVATE_FILES: { get() { reads++; throw new Error('must not read'); } } },
+    documentReviewer, { driverId: DRIVER_ID, resourceType: 'document', resourceId: passport.id });
+  assert.equal(denied.status, 403);assert.equal(reads, 0);assert.equal(DB.audits.length, 0);
+}
