@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-15",
+  "purpose": "Recover OWNER bootstrap after committed Wrangler import response parsing failure",
+  "sourceCommit": "a7ed6128dbd5416b1c4db5210accfacebec3377e",
+  "ci": {
+    "runId": 43726075123,
+    "jobId": 132848172485,
+    "status": "success",
+    "testScripts": 67,
+    "ownerPhoneTests": 15,
+    "protectedCliScenarios": 5,
+    "migrationFiles": 18,
+    "d3PreflightTests": 12,
+    "nativeD1Harnesses": 4,
+    "dependencyVulnerabilities": 0,
+    "workerDryRun": true
+  },
+  "protectedCliScenarios": [
+    "legacy_committed_failure",
+    "new_success",
+    "existing_success",
+    "wrong_postcondition",
+    "import_failure"
+  ],
+  "reviewedInputSha256": "9c0aeca6ae4f33f46b79967cbd2d11d28c790e3e9440f1d33270ea3ca5b4fbe7",
+  "reportedState": {
+    "ownerExists": true,
+    "ownerFactorCount": 0,
+    "pendingMigrations": [],
+    "jwtSecretPresent": true,
+    "mfaSecretPresent": true
+  },
+  "approvedRecoverySequence": [
+    "reuse_local_exact_staging_config",
+    "npm_ci_ignore_scripts",
+    "plan",
+    "owner_existing",
+    "phone_enrollment"
+  ],
+  "keptProtections": [
+    "private_TTY",
+    "source_integrity",
+    "exact_staging_target",
+    "typed_confirmation",
+    "atomic_import",
+    "strict_JSON_reads",
+    "authoritative_digest_expiry_postcondition",
+    "no_factor_reset"
+  ],
+  "remoteWritesPerformedByAssistant": false,
+  "archive": {
+    "name": "owner-phone-setup.zip",
+    "bytes": 392150,
+    "sha256": "b4f813c07c78f3bd2de7fd97869610f71e24aece43d8f1e4eae22e7db62d5079",
+    "files": 182,
+    "protectedSourceFiles": 96
+  },
+  "packagingChecks": {
+    "sourceHashes": true,
+    "privateTtyInit": true,
+    "tamperedSourceRejectedBeforeNetwork": true,
+    "productionConfigExcluded": true,
+    "uploadedDriverFirebaseKeyAbsent": true
+  },
+  "unchanged": [
+    "Worker runtime",
+    "Admin APK",
+    "migrations",
+    "dependencies",
+    "OWNER account password",
+    "MFA policy"
+  ],
+  "privateWindowsRuntimeNotExecutedHere": true
+}

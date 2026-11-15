@@ -1681,3 +1681,40 @@ wrong_postcondition без выдачи кода, import_failure с rollback. И
 raw terminal output не раскрывается, hidden synthetic password не echo. Existing
 ownerPhoneSetup 15 tests PASS, syntax/whitespace checks PASS. Новый regression
 добавлен в CI после native OWNER phone check; финальный полный CI ещё ожидается.
+
+
+### 2026-11-15 — Post-import исправление проверено, подготовлено продолжение
+
+Source a7ed6128dbd5416b1c4db5210accfacebec3377e, backend CI 43726075123 /
+job 132848172485 — SUCCESS: 67 test scripts, 15 setup tests, 18 migrations,
+12 D3 preflight tests, четыре native workerd/D1 harnesses, Worker dry-run,
+npm audit 0 vulnerabilities. Дополнительно новая CI проверка реального protected
+CLI + реального Wrangler 4.125.0 + synthetic loopback SQLite/D1 API: 5 scenarios
+PASS — legacy_committed_failure, new_success, existing_success, wrong_postcondition,
+import_failure. Negative legacy control воспроизводит записанный OWNER/bootstrap
+без вывода кода. Positive existing flow не создаёт вторую account; wrong
+postcondition/import failure не выдают код, audit failure откатывает запись.
+Real Cloudflare requests 0, password echo/raw terminal disclosure отсутствуют.
+
+Исправленный пакет отдельно: transfer-admin-owner-phone-import-2026-11-15/
+owner-phone-setup.zip, 182 файла, 96 source hashes. Receipt —
+OWNER_PHONE_IMPORT_FIX_2026-11-15.json. Проверены source hashes, private TTY init
+с synthetic Account ID, отказ на подменённый source до config/network, отсутствие
+production config и загруженного Driver Firebase key в ZIP. Архив SHA256:
+b4f813c07c78f3bd2de7fd97869610f71e24aece43d8f1e4eae22e7db62d5079.
+Предыдущие пакеты сохранены; private Windows run этого исправления ещё ожидается.
+
+Выдана OWNER_PHONE_POST_IMPORT_RECOVERY_2026-11-15.md: новый ZIP в новую папку,
+локальное повторное использование уже проверенного config (CLI валидирует его
+заново), npm ci --ignore-scripts → plan → owner. Ожидается Existing OWNER found;
+не повторяются schema/isolate/key creation, не создаётся другой account, пароль
+не сбрасывается. Новая попытка выдаст новый bootstrap только для active OWNER
+без factor после authoritative digest/expiry read. Затем те же login/password
+на телефоне, новый bootstrap, TOTP/recovery и новый вход. Секреты только в
+private TTY/UI. Актуальные remote/phone результаты будут записаны после ответа
+владельца. Утверждение STAGING действует, G1 на паузе, APK/Worker/API/миграции/
+зависимости не меняются. Production/merge/reset не выполнялись.
+
+При публикации source первый JS orchestration вызов не выполнился из-за
+синтаксической ошибки конкатенации до tool actions; исправлен и повторён,
+репозитории проверены сопоставлением staged tree с remote proposed tree.
