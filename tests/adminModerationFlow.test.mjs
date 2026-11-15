@@ -37,6 +37,10 @@ test('HTTP review rejects oversized payloads and missing correction reasons with
  for(const path of [base+'/review/items/document/'+documentId,base+'/review/complete']){
   const result=await send(path,{decision:'changes_required',expectedRevision:path.endsWith('/complete')?2:1},token,'fixture-missing-reason');
   assert.equal(result.status,400);assert.equal(result.body.code,'moderation_reason_required');
+  for(const note of [{reason:'not a string'},true,42]){
+   const invalid=await send(path,{decision:'changes_required',expectedRevision:path.endsWith('/complete')?2:1,note},token,'fixture-invalid-reason');
+   assert.equal(invalid.status,400);
+  }
  }
  assert.equal(DB.sqlite.prepare('SELECT status FROM document_resources WHERE id=?').get(documentId).status,'pending');
 });

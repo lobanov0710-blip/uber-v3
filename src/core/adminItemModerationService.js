@@ -154,6 +154,9 @@ function validRevision(value) {
 
 
 function normalizeNote(value) {
+  if (value !== null && value !== undefined && typeof value !== "string") {
+    return undefined;
+  }
   if (
     value === null ||
     value === undefined ||

@@ -1222,3 +1222,14 @@ ADMIN ITEM MODERATION ERROR ожидаемо в negative test с намерен�
 G1 приостановлен; remote DB/R2, реальные документы/credentials, merge/deploy не трогались.
 Ограничения: очередь показывает до 50 записей запроса, history до 200; остальные
 Admin разделы, Driver исправления и живой E2E остаются дальнейшими этапами G2/G1.
+
+
+### 2026-11-15 — Строгая проверка типа причины при финальном review
+
+После первого source CI backend d1f9e1e / 43702432031 SUCCESS дополнительный
+проход выявил: normalizeNote преобразовывал JSON object/boolean/number в строку.
+Теперь причина принимает только string (null/undefined остаются отсутствием note);
+возврат/отклонение без непустой строки запрещены. Расширены реальные HTTP tests
+неверных типов; 3 HTTP scenarios, moderation policy и replay regressions PASS.
+Изменённый backend source требует свежего полного CI; прошлый PASS за него не выдаётся.
+Android source 894fe1c5 и его APK этим серверным исправлением не меняются.
