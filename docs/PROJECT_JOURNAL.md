@@ -1797,3 +1797,94 @@ Account id/password_hash/token_version/role/status сохраняются. PASS,
 приватно переписать: Admin очищает его в фоне, IDs сохраняет только до исходных
 5 минут. Значения ключей/OTP/bootstrap/recovery в чат не присылать. Фактический
 перевыпуск/phone login ожидаются от владельца. G1 остаётся на паузе.
+
+
+## 2026-11-15 — Владелец подтвердил новый TOTP и вход; продолжение G2
+
+Владелец подтвердил: после перевыпуска новый TOTP подключён, вход в Transfer
+Admin на телефоне выполнен. Это результат проверки владельцем; независимого
+чтения live factor/session или новой полной STAGING E2E проверки не проводилось.
+Значения seed/bootstrap/OTP/recovery не запрашиваются и не фиксируются.
+Задача восстановления OWNER phone login закрывается по подтверждению владельца.
+
+Продолжается ранее утверждённая последовательность G2: после Admin moderation
+— Driver registration/vehicles, затем availability/manual assignment. Для
+анкеты и автомобилей создана отдельная ветка arch/g2-driver-registration.
+Используются действующие D3 API, Java/XML, существующие Material-компоненты.
+Реальные документы/биометрия не собираются: D4–D7 не утверждены, G1 на паузе.
+Флаг ADMIN_PHONE_TEST_ONLY не снимается; Driver UI проверяется на синтетическом
+транспорте, а не обходом изоляции STAGING. Merge и production deploy не разрешены.
+
+В текущем GET /v1/driver/me есть profile/vehicles/status/revision, но нет
+причин возврата отдельных элементов. Не придумывать эти данные в UI; расширение
+контракта требует отдельной конкретизации. Первый срез: сохранение личных
+данных, read-only подтверждённый телефон, список/создание/изменение автомобилей,
+VIN, серверные статусы, optimistic revision conflict и защита от повтора mutation.
+Отправка документов и финальная подача всей регистрации в этот срез не входят.
+
+
+## 2026-11-15 — Проверка G2 Driver и общая защита HTTP503: финальный code CI
+
+Android Draft PR #8: https://github.com/lobanov0710-blip/TransferDriver/pull/8
+Проверенный source 5cb6d60060c491e4d0768c90d1446beeacfd1e00, tree
+fae2d2d4f41923bdde0e7ebb2bb1a47ba85b8a7e. CI 43736924677 / job132881464115
+SUCCESS: Driver43 JVM×3=129 + API35 runtime27; Admin34 JVM×3=102 + runtime29.
+Итого231 JVM +56 runtime, без failed/skipped. Full lint3 variants обеих apps:
+Driver0errors/54 прежних warnings в каждом, новые формы0issues; Admin0issues.
+Локальная повторная сборка и те же6 JVM suites/6 lint suites прошли. Driver7+
+Admin5 security guards и4 backend registration contract scripts PASS.
+
+Нативный artifact14171191658 (544933bytes) checksum совпал:
+218740e98b81bb7106046c30666e5eb028d1c6f06ec5ab511c932ba549d548e1.
+Четыре actual API35 screenshots1080×2400 прошли signature/IHDR/chunk CRC/IEND
+и локальную повторную проверку. Предыдущий artifact с adb diagnostic text
+остался отвергнутым, его CI success не использован как визуальная приёмка.
+
+Собран Admin debug STAGING с прежним отдельным сертификатом (публичный SHA256
+ea4f14836b45719946857ce90a3fd8399a088b6ecca76f0a82db26cfa9c71a8b),
+взятым только из прежнего локального ignored signing store. APK SHA256
+43bfbb4daad747a53d231a2ffb3518ad3a5fd8e125d3a3712a519cbef85348d5.
+Driver debug APK SHA256 a299c3a7ba3de59d15bc74a041f3c2cfb3bb9ad0c24d68c6a1111e039b6b8157;
+сертификат отличается от Admin. APK подписи проверены apksigner37. Его новый
+формат V2 Signer потребовал исправить локальный разбор public digest; первая
+попытка receipt завершилась StopIteration, ключи не раскрывались/не менялись.
+Это локальные сборки того же source; CI самостоятельно собрал/проверил source,
+а не эти конкретные локальные APK bytes. Driver live E2E не выполнялся.
+
+Загруженный Firebase SDK config key проверен на отсутствие во всех tracked
+файлах (сам ключ не печатался). Документы ТЗ не изменены: blob
+7434dc0b1548b4f2c5382f12d6cc5399f93d0a84. OWNER подтвердил новый TOTP/вход;
+G1 остаётся на паузе, ADMIN_PHONE_TEST_ONLY не снимается. Реальные документы/
+биометрия, release signing, merge и production deploy не выполнялись.
+
+Первый fresh Impeccable reviewer завершился без результата из-за service usage
+limit; это не review pass. После команды владельца «далее» повторяется тот же
+safe review packet, без user secrets/входных ключей и без fork исходной беседы.
+Итог UI review и необходимые исправления ещё будут зафиксированы отдельно.
+
+
+### G2 Driver: independent UI review и промежуточные runtime failures
+
+Frontend source16cdc03e6e7b2830c88a9bda19ee370540d1dfb5, Draft PR#8,
+отдельная arch/g2-driver-registration. Backend code/API/schema/deploy не меняются.
+Первый fresh reviewer был остановлен service quota; после команды владельца
+«далее» independent generic agent по fallback Impeccable contract выполнил
+проверку4valid native captures. Disposition fix: контраст system bars и
+обрезанный диапазон мест при font1.3. Исправлены foreground по DayNight и
+короткий label+permanent helper. PRODUCT.md содержит только утверждённые факты.
+
+CI43738660853/source5448f31c: Driver dark fixture timeout до новых assertions.
+Исправлена синхронизация actual font configuration и уничтожения Activity,
+добавлен test-only запрет немокированного network. Следующий CI43739771085/
+source505454a5: Driver27runtime PASS и4PNG validation PASS, позднее Admin
+moderation test потерял focus первого dialog. Добавлены event-based ожидание
+parent focus и matcher focused dialog, Espresso confirmation/все assertions
+сохранены, таймауты не повышены. Production code не менялся после UI correction.
+Сохранение PNG теперь возможно после позднего failure только по validator
+marker, без изменения общего test status. Не применяется retry-until-green.
+
+Текущий полный CI43742661189 ещё выполняется; окончательный runtime/recapture/
+verdict не объявляются успешными заранее. История проверок/причин/fixes подробно
+записана в Android журнале той же feature branch. Срез остаётся частичной
+реализацией G2, Driver live E2E/реальные материалы/merge/production не выполняются.
+G1 на паузе, утверждённое OWNER-only STAGING ограничение не снимается.
