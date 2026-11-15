@@ -68,17 +68,20 @@ OWNER и не меняет secrets. CLI сверяет source manifest, точн
 
 ```powershell
 node .\scripts\adminOwnerPhoneSetup.mjs schema
+node .\scripts\adminOwnerPhoneSetup.mjs jwt-key
 node .\scripts\adminOwnerPhoneSetup.mjs mfa-key
 node .\scripts\adminOwnerPhoneSetup.mjs deploy
 node .\scripts\adminOwnerPhoneSetup.mjs owner
 ```
 
 `schema`: только подтверждённая pending 0018, повторно не применяется.
-`mfa-key`: CSPRNG 32 bytes → Wrangler stdin, ни ключа в аргументах/файлах/выводе,
+`jwt-key`: отдельный CSPRNG 32 bytes → base64 → Wrangler stdin для JWT_SECRET;
+существующий secret не заменяется. Никаких значений в выводе/argv/файлах.
+`mfa-key`: другой независимый CSPRNG 32 bytes → Wrangler stdin, ни ключа в аргументах/файлах/выводе,
 ни автоматической ротации. Существующий ключ сохраняется; факторы без исходного
 ключа требуют отдельного восстановления, CLI их не сбрасывает.
 `deploy`: только фиксированный STAGING, проверка закрытых Driver routes и
-`X-Transfer-Test-Scope: owner_phone`. Если JWT_SECRET отсутствует или есть
+`X-Transfer-Test-Scope: owner_phone`. Если после jwt-key JWT_SECRET всё ещё отсутствует или есть
 неожиданные bindings, остановка для отдельного разбора; production не затрагивается.
 
 `owner`: если OWNER существует без TOTP — использует его; если binding отсутствует,
@@ -121,3 +124,13 @@ Bootstrap TTL 15 минут, считается по часам БД, макси
 STAGING или прохождение на вашем телефоне. Это станет проверяемым только после
 приватного `plan`, утверждённых remote шагов и ручной проверки. В журнал передаются
 только action/result, время и безопасный отчёт, без реквизитов входа.
+
+
+## Разбор первого отчёта
+
+[Отчёт от 2026-11-15 и предлагаемый этап](OWNER_PHONE_PLAN_REVIEW_2026-11-15.md).
+В первом отчёте отсутствуют оба ключа; старый пакет не содержит action jwt-key.
+Используйте обновлённый пакет в отдельной папке; прежний APK остаётся тем же.
+Не копируйте файлы поверх старого source manifest. Для новой папки повторите
+init и plan после npm ci; приватный Cloudflare login можно использовать существующий.
+До явного утверждения remote этапа доступны только init/login/plan.

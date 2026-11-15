@@ -73,3 +73,29 @@ test('remote inspection rejects unknown or production bindings before deploy',()
  for(const extra of [{name:'FILES',type:'r2_bucket'},{name:'APP_ENV',type:'plain_text',text:'production'},{name:'OTHER',type:'plain_text',text:'unknown'}])assert.throws(()=>checkRemoteVersion({resources:{bindings:[...bindings,extra]}}));
  const wrong=structuredClone(bindings);wrong[0].id='production';assert.throws(()=>checkRemoteVersion({resources:{bindings:wrong}}));
 });
+
+test('missing JWT and MFA keys work with actual crypto and travel only through stdin after confirmation',async()=>{
+ const {putMissingPhoneSecret}=await import('../scripts/lib/ownerPhoneSecrets.mjs');
+ const {signJWT,verifyJWT}=await import('../src/core/auth.js');
+ const {encryptSeed,decryptSeed}=await import('../src/core/ownerMfaCrypto.js');
+ const keys={},confirmed=[];const current={pending:[],jwtPresent:false,mfaKeyPresent:false,factors:0};
+ const client={async run(args,{input}){assert.equal(args.length,3);assert.deepEqual(args.slice(0,2),['secret','put']);assert.ok(confirmed.length>Object.keys(keys).length);assert.equal(Buffer.from(input,'base64').length,32);assert.ok(!args.includes(input));keys[args[2]]=input;}};
+ for(const name of ['JWT_SECRET','ADMIN_MFA_ENCRYPTION_KEY'])assert.equal(await putMissingPhoneSecret(client,current,name,async phrase=>confirmed.push(phrase)),true);
+ assert.deepEqual(confirmed,['SET JWT KEY ON uber-v3-staging','SET MFA KEY ON uber-v3-staging']);assert.notEqual(keys.JWT_SECRET,keys.ADMIN_MFA_ENCRYPTION_KEY);
+ const token=await signJWT(keys.JWT_SECRET,{sub:'synthetic-owner'},60);assert.equal((await verifyJWT(keys.JWT_SECRET,token)).sub,'synthetic-owner');
+ const seed=new Uint8Array(20).fill(7),env={ADMIN_MFA_ENCRYPTION_KEY:keys.ADMIN_MFA_ENCRYPTION_KEY};assert.deepEqual(await decryptSeed(env,'synthetic-owner',await encryptSeed(env,'synthetic-owner',seed)),seed);
+});
+test('secret preparation never rotates existing keys and refuses pending schema, unknown names or existing MFA factors',async()=>{
+ const {putMissingPhoneSecret}=await import('../scripts/lib/ownerPhoneSecrets.mjs');
+ let writes=0,confirmations=0;const client={async run(){writes++;}},confirm=async()=>{confirmations++;};
+ const ready={pending:[],jwtPresent:true,mfaKeyPresent:true,factors:1};
+ for(const name of ['JWT_SECRET','ADMIN_MFA_ENCRYPTION_KEY'])assert.equal(await putMissingPhoneSecret(client,ready,name,confirm),false);
+ for(const [state,name]of [[{...ready,pending:['0018_owner_totp_mfa.sql']},'JWT_SECRET'],[{...ready,mfaKeyPresent:false},'ADMIN_MFA_ENCRYPTION_KEY'],[ready,'PROXY_HMAC_SECRET'],[{...ready,jwtPresent:undefined},'JWT_SECRET']])await assert.rejects(putMissingPhoneSecret(client,state,name,confirm));
+ assert.equal(writes,0);assert.equal(confirmations,0);
+});
+test('denied confirmation prevents a key write; uncertain provider failure is not automatically retried',async()=>{
+ const {putMissingPhoneSecret}=await import('../scripts/lib/ownerPhoneSecrets.mjs');const current={pending:[],jwtPresent:false,mfaKeyPresent:false,factors:0};let writes=0;
+ const client={async run(){writes++;throw new Error('synthetic uncertain result');}};
+ await assert.rejects(putMissingPhoneSecret(client,current,'JWT_SECRET',async()=>{throw new Error('not approved');}));assert.equal(writes,0);
+ await assert.rejects(putMissingPhoneSecret(client,current,'JWT_SECRET',async()=>{}));assert.equal(writes,1);
+});

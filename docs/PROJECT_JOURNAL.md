@@ -1409,3 +1409,37 @@ Live server E2E, private storage/реальные материалы и тест
 не утверждены. ТЗ не менялось (blob 7434dc0b1548b4f2c5382f12d6cc5399f93d0a84).
 Публикуются только рабочие feature ветки и journal-only baseline updates; merge,
 remote migrations/secrets/OWNER provisioning и deployment не выполнялись.
+
+
+## 2026-11-15 — Получен и разобран OWNER phone public plan
+
+Владелец передал admin-phone-plan.public.json, SHA256
+1ee6fadc8b3a3f375c66f5d15a48a84a528ed23515beaf20dbf715bffdc41726.
+Файл разобран как данные без выполнения содержимого. Source 550d2dda8f86242a8608b9daaee2c64bff0e9c49,
+Worker/host/D1 совпадают с утверждённым STAGING; единственная pending migration
+0018_owner_totp_mfa.sql. По отчёту OWNER binding отсутствует, MFA factors 0,
+JWT_SECRET и ADMIN_MFA_ENCRYPTION_KEY отсутствуют; remoteWritesPerformed=false,
+G1 остаётся приостановленным. Отчёт не подтверждает отсутствие staff accounts.
+KV ID/value APP_ENV не входят в public JSON, exact check выполняет ранее выданный
+CLI; независимое live чтение из среды ассистента не проводилось.
+
+Обнаружен пробел setup: deploy правильно блокируется без JWT_SECRET, но нет
+отдельного безопасного action создания. Подготовлен jwt-key с независимыми
+CSPRNG 32 bytes через Wrangler stdin; значения не выводятся/не сохраняются и
+не передаются в argv. Существующие JWT/MFA keys не ротируются, чужие secret names
+запрещены, без reviewed schema/typed confirmation записи невозможны, MFA factors
+без исходного key не сбрасываются. Remote записи не выполнялись.
+
+Предложен конкретный этап для утверждения: 0018 → jwt-key → mfa-key → plan →
+OWNER-only deploy → приватная настройка выбранного владельцем OWNER account/TOTP.
+Подробный разбор: OWNER_PHONE_PLAN_REVIEW_2026-11-15.md. Передача файла сама по
+себе не разрешает этот этап; прежняя read-only граница сохраняется. APK/Android
+код и контракт API не меняются. Production/G1/R2/Firebase/merge вне объёма.
+
+Локально ownerPhoneSetup — 11 tests PASS: добавлены crypto roundtrip JWT/MFA
+для независимых ключей, stdin-only transport, сохранение existing secrets,
+pending schema/unknown name/factor guards, denied confirmation и отсутствие
+автоповтора ambiguous provider failure. При подготовке нового теста сначала
+перепутан порядок аргументов signJWT/verifyJWT; исправлен вызов теста по существующей
+сигнатуре, код JWT не изменялся. Свежий backend CI ещё ожидается; прежний Android
+CI остаётся применим к неизменённому APK/source.
