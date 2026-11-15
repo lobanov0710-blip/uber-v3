@@ -1524,3 +1524,27 @@ CI 43719538291 SUCCESS (15 setup tests и полный backend набор); ZIP 
 Факт migration/isolation/secrets/OWNER/TOTP/телефона будет записан после
 безопасного отчёта о выполнении; при ошибке — action name и plan без секретов.
 G1 остаётся на паузе.
+
+
+## 2026-11-15 — Разобрана остановка private CLI на init
+
+Владелец сообщил фиксированное OWNER PHONE SETUP FAILED at init и уточнил:
+ошибка после ввода public Account ID; Test-Path wrangler.admin-phone.staging.json
+возвращает True. До запроса ID уже пройдены private TTY/source manifest checks.
+В коде init запись выполняется writeFile(flag='wx'), существующий config не
+перезаписывается. В распакованном проверенном ZIP с synthetic Account ID
+воспроизведено: первый init PASS, повторный init после ID выдаёт тот же generic
+failure; байты ранее созданного config не изменяются, remote calls отсутствуют.
+Это подтверждает блокировку повторного init при существующем config; исходный
+скрытый exception пользователя независимо не получен, Account ID в чат не запрошен.
+
+Безопасный следующий шаг — пропустить ненужное создание и выполнить plan.
+Plan заново проверяет exact STAGING config/source/bindings/schema и не делает
+remote writes. Config не удаляется/не перезаписывается, private TTY и source
+checks не отключаются. После успешного plan владелец продолжает уже утверждённый
+этап с schema; нового согласования не требуется. При ошибке plan — только action
+name/public report без raw credentials/provider output. В инструкциях добавлено
+пояснение про повторный init. Код/пакет/подпись/API не меняются; прежние 15 setup
+tests/CI 43719538291 остаются применимы, заново за исполненные не выдаются.
+G1 на паузе; migration/deploy/keys/OWNER/phone success не подтверждены этим
+сообщением. Remote действия из среды ассистента не выполнялись.
