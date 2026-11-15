@@ -6,7 +6,7 @@
 
 > **Текущая работа:** по решению владельца G1 приостановлен; начат G2 / отдельный Transfer Admin.
 > Параметры/API TOTP MFA OWNER утверждены; реализация в arch/g2-owner-totp-mfa и Android arch/g2-transfer-admin. Локальные проверки и source CI/runtime PASS; live E2E не выполнялся.
-> **Актуальный индекс: 2026-11-15.** [План и матрица ТЗ](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/PROJECT_PLAN_V1_0.md) · [Текущий аудит](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/AUDIT_SPEC_PLAN_JOURNAL_2026-11-14.md)
+> **Актуальный индекс: 2026-11-15.** [План и матрица ТЗ](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/g2-transfer-admin/docs/PROJECT_PLAN_V1_0.md) · [Базовый аудит 2026-11-14](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/AUDIT_SPEC_PLAN_JOURNAL_2026-11-14.md)
 > Реализация частичная; production-выпуск не готов. SDK config/локальные сборки получены;
 > подпись/Play/App Check/private R2 и живой E2E ещё не подтверждены. D1–D3 утверждены, D4–D7 нет.
 > Ниже сохранена история: слова «текущий»/«отсутствует» внутри старого checkpoint относятся к его дате.
@@ -36,6 +36,8 @@ Merge/deploy не выполнялись. Реальные D1/R2/Firebase E2E и
 
 Следующие блокеры: terminal done/canceled mutations с revision/idempotency/audit,
 полный photo-check eligibility и согласование Android с /v1 assignment flow.
+
+> **Последний завершённый срез:** Admin registration moderation; source CI d469b42c / 51d21da7 PASS.
 
 ## CI run 156: обнаружена разница npm, исправление воспроизводимости
 
@@ -1168,3 +1170,140 @@ SDK/cache и старые логи/артефакты сохранились; п
 G1 остаётся приостановлен. Merge, deploy, remote migration apply и создание
 реальных OWNER keys/credentials не выполнялись. Локальная фиксация исходников
 и сверка дерева выполняются отдельно от изменения удалённых рабочих веток.
+
+
+## 2026-11-15 — Утверждена рекомендация продолжить G2; начало Admin moderation
+
+Владелец: «Продолжаем согласно рекомендации». Принята предложенная очередность:
+Admin moderation → Driver registration/vehicles → availability/manual assignment,
+с проверками и фиксацией результатов каждого законченного сценария. Текущий срез —
+Admin карточка регистрации, поэлементные решения, возврат с причиной и история.
+G1 не возобновляется, D4–D7 этим не утверждаются. Только синтетические fixtures.
+
+Проверены ТЗ §§28–35, D1–D3 и существующие review/resource APIs. История уже входит
+в review bundle; новые history endpoints/таблицы не требуются. Найдены пробелы:
+queue filter исключает approved/rejected из пяти требуемых очередей;
+private document read не требует отдельного documents.read_sensitive. Исправления
+входят в текущий срез вместе с отрицательными тестами. Ручное identity verified
+по-прежнему запрещено; просмотр/одобрение не заменяет D4 provider result.
+Изменения разрабатываются в текущих отдельных G2 ветках; merge/deploy/remote
+migration не выполняются. Результаты новых тестов пока не объявляются PASS.
+
+
+### 2026-11-15 — Admin moderation: код и локальные проверки подготовлены
+
+UI: пять фильтров (submitted/under_review/changes_required/approved/rejected),
+карточка и история, начало проверки, отдельные решения по документам/фото/авто,
+итоговое решение. Подтверждение документа/фото требует предварительного preview;
+identity verified вручную недоступно, итоговое одобрение зависит от backend readiness.
+Preview — только bounded JPEG/PNG/WebP в памяти, без URL/export/cache/внешнего viewer.
+Карточка/причина/image/pending action исключены из saved state и очищаются в фоне.
+Каждый вызов читает свежие permissions; response/session binding предотвращает
+переход позднего запроса на другую учётную запись. POST не повторяется через refresh;
+явный повтор при неизвестном результате сохраняет исходные actor/body/revision/key.
+
+Backend: approved/rejected разрешены как явные queue filters; default active queue
+не изменена. Для sensitive document read требуется отдельное documents.read_sensitive
+вместе с соответствующим verify_documents/verify_identity. Три review mutation JSON
+ограничены 4096 bytes; для возврата/отклонения причина обязательна и на сервере.
+Новых routes, migrations, dependencies и identity provider нет.
+
+PASS: Admin JVM 31 debug + 31 staging + 31 release = 93, failures/errors/skips 0;
+full lint всех трёх variants — 0 issues. Backend 66 test scripts — PASS, включая
+3 новых HTTP/SQLite scenarios. Native local workerd HTTP/D1 сценарий — PASS:
+partial return сохраняет verified элементы, replay не дублирует audit, отзыв прав
+блокирует повтор, ручное identity approval запрещено. Аудит failure rollback
+и oversized/missing reason также проверены через настоящий router/SQLite.
+Новые Android runtime tests скомпилированы; их выполнение ожидается в source CI.
+Финальная APK/AAB сборка ещё выполняется, артефакты пока не объявлены готовыми.
+
+В ходе проверок исправлены устаревшее ожидание теста (approved ранее был запрещён)
+и единственный lint UnusedResources без подавления проверок. Сообщение
+ADMIN ITEM MODERATION ERROR ожидаемо в negative test с намеренным audit failure;
+оно не содержит DB exception/PII. Security guards 5 Admin + 7 Driver PASS.
+G1 приостановлен; remote DB/R2, реальные документы/credentials, merge/deploy не трогались.
+Ограничения: очередь показывает до 50 записей запроса, history до 200; остальные
+Admin разделы, Driver исправления и живой E2E остаются дальнейшими этапами G2/G1.
+
+
+### 2026-11-15 — Android runtime CI выявил сбой; расширена диагностика
+
+Android source 894fe1c5 / CI 43702428479: JVM/build/guards/signatures PASS,
+connected Admin runtime FAILED; runtime PASS не заявляется. Failure-report step
+ранее печатал только app/Driver XML, поэтому подробности Admin отсутствуют.
+Добавлен вывод обоих отчётов в существующий failure step. Это изменение диагностики,
+не отключение/пропуск тестов. Новый CI нужен для точной причины и исправления.
+
+
+### 2026-11-15 — Причина Android runtime failure установлена
+
+Diagnostic source dd4911bb / CI 43703195348 вывел Admin XML: 27 tests,
+26 PASS, один failure в новом moderation UI test. Espresso RootViewPicker
+выбрал BASE_APPLICATION root без window focus при открытом AlertDialog
+(ModerationUiInstrumentationTest.java:60, RootViewWithoutFocusException).
+Оба действия подтверждения теперь явно ищут isDialog() root, сохраняя реальный
+Espresso click и ожидание focus. Focus/security checks, FLAG_SECURE и остальные
+27 тестов не ослабляются/не пропускаются. Все 5 repository moderation tests,
+background/saved-state privacy test и прежние MFA/isolation tests уже PASS.
+App code этим test-only исправлением не меняется; новый полный CI ещё ожидается.
+
+
+### 2026-11-15 — Строгая проверка типа причины при финальном review
+
+После первого source CI backend d1f9e1e / 43702432031 SUCCESS дополнительный
+проход выявил: normalizeNote преобразовывал JSON object/boolean/number в строку.
+Теперь причина принимает только string (null/undefined остаются отсутствием note);
+возврат/отклонение без непустой строки запрещены. Расширены реальные HTTP tests
+неверных типов; 3 HTTP scenarios, moderation policy и replay regressions PASS.
+Изменённый backend source требует свежего полного CI; прошлый PASS за него не выдаётся.
+Android source 894fe1c5 и его APK этим серверным исправлением не меняются.
+
+
+## 2026-11-15 — G2 Admin moderation: итоговая проверка и готовые артефакты
+
+Проверенный Android source d469b42c60fd1c6c33ba91120920e0d1aa709929:
+https://github.com/lobanov0710-blip/TransferDriver/actions/runs/43704273792
+job 132781893105 — SUCCESS. Admin JVM 31+31+31 = 93, API 35 runtime 27;
+Driver JVM 29+29+29 = 87, runtime 12. Executed reports без failures/errors/skips.
+Выполнены все новые repository/UI tests: fresh permissions, sensitive read denial,
+явный retry после потерянного acknowledgement с тем же body/key, partial return,
+401/account replacement, snapshot-bound image, saved-state/background privacy.
+Полный lint Admin debug/staging/release — 0 issues. Security guards 5+7,
+package/signature/UID isolation, endpoint locks и Driver App Check policy PASS.
+
+Проверенный backend source 51d21da7e7338a7b3a85982c06922fc200963e80:
+https://github.com/lobanov0710-blip/uber-v3/actions/runs/43702881770
+job 132777627061 — SUCCESS. 66 test scripts, 18 local migration smoke checks,
+12 preflight tests; три native workerd/D1 harness (availability, OWNER MFA,
+moderation HTTP workflow), Worker dry-run — PASS. Npm install/audit: 0 vulnerabilities.
+Внутри нового HTTP suite 3 сценария включают audit rollback, reason/type/body bounds;
+никакие security checks не отключались. Предыдущие Android CI failures 43702428479
+и diagnostic 43703195348 сохранены в истории выше и не выданы за PASS.
+
+Новый итоговый набор из 6 файлов:
+/workspace/artifacts/transfer-admin-moderation-verified-2026-11-15/
+Debug/staging/release APK, staging/release AAB и AndroidTest APK проверены:
+manifest/package, no shared UID, backup/cleartext disabled, разные Admin/Driver
+certificates, v2 signature debug и AndroidTest (cert совпадает с Admin), unsigned
+staging/release APK/AAB, правильные variant endpoints, отсутствие Driver/Firebase
+classes и SHA-256 всех файлов. Source hashes 45 файлов сохранены.
+Первоначальный набор transfer-admin-moderation-2026-11-15 и старые MFA/первый
+Admin наборы не перезаписаны. Полный receipt:
+docs/ADMIN_MODERATION_BUILD_2026-11-15.json в Android ветке, копия рядом с APK.
+Dependencies не менялись; Android OSV inventory от 2026-11-15 (6 configurations,
+152 components, 0 advisories на момент запроса) сохранён и не выдаётся за новый scan.
+
+Draft PR #7 TransferDriver / #29 uber-v3 обновлены под итоговый объём: OWNER MFA
+и registration moderation. Подробный API/permissions/retry контракт — backend
+/docs/ADMIN_MODERATION_API.md. После проверенных source SHA публикуются только
+документы/receipt. Общие baseline-ветки получают только журнал, код moderation
+остаётся в отдельных G2 ветках. История Git не переписывается.
+
+ТЗ не менялось: blob 7434dc0b1548b4f2c5382f12d6cc5399f93d0a84.
+Этим завершён описанный Admin moderation срез, а не весь G2/production.
+Ограничения: до 50 строк очереди без cursor pagination, до 200 review events;
+остальные Admin разделы и Driver анкета/автомобили/исправления/availability ещё
+не завершены. Следующий утверждённый шаг рекомендации — Driver registration/
+vehicles UI на синтетических данных с серверными статусами и revisions.
+D4–D7 не утверждены. G1 приостановлен. Реальные документы/биометрия, storage/OWNER
+secrets, live server E2E, remote migrations, merge и deploy не выполнялись.
