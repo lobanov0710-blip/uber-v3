@@ -69,3 +69,21 @@ Driver маршрутов. До настроенных ключей/OWNER/MFA р
 сформировался. Нельзя повторять неоднозначную запись вслепую или обходить guards.
 Пароль, seed, bootstrap, recovery-коды, токены, SQL и raw provider output в чат
 не отправлять. Production/merge/G1/R2/Firebase вне этого утверждения.
+
+
+## Повторный init при существующем config
+
+Если init остановился после Account ID, проверьте только наличие файла:
+`Test-Path .\wrangler.admin-phone.staging.json`. При True повторное создание
+config не требуется: init использует flag=wx и защищает существующий файл от
+перезаписи. Ничего не удаляйте и не отключайте checks. Выполните:
+
+```powershell
+node .\scripts\adminOwnerPhoneSetup.mjs plan
+```
+
+Plan проверяет существующий config и состояние STAGING без remote writes.
+После его успешного завершения продолжайте утверждённую последовательность с
+schema. При ошибке plan остановитесь и сообщите action name, без содержимого
+private config/credentials. При False причина может быть в формате public
+Account ID или доступе на запись; требуется уточнение, не автоматический обход.
