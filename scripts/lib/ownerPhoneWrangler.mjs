@@ -14,7 +14,7 @@ export class OwnerPhoneWrangler {
   try{
    const output=await new Promise((resolve,reject)=>{
     const child=spawn(process.execPath,[path.join(this.root,'node_modules/wrangler/bin/wrangler.js'),...args,'--config',this.configPath],{
-     cwd:this.root,shell:false,stdio:['pipe','pipe','pipe'],env:{...process.env,CLOUDFLARE_ACCOUNT_ID:config.account_id,WRANGLER_LOG_PATH:path.join(temporary,'wrangler.log'),WRANGLER_SEND_METRICS:'false',CI:'true'}});
+     cwd:this.root,shell:false,stdio:['pipe','pipe','pipe'],env:{...process.env,CLOUDFLARE_ACCOUNT_ID:config.account_id,WRANGLER_LOG_PATH:path.join(temporary,'wrangler.log'),WRANGLER_LOG_SANITIZE:'true',WRANGLER_SEND_METRICS:'false',CI:'true'}});
     const stdout=[],stderr=[];let bytes=0;const timer=setTimeout(()=>{child.kill();reject(new Error('Cloudflare command timed out; inspect state before retry'));},180000);
     const abort=()=>{child.kill();reject(new Error('Owner cancelled'));};process.once('SIGINT',abort);
     child.on('error',()=>{clearTimeout(timer);process.removeListener('SIGINT',abort);reject(new Error('Cannot start pinned Wrangler'));});

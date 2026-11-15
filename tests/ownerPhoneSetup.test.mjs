@@ -119,3 +119,16 @@ test('initial OWNER-only Worker answers scope probes and denies login before eit
  const response=await worker.fetch(new Request('https://'+TARGET.host+'/staff/login',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'203.0.113.12'},body:JSON.stringify({login:'synthetic-unknown',password:'Synthetic-Password-123!'})}),env,{});
  assert.equal(response.status,401);assert.equal((await response.json()).accessToken,undefined);
 });
+
+test('private Wrangler wrapper enforces sanitized logs even when parent environment disables them',async t=>{
+ const {mkdtemp,mkdir,writeFile,rm}=await import('node:fs/promises'),{tmpdir}=await import('node:os'),path=await import('node:path');
+ const {OwnerPhoneWrangler}=await import('../scripts/lib/ownerPhoneWrangler.mjs');
+ const root=await mkdtemp(path.join(tmpdir(),'phone-wrapper-fixture-'));t.after(()=>rm(root,{recursive:true,force:true}));
+ await mkdir(path.join(root,'node_modules/wrangler/bin'),{recursive:true});
+ await writeFile(path.join(root,'node_modules/wrangler/package.json'),JSON.stringify({version:'4.125.0'}));
+ await writeFile(path.join(root,'node_modules/wrangler/bin/wrangler.js'),"console.log(JSON.stringify({sanitized:process.env.WRANGLER_LOG_SANITIZE==='true'}))");
+ const config=path.join(root,'phone.json');await writeFile(config,JSON.stringify(makeConfig('a'.repeat(32))));
+ const previous=process.env.WRANGLER_LOG_SANITIZE;process.env.WRANGLER_LOG_SANITIZE='false';
+ try{assert.deepEqual(await new OwnerPhoneWrangler(root,config).run(['fixture'],{json:true}),{sanitized:true});}
+ finally{if(previous===undefined)delete process.env.WRANGLER_LOG_SANITIZE;else process.env.WRANGLER_LOG_SANITIZE=previous;}
+});
