@@ -682,6 +682,10 @@ export async function reviewAdminRegistrationItem(
     );
   }
 
+  if ((decision === "changes_required" || decision === "rejected") && !note) {
+    return invalid("moderation_reason_required");
+  }
+
   // Replay follows current authorization and input validation, before mutable state checks.
   const idempotency =
     await prepareIdempotency(
@@ -1034,6 +1038,10 @@ export async function completeAdminRegistrationReview(
     note === undefined
   ) {
     return invalid();
+  }
+
+  if ((decision === "changes_required" || decision === "rejected") && !note) {
+    return invalid("moderation_reason_required");
   }
 
   // Replay follows current authorization and input validation, before mutable state checks.

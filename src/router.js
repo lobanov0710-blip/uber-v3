@@ -985,7 +985,7 @@ export default async function router(
 
 
     const body =
-      await safeJson(
+      await boundedAuthJson(
         req
       );
 
@@ -1156,7 +1156,7 @@ export default async function router(
 
 
     const body =
-      await safeJson(
+      await boundedAuthJson(
         req
       );
 
@@ -1325,7 +1325,7 @@ export default async function router(
 
 
     const body =
-      await safeJson(
+      await boundedAuthJson(
         req
       );
 

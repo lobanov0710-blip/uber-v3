@@ -1168,3 +1168,57 @@ SDK/cache и старые логи/артефакты сохранились; п
 G1 остаётся приостановлен. Merge, deploy, remote migration apply и создание
 реальных OWNER keys/credentials не выполнялись. Локальная фиксация исходников
 и сверка дерева выполняются отдельно от изменения удалённых рабочих веток.
+
+
+## 2026-11-15 — Утверждена рекомендация продолжить G2; начало Admin moderation
+
+Владелец: «Продолжаем согласно рекомендации». Принята предложенная очередность:
+Admin moderation → Driver registration/vehicles → availability/manual assignment,
+с проверками и фиксацией результатов каждого законченного сценария. Текущий срез —
+Admin карточка регистрации, поэлементные решения, возврат с причиной и история.
+G1 не возобновляется, D4–D7 этим не утверждаются. Только синтетические fixtures.
+
+Проверены ТЗ §§28–35, D1–D3 и существующие review/resource APIs. История уже входит
+в review bundle; новые history endpoints/таблицы не требуются. Найдены пробелы:
+queue filter исключает approved/rejected из пяти требуемых очередей;
+private document read не требует отдельного documents.read_sensitive. Исправления
+входят в текущий срез вместе с отрицательными тестами. Ручное identity verified
+по-прежнему запрещено; просмотр/одобрение не заменяет D4 provider result.
+Изменения разрабатываются в текущих отдельных G2 ветках; merge/deploy/remote
+migration не выполняются. Результаты новых тестов пока не объявляются PASS.
+
+
+### 2026-11-15 — Admin moderation: код и локальные проверки подготовлены
+
+UI: пять фильтров (submitted/under_review/changes_required/approved/rejected),
+карточка и история, начало проверки, отдельные решения по документам/фото/авто,
+итоговое решение. Подтверждение документа/фото требует предварительного preview;
+identity verified вручную недоступно, итоговое одобрение зависит от backend readiness.
+Preview — только bounded JPEG/PNG/WebP в памяти, без URL/export/cache/внешнего viewer.
+Карточка/причина/image/pending action исключены из saved state и очищаются в фоне.
+Каждый вызов читает свежие permissions; response/session binding предотвращает
+переход позднего запроса на другую учётную запись. POST не повторяется через refresh;
+явный повтор при неизвестном результате сохраняет исходные actor/body/revision/key.
+
+Backend: approved/rejected разрешены как явные queue filters; default active queue
+не изменена. Для sensitive document read требуется отдельное documents.read_sensitive
+вместе с соответствующим verify_documents/verify_identity. Три review mutation JSON
+ограничены 4096 bytes; для возврата/отклонения причина обязательна и на сервере.
+Новых routes, migrations, dependencies и identity provider нет.
+
+PASS: Admin JVM 31 debug + 31 staging + 31 release = 93, failures/errors/skips 0;
+full lint всех трёх variants — 0 issues. Backend 66 test scripts — PASS, включая
+3 новых HTTP/SQLite scenarios. Native local workerd HTTP/D1 сценарий — PASS:
+partial return сохраняет verified элементы, replay не дублирует audit, отзыв прав
+блокирует повтор, ручное identity approval запрещено. Аудит failure rollback
+и oversized/missing reason также проверены через настоящий router/SQLite.
+Новые Android runtime tests скомпилированы; их выполнение ожидается в source CI.
+Финальная APK/AAB сборка ещё выполняется, артефакты пока не объявлены готовыми.
+
+В ходе проверок исправлены устаревшее ожидание теста (approved ранее был запрещён)
+и единственный lint UnusedResources без подавления проверок. Сообщение
+ADMIN ITEM MODERATION ERROR ожидаемо в negative test с намеренным audit failure;
+оно не содержит DB exception/PII. Security guards 5 Admin + 7 Driver PASS.
+G1 приостановлен; remote DB/R2, реальные документы/credentials, merge/deploy не трогались.
+Ограничения: очередь показывает до 50 записей запроса, history до 200; остальные
+Admin разделы, Driver исправления и живой E2E остаются дальнейшими этапами G2/G1.

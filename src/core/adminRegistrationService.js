@@ -22,7 +22,9 @@ const QUEUE_STATUSES =
     "",
     "submitted",
     "under_review",
-    "changes_required"
+    "changes_required",
+    "approved",
+    "rejected"
   ]);
 
 
