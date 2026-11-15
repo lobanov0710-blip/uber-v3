@@ -1751,3 +1751,49 @@ Existing OWNER found; новый account/пароль/factor/keys/schema/isolate
 SUCCESS, 15 setup tests + 5 protected CLI scenarios и полный backend набор.
 Это не новый запуск CI и не независимый scan пользовательского Windows.
 Remote действий из среды ассистента не выполнялось, G1 на паузе.
+
+
+## 2026-11-15 — Разъяснён ввод TOTP: два приложения; возможное раскрытие pending seed
+
+Владелец сообщил о цифровой клавиатуре, затем уточнил: приложение Transfer Admin,
+bootstrap принимается, затруднение возникло с буквенной строкой после этого.
+В сообщение включена потенциально секретная строка настройки. Её значение,
+фрагменты и fingerprint в журнал/файлы/репозиторий/инструменты не копируются.
+Владелец отдельно подтвердил: 6-значным кодом подключение ещё не подтверждено,
+recovery-коды не получены. Точный live factor state не читается ассистентом.
+
+Проверены исходники и фактически переданный signed debug APK: SHA256
+f7d42523fb5f16803d4bd52c03a9b0f462f041e1911c858799944f2c48f35fd2
+соответствует receipt/source 8a948591. apkanalyzer binary XML и aapt2 resource
+mapping подтвердили bootstrapCode inputType=0x81 (textPassword), maxLength=100;
+totpCode/enrollmentCode inputType=0x12 (numberPassword), maxLength=6. Java не
+переводит bootstrap в number. Numeric TOTP input здесь предусмотрен контрактом;
+факт неисправной клавиатуры на bootstrap не установлен. Установленный на телефоне
+APK независимо не считан. Код/IME/security guards не изменяются по предположению.
+
+Дан порядок двух приложений: Admin показывает секретный Base32 key → отдельное
+TOTP приложение (например Google Authenticator), manual setup с этим key и time
+based mode → шесть цифр обратно в Admin. Bootstrap из private Windows вводится
+только в Код подключения. Буквенный key не предназначен для цифрового поля Admin.
+TOTP SHA1/6 digits/30s и challenge 5 минут остаются по утверждённой политике.
+
+Потенциально раскрытый pending key не используется дальше. Пока enrollment не
+подтверждён, предложен новый bootstrap через утверждённый protected owner action
+для того же существующего OWNER, затем новый login/enrollment. Реальный CLI
+сам проверит active owner/no factor; при уже enrolled factor остановится без
+reset. Пароль, account, серверные JWT/MFA encryption keys не меняются. Не требуется
+новое согласование прежнего STAGING setup объёма; active MFA reset не разрешён.
+
+Проверка с synthetic account/keys в in-memory SQLite на actual migrations и
+actual protected bootstrap SQL/MFA services: reissue удаляет старые challenges,
+FK ON DELETE CASCADE удаляет pending enrollments; old enrollment confirm и old
+bootstrap отвергаются, fresh key отличается, новый enrollment работает.
+Account id/password_hash/token_version/role/status сохраняются. PASS, raw secrets
+не выводились, actual user string не использовалась, реальных Cloudflare calls 0.
+Это локальная проверка, не подтверждение remote invalidation на ПК владельца.
+
+Добавлена OWNER_TOTP_TWO_APPS_GUIDE_2026-11-15.md с последовательностью действий
+и безопасным перевыпуском. Перед переключением на том же телефоне seed следует
+приватно переписать: Admin очищает его в фоне, IDs сохраняет только до исходных
+5 минут. Значения ключей/OTP/bootstrap/recovery в чат не присылать. Фактический
+перевыпуск/phone login ожидаются от владельца. G1 остаётся на паузе.
