@@ -86,3 +86,11 @@ node .\scripts\adminOwnerPhoneSetup.mjs owner
 существующем config не повторять; schema/isolate/keys заново не выполнять.
 Если файлы смешались, source check остановит plan до работы с target: не
 изменяйте manifest для обхода проверки, используйте проверенный архив.
+
+
+## Какой код вводить на телефоне
+
+[Пошаговая инструкция TOTP в двух приложениях](OWNER_TOTP_TWO_APPS_GUIDE_2026-11-15.md).
+Ключ из Admin вводится в отдельный аутентификатор, а 6 цифр из него — обратно
+в Admin. Numeric TOTP keyboard не меняется. При раскрытии незавершённого key
+используйте предусмотренный protected reissue без password/factor reset.
