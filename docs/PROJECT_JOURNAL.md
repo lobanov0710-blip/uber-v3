@@ -1548,3 +1548,26 @@ name/public report без raw credentials/provider output. В инструкци
 tests/CI 43719538291 остаются применимы, заново за исполненные не выдаются.
 G1 на паузе; migration/deploy/keys/OWNER/phone success не подтверждены этим
 сообщением. Remote действия из среды ассистента не выполнялись.
+
+
+## 2026-11-15 — После existing-config init выполнен read-only plan
+
+Владелец прислал успешный CLI итог: Reading the exact STAGING target; credentials
+and provider output stay private / READ-ONLY plan complete. Это результат
+plan после рекомендации использовать уже существующий config вместо повторного
+init. Config не удалялся/не перезаписывался по инструкции; факт байтового
+состояния файла на ПК владельца ассистентом не проверялся. В сообщении нет
+обновлённого public JSON: конкретные текущие pending/owner/key flags и source SHA
+по одному stdout не переутверждаются. CLI plan по своему контракту remote writes
+не выполняет; deployment/schema/keys/OWNER/TOTP/телефон этим не подтверждены.
+
+Фраза Do not run write actions before approval — стандартный текст CLI.
+Явное утверждение владельца от 2026-11-15 уже записано и действует на
+schema → isolate → jwt-key → mfa-key → plan → owner только STAGING; нового
+согласования этого объёма не требуется. Следующие команды выдаются с условием
+последовательного успешного исполнения и сохранением всех exact-target/schema/
+route-isolation guards. Сначала schema (единственная допустимая pending 0018),
+потом isolate и лишь после подтверждения закрытых routes — ключи/OWNER.
+При ошибке остановка и безопасная диагностика без вывода credentials.
+Фактические изменения на Cloudflare выполняет владелец в private PowerShell,
+а не среда ассистента. G1 остаётся на паузе. Код/пакет не менялись.
