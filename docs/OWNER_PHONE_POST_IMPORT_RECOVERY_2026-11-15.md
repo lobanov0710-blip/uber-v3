@@ -59,3 +59,30 @@ TOTP и сохраните recovery-коды до ухода в фон. Зате
 и результат входа на телефоне. При новой ошибке после PROVISION не повторяйте
 запись вслепую: сначала plan. Пароли, bootstrap, seed, recovery-коды, private
 config/SQL и raw provider logs в чат не передавать.
+
+
+## Если обновлена родительская папка, а запускается вложенная
+
+При повторной ошибке после замены файлов проверьте sourceCommit в текущем
+owner-phone-release.json. В разобранном случае owner-phone-approved содержала
+старый 01bbcc8a, а её родитель owner-phone-setup — исправленный a7ed6128.
+Относительная команда node .\scripts\adminOwnerPhoneSetup.mjs запускает файл
+из текущей рабочей папки. Перейдите явно в папку с исправленным пакетом.
+
+Уже проверенный config можно локально скопировать из вложенной папки, только
+если его нет в папке исправления:
+
+```powershell
+if (-not (Test-Path -LiteralPath '.\wrangler.admin-phone.staging.json')) {
+    Copy-Item -LiteralPath '.\owner-phone-approved\wrangler.admin-phone.staging.json' -Destination '.\wrangler.admin-phone.staging.json'
+}
+npm ci --ignore-scripts
+node .\scripts\adminOwnerPhoneSetup.mjs plan
+node .\scripts\adminOwnerPhoneSetup.mjs owner
+```
+
+Каждая следующая команда — только после успеха предыдущей. Выполняйте этот
+блок из исправленной родительской папки, не из owner-phone-approved. Init при
+существующем config не повторять; schema/isolate/keys заново не выполнять.
+Если файлы смешались, source check остановит plan до работы с target: не
+изменяйте manifest для обхода проверки, используйте проверенный архив.

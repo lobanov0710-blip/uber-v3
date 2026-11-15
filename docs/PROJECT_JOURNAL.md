@@ -1718,3 +1718,36 @@ private TTY/UI. Актуальные remote/phone результаты буду�
 При публикации source первый JS orchestration вызов не выполнился из-за
 синтаксической ошибки конкатенации до tool actions; исправлен и повторён,
 репозитории проверены сопоставлением staged tree с remote proposed tree.
+
+
+## 2026-11-15 — Повтор после обновления выполнялся из старой вложенной папки
+
+Владелец сообщил, что распаковал обновление в owner-phone-setup с заменой
+похожих файлов, затем прислал npm ci success (37 added / 38 audited / 0
+vulnerabilities по его выводу), успешный plan и повторный generic owner failure
+после PROVISION. В prompt PowerShell рабочая папка — вложенная
+owner-phone-setup/owner-phone-approved. Private home path и actual staff ID
+из сообщения в журнал не копируются.
+
+Запрошены только публичные sourceCommit из двух owner-phone-release.json.
+Владелец подтвердил: текущая вложенная папка =
+01bbcc8acf5228ba7735969a8fbbf0cb4e8671ba (старый import JSON parsing);
+родительская owner-phone-setup = a7ed6128dbd5416b1c4db5210accfacebec3377e
+(проверенное исправление post-import). Таким образом повтор запускал прежний
+CLI из другой директории, новый исправленный CLI ещё не проверен на его Windows.
+По одному повторному failure точный итог второго import не объявляется:
+успех account/bootstrap/телефона требует новой authoritative проверки.
+
+Продолжение: перейти явно в родительскую owner-phone-setup; сохранить
+существующий config там либо скопировать только локально проверенный config
+из owner-phone-approved, если в родительской папке его нет; не перезаписывать
+имеющийся config и не редактировать source/manifest. Затем npm ci --ignore-scripts,
+plan (проверит все source hashes и exact target), и после успеха owner. Ожидается
+Existing OWNER found; новый account/пароль/factor/keys/schema/isolate не создаются
+и не сбрасываются. Утверждение этого STAGING восстановления действует, повторного
+согласования не нужно. При ошибке plan — остановка, не обход guards.
+
+Код/запечатанный пакет не менялись: по-прежнему source a7ed6128 / CI 43726075123
+SUCCESS, 15 setup tests + 5 protected CLI scenarios и полный backend набор.
+Это не новый запуск CI и не независимый scan пользовательского Windows.
+Remote действий из среды ассистента не выполнялось, G1 на паузе.
