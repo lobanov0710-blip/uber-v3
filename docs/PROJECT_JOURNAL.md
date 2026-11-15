@@ -1363,3 +1363,49 @@ spawnSync; повтор с разрешённым network capability выпол�
 проверяется успешный batch ровно четырёх MFA-only SQL statements. Android runtime
 ещё требует свежего CI; локальная компиляция AndroidTest не выдаётся за его запуск.
 Remote migrations, secrets, account provisioning, deployment и merge не выполнялись.
+
+
+### 2026-11-15 — OWNER phone: финальная проверка и пакет для владельца
+
+Android source 8a948591e6fa8bbbc3dd0b79f25ce27913761323, CI 43714614881 /
+job 132813325050 — SUCCESS. Admin: JVM 31×3=93, API35 runtime 29, lint 0
+issues во всех трёх вариантах. Driver regression: JVM 29×3=87, API35 runtime 12.
+Итого 180 JVM и 41 runtime test, без failures/errors/skips. Required-name guard
+подтвердил выполнение samePhoneSwitchPreservesChallengeWithoutCodesOrExtendedExpiry,
+enrollmentBackgroundKeepsOnlyOpaqueIdsAndNeverSeed, retainedChallengeExpiresWithoutAnotherNetworkRequest
+и прежних MFA/session/moderation checks. Endpoint locks, независимые signatures/UID,
+Play Integrity policy и security guards — PASS.
+
+Backend source 550d2dda8f86242a8608b9daaee2c64bff0e9c49, CI 43714618395 /
+job 132813334993 — SUCCESS. 67 test scripts (новый ownerPhoneSetup 8 tests),
+18 migration files, 12 D3 preflight tests, четыре native workerd/D1 harnesses,
+Worker dry-run и npm audit 0 vulnerabilities. D3 gate не ослаблен.
+
+В отдельной папке artifacts/transfer-admin-owner-phone-2026-11-15 приготовлены
+новый signed debug APK для STAGING, unsigned staging/release APK/AAB и test APK,
+receipt, SHA256SUMS и owner-phone-setup.zip. Прежние наборы не перезаписывались.
+Проверены manifest/package/no-backup/TLS/endpoint, отсутствие Firebase/Driver
+classes, APK v2 signature; AndroidTest подписан тем же Admin сертификатом,
+Driver — другим. Проверка содержимого всех архивов не обнаружила загруженный
+Firebase SDK key Driver (само значение не выводилось).
+
+Setup ZIP: 177 файлов, 95 source hashes; нет production wrangler.toml, .git,
+node_modules, credentials или private config. Распакованный пакет прошёл private
+TTY init с синтетическим public Account ID: только локальный exact-STAGING config,
+без сети/remote writes. Подмена source file блокирует init до config/network.
+Windows PowerShell непосредственно в этой Linux-среде не запускался; реальная
+авторизация Cloudflare и hosted-state не проверены и не объявляются готовыми.
+
+OWNER_PHONE_STAGING_WINDOWS.md описывает первый шаг владельца: npm ci --ignore-scripts,
+init, Cloudflare browser login, read-only plan. В чат — только
+.owner-phone/admin-phone-plan.public.json. Изменяющие schema/mfa-key/deploy/owner
+шаги после разбора отчёта и отдельного утверждения; аккаунт/пароль/factor не
+заменяются автоматически. Публичного bootstrap/reset и обхода MFA нет.
+
+Сборки debug предназначены для теста, release/upload key ещё не создан.
+Live server E2E, private storage/реальные материалы и тест на телефоне владельца
+не выполнены. Dependencies не менялись; прежний OSV inventory 152 components/
+6 configurations/0 advisories не выдаётся за новый scan. G1 на паузе, D4–D7
+не утверждены. ТЗ не менялось (blob 7434dc0b1548b4f2c5382f12d6cc5399f93d0a84).
+Публикуются только рабочие feature ветки и journal-only baseline updates; merge,
+remote migrations/secrets/OWNER provisioning и deployment не выполнялись.

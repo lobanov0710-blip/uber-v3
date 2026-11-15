@@ -100,3 +100,15 @@ CLI требует совпадающее подтверждение, отзыв
 public HTTP contracts и local workerd с реальным bundled router, Android JVM/runtime
 и полный lint. Точные выполненные результаты записываются в PROJECT_JOURNAL.md;
 наличие команд не является заявлением об их выполнении.
+
+
+## Подготовка OWNER phone STAGING от 2026-11-15
+
+Владелец выбрал Admin/OWNER-only scope и приватный Windows PowerShell.
+[Инструкция](OWNER_PHONE_STAGING_WINDOWS.md): exact STAGING target, read-only plan
+перед remote writes, без изменения full D3 gate. `adminOwnerPhoneSetup.mjs`
+предназначен для проверенного ZIP с source manifest; CLI требует private TTY,
+не создаёт public provisioning/reset endpoint и не сбрасывает существующий фактор.
+Временный OWNER-only флаг закрывает Driver/public/legacy/private-file API,
+non-OWNER auth и Driver/support cron; существующие регистрации скрываются.
+Same-phone TOTP IDs/TTL в Android RAM утверждены владельцем; API TTL не изменялся.
