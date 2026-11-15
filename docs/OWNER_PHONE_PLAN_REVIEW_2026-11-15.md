@@ -82,3 +82,14 @@ checks, четыре native workerd/D1 harnesses, dry-run, npm audit 0 vulnerabi
 sanitization Wrangler logs. Пакет/receipt: OWNER_PHONE_SETUP_BUILD_2026-11-15.json.
 APK/Worker runtime/зависимости неизменны; private Windows/live телефон ещё требуют
 участия владельца. Remote этап остаётся не выполненным.
+
+
+## Утверждение владельца от 2026-11-15
+
+После разбора public plan владелец ответил «утверждаю» на этап 0018 → isolate →
+jwt-key → mfa-key → plan → настройка OWNER/TOTP только на STAGING. Граница
+согласования этого этапа пройдена; повторное согласование в чате не требуется.
+[Команды утверждённого этапа](OWNER_PHONE_STAGING_APPROVED_STEPS_2026-11-15.md).
+Ранее записанное ожидание относится к состоянию до этого ответа. Разрешение
+не означает, что remote шаги уже выполнены; их результаты ещё ожидаются от
+владельца, работающего в приватном Windows PowerShell. G1 остаётся на паузе.
