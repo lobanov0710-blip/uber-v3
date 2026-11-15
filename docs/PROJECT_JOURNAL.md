@@ -1888,3 +1888,68 @@ verdict не объявляются успешными заранее. Исто�
 записана в Android журнале той же feature branch. Срез остаётся частичной
 реализацией G2, Driver live E2E/реальные материалы/merge/production не выполняются.
 G1 на паузе, утверждённое OWNER-only STAGING ограничение не снимается.
+
+
+## 2026-11-15 — Первый срез G2 Driver: проверенный checkpoint и ограниченный UI verdict
+
+Окончательный tested source16cdc03e6e7b2830c88a9bda19ee370540d1dfb5,
+tree078a54b798d1911e6f15ac91891bc08afed84321; CI43742661189/job132899016826
+SUCCESS. Driver43JVM×3=129 +27API35runtime, Admin34×3=102 +29runtime:
+231 JVM +56 runtime, failed/skipped0. Полные lint6suites/endpoint locks/
+отдельные package+UID+signing/App Check policy/security guards PASS. Driver
+имеет54 прежних lint warnings и0errors, новые registration files0issues;
+Admin lint0issues. Четыре backend registration contract scripts проверены
+локально PASS, backend production code/API/schema не менялись.
+
+Два промежуточных runtime failures (dark fixture и Admin dialog focus)
+не скрыты/не объявлены успехом: исправлены наблюдаемые условия синхронизации
+fixture без удаления cases/assertions, увеличения timeout или auth bypass.
+Окончательный прогон выполнил все прежние и новые cases. По сравнению с
+source5448f31c после исправления native UI production sources Driver/Admin
+не менялись: дальнейшие changes только tests/workflow/docs.
+
+Post-fix native artifact14173720607 (525678bytes), archive SHA256
+72c114fe0aadf374745b7acbc8d65cd5d6bf08bb13dea36cf7e3b8dc04399077
+проверен после скачивания. Четыре actual PNG1080×2400 light/dark/font1.3
+валидированы и заново просмотрены по тем же путям. Прежние pre-fix captures
+и отвергнутый adb-text artifact не используются как post-fix evidence.
+
+Тот же independent fresh reviewer вернул disposition ship в scoring pass:
+контраст system bars, полный label+permanent helper1–20, factual PRODUCT.md
+и confirmation evidence — все4resolved; регрессий от этого batch не заметил.
+Это verdict только о перечисленных исправлениях, не scan всего проекта,
+не physical-device/live Driver E2E, не полная приёмка G2/production approval.
+Использован generic fresh agent по fallback Impeccable role contract;
+штатный launcher/agent-type отсутствовал, первый service-quota failure описан
+ранее. Отдельный documenter сохранил incumbent Material3 DayNight, без нового
+DESIGN/world/palette/fonts/dependencies, факты/ограничения — в UI review.
+
+Результат: личные данные/read-only подтверждённый телефон, несколько машин,
+обязательный VIN, раздельные revisions/statuses/save; single-send HTTP503
+защита общих clients обеих apps и session/lifecycle binding registration.
+GET me не даёт причин исправлений — UI их не выдумывает; полный wizard/
+документы/биометрия/submit ещё не закончены. Technical response bounds
+1MiB/200vehicles отражены в receipt, это не изменение server model.
+
+Artifacts сохранены раздельно, старые не перезаписаны. Driver UI-fix debug APK
+SHA2562940d9f67f47a27e8a8609f77a3835e16026f20f19688931beb0c2d3c11d4461
+(source5448f31c, тот же production tree в final source); Admin STAGING debug
+SHA25643bfbb4daad747a53d231a2ffb3518ad3a5fd8e125d3a3712a519cbef85348d5
+(source5cb6d600, production Admin не менялся). Admin certificate совпадает
+с ранее выданным, обновление предусматривается поверх без удаления данных.
+Exact local APK bytes не объявляются CI-tested: CI собирал тот же source сам.
+Driver live backend остаётся недоступен в утверждённом OWNER-only STAGING
+scope: G1 на паузе, флаг изоляции не снимается.
+
+Полные facts/hashes/provenance/limitations опубликованы в Android feature:
+https://github.com/lobanov0710-blip/TransferDriver/blob/arch/g2-driver-registration/docs/DRIVER_REGISTRATION_VERIFICATION_2026-11-15.json
+https://github.com/lobanov0710-blip/TransferDriver/blob/arch/g2-driver-registration/docs/DRIVER_REGISTRATION_UI_REVIEW_2026-11-15.md
+Draft PR#8: https://github.com/lobanov0710-blip/TransferDriver/pull/8
+
+Утверждённое ТЗ не изменено (blob7434dc0b1548b4f2c5382f12d6cc5399f93d0a84).
+D4–D7 не утверждены. Владелец подтвердил новый TOTP и phone login; это
+owner-reported acceptance, независимый live factor read не выполнялся.
+Следующая уже утверждённая часть — availability/manual assignment.
+Merge/production deploy не выполняются без отдельного решения владельца.
+Финальные commits меняют только документы/журналы и помечаются [skip ci]:
+проверки закреплены за exact code source выше, повтор unchanged code не нужен.
