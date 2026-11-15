@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-15",
+  "purpose": "Reviewed OWNER-only STAGING first setup, G1 paused",
+  "sourceCommit": "01bbcc8acf5228ba7735969a8fbbf0cb4e8671ba",
+  "ci": {
+    "runId": 43719538291,
+    "jobId": 132828305901,
+    "status": "success",
+    "testScripts": 67,
+    "ownerPhoneTests": 15,
+    "migrationFiles": 18,
+    "d3PreflightTests": 12,
+    "nativeD1Harnesses": 4,
+    "dependencyVulnerabilities": 0,
+    "workerDryRun": true
+  },
+  "reviewedInputSha256": "1ee6fadc8b3a3f375c66f5d15a48a84a528ed23515beaf20dbf715bffdc41726",
+  "proposedSequence": [
+    "schema",
+    "isolate",
+    "jwt-key",
+    "mfa-key",
+    "plan",
+    "owner"
+  ],
+  "remoteWritesPerformed": false,
+  "remoteStageAwaitingApproval": true,
+  "androidUnchanged": {
+    "sourceCommit": "8a948591e6fa8bbbc3dd0b79f25ce27913761323",
+    "ciRunId": 43714614881,
+    "apkSha256": "f7d42523fb5f16803d4bd52c03a9b0f462f041e1911c858799944f2c48f35fd2"
+  },
+  "archive": {
+    "name": "owner-phone-setup.zip",
+    "bytes": 382870,
+    "sha256": "27a6469315a5a9d841dd0269d1154648f5be6453be5842008a2f6fb649962ff7",
+    "files": 179,
+    "protectedSourceFiles": 96
+  },
+  "packagingChecks": {
+    "privateTtyInit": true,
+    "syntheticPublicAccountIdOnly": true,
+    "tamperedSourceRejectedBeforeNetwork": true,
+    "productionConfigExcluded": true,
+    "uploadedDriverFirebaseKeyAbsent": true,
+    "windowsRuntimeTestedHere": false
+  }
+}

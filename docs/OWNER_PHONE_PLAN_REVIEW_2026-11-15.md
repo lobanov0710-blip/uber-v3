@@ -70,3 +70,15 @@ Production, Driver G1, R2/Firebase, реальные материалы, merge, 
 не меняются. Новые remote действия не выполнялись и не разрешены передачей файла.
 Порядок исполнения и private confirmation phrases —
 [OWNER_PHONE_STAGING_WINDOWS.md](OWNER_PHONE_STAGING_WINDOWS.md).
+
+
+## Проверки обновлённого пакета
+
+Source `01bbcc8acf5228ba7735969a8fbbf0cb4e8671ba`,
+[CI 43719538291](https://github.com/lobanov0710-blip/uber-v3/actions/runs/43719538291):
+SUCCESS. 67 test scripts, 15 phone setup tests, 18 migrations, 12 D3 preflight
+checks, четыре native workerd/D1 harnesses, dry-run, npm audit 0 vulnerabilities.
+Отдельно проверены запрет secret write до route isolation и принудительная
+sanitization Wrangler logs. Пакет/receipt: OWNER_PHONE_SETUP_BUILD_2026-11-15.json.
+APK/Worker runtime/зависимости неизменны; private Windows/live телефон ещё требуют
+участия владельца. Remote этап остаётся не выполненным.

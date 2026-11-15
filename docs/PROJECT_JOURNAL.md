@@ -1457,3 +1457,38 @@ HTTP scope header/закрытые Driver routes. Дополнительные t
 неподтверждённой изоляции; локально 13 tests PASS. В ходе правки test source
 исправлена лишняя закрывающая скобка, найденная node --check; production JWT код
 и Worker runtime не изменялись.
+
+
+### 2026-11-15 — Разбор плана и обновлённая OWNER setup подготовка завершены
+
+Итоговый setup source 01bbcc8acf5228ba7735969a8fbbf0cb4e8671ba, backend
+CI 43719538291 / job 132828305901 — SUCCESS: 67 test scripts, ownerPhoneSetup
+15 tests, 18 migrations, 12 unchanged D3 preflight tests, четыре native workerd/D1
+harnesses, Worker dry-run и npm audit 0 vulnerabilities. Предшествующий source
+6ec22a78 / CI 43719298434 (14 phone tests) тоже прошёл; последняя правка дополнительно
+принудительно включает WRANGLER_LOG_SANITIZE=true. Реальный child-process test
+подтверждает sanitization даже при inherited false. Raw provider output не
+выдаётся пользователю; временный private log удаляется.
+
+Обновлённый архив хранится отдельно: transfer-admin-owner-phone-jwt-2026-11-15/
+owner-phone-setup.zip, 179 файлов, 96 protected source hashes. Проверен после
+распаковки: private TTY init создаёт exact STAGING config только локально с
+синтетическим Account ID; подмена source блокируется до config/network. ZIP
+не содержит production config/credentials/.git/node_modules или загруженный
+Driver Firebase SDK key. SHA256 и tested-source provenance —
+OWNER_PHONE_SETUP_BUILD_2026-11-15.json и SHA256SUMS. Предыдущий пакет сохранён.
+Исходный Admin APK не менялся (source 8a948591, CI 43714614881). Worker src,
+миграции и зависимости также не изменялись; исправления только control plane/tests/docs.
+
+Итоговый предложенный порядок после явного утверждения: schema(0018) → isolate
+(подтверждённое пустое OWNER/key state) → jwt-key → mfa-key → plan → owner.
+Ни secret put, ни Owner provision не выполняются без проверки OWNER-only scope.
+Точный account/пароль выбирает владелец в приватном терминале. Cloudflare remote
+write/deploy/merge не выполнялись; реальный Windows run этого обновления, live
+server E2E и телефон владельца ещё не проверены. G1 на паузе.
+
+Прерванный пользовательским сообщением командный вызов не применил правку
+документов; это проверено по состоянию файлов и запись повторена. Команда
+«продолжаем» обработана как продолжение текущей подготовки; remote этап остаётся
+на отдельной границе подтверждения из выданного runbook. В journals сохраняется
+история промежуточного порядка, актуальная последовательность указана выше.
