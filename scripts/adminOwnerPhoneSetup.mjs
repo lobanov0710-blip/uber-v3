@@ -101,7 +101,7 @@ try{
     if(enrolled.length)throw new Error('OWNER already enrolled; no password/factor reset is provided');
     console.log('Existing OWNER found. It will not be replaced. Use its existing login/password.');
    }else{
-    const choice=await ask('Create a new OWNER account (N), or bind an existing active admin (E)? ');
+    const choice=(await ask('Create a new OWNER account (N), or bind an existing active admin (E)? ')).toUpperCase();
     if(choice==='N'){
      const login=await ask('New OWNER login: '),displayName=await ask('Display name: ');let password=await hidden('New password (16–128 characters, hidden): '),again=await hidden('Repeat password (hidden): ');
      try{if(password!==again)throw new Error('Password mismatch');account=await createAdminBootstrapAccount({login,displayName,password});newAccount=true;}finally{password=null;again=null;}
