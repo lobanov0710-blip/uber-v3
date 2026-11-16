@@ -2437,3 +2437,34 @@ links/diff PASS. Новые APK/JVM/runtime/backend suites не запускал
 этот запрос не утверждает новые GET/объём фотоконтроля. Executable code/API/
 schema/dependencies/phone whitelist не менялись. G1paused/D4–D7pending,
 merge/deploy/remote resources/обработка реальных документов не выполнялись.
+
+
+## Состав140 марок явно утверждён владельцем — 2026-11-16
+
+Ответ владельца на опубликованный список: «Состав справочника утверждают.».
+Это явное утверждение полного состава140 марок, включая Haval/Chery.
+Утверждённый исходный список: b5fa627ab31f5c8da65788d60e788f9ea1d824c5,
+VEHICLE_MAKES_CATALOG_PROPOSAL_2026-11-16.{md,json}, Android Draft PR#11.
+Повторное подтверждение не запрашивалось; прежние pending записи — история.
+
+Статус изменён на approved-composition, сохранены дата/точная формулировка,
+source и SHA256 состава id/name/group:
+20c245092f7299e051616d1ade2c71aab8bd233578c2f5c47edab721b54e6d46.
+Все140 makes/5 groups и предложенные aliases/proposedBehavior сохранены
+без изменения. PRODUCT/план/справочник и фотоконтроль proposal актуализированы.
+Документы опубликованы: b4a9e8999ffabeda5b5aef45c073deeefe73d39a,
+tree334399045540fa868fece18fb4490036bb3a4f0a; local/remote tree совпадают.
+
+Проверены140 unique IDs/names,5 counts,188 search entries/no collisions,
+length≤80/no controls, Markdown/JSON parity, metadata/source snapshot checksum,
+неизменность состава и links/diff. Это фиксация решения, не новая сборка:
+новые APK/JVM/native/backend tests не запускались и не заявляются выполненными.
+Служебный JS publisher первоначально остановился на SyntaxError до любых
+инструментов/записей, затем исправлен; ref изменён только после проверки tree.
+
+Объём утверждения: состав марок. Поиск/aliases, модели, внедрение UI/API,
+миграция старых данных и новые GET/выбор объёма фотоконтроля этим сообщением
+не утверждены. implementationChanged=false/photoControlApiApprovalImplied=false.
+API/schema/dependencies/правила допуска/phone whitelist не менялись.
+G1paused/D4–D7pending; merge/deploy не выполнялись. Запись фиксирует решение
+для следующих шагов, а не объявляет реализацию справочника завершённой.
