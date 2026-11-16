@@ -2307,3 +2307,26 @@ Admin UI ручного назначения — следующий планов
 не объявляется готовым; новый APK не выпускался. Merge/deploy требуют отдельного
 решения. Финальные docs/journal commits [skip ci] не меняют проверенный код;
 результаты относятся к exact code source выше.
+
+
+## G2 Admin manual assignment UI — 2026-11-16, проверка Material3 исправления
+
+Android Draft PR#10 https://github.com/lobanov0710-blip/TransferDriver/pull/10,
+ветка arch/g2-admin-assignment-ui, base arch/g2-availability-assignment.
+Утверждённый вариант A/D1–D3: явные order+driver/vehicle, reason, confirmation,
+orderRevision/idempotency, no automatic replay, session-bound/current grants/MFA,
+onStop privacy, закрытый owner_phone scope. Backend API/whitelist не менялись.
+Устранена неоднозначность одинаковых маршрутов: в UI показан полный orderId.
+
+Проверенный source1a26fb5950eab915f05230e306b05c60fb6d6041,
+CI43875519388 SUCCESS:291 JVM,84 API35 native (Driver38/Admin46),6 build/lint,
+endpoint/AppCheck/signing/UID/security gates,18 validated native PNG.
+Fresh Impeccable reviewer проверил10 Admin captures, disposition FIX только
+для legacy confirmation surface. Builder заменён на существующий Material3
+компонент, runtime защиты не менялись. Текущий source86ae9b46fe6b7918eb28cf00b822a34f26f3b52c,
+CI43877768185 — RUNNING; прежний успех не доказывает новую версию.
+Требуются recaptures и scoring того же reviewer, затем fresh documenter/receipt.
+
+G1paused/D4–D7pending. Это synthetic Activity/component evidence, не live/hardware
+приёмка. На OWNER-only STAGING operational routes остаются404. Merge/deploy
+и расширение телефонного scope не выполнялись; требуют отдельного решения.
