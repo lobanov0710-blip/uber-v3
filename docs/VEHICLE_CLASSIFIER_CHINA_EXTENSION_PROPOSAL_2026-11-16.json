@@ -197,18 +197,25 @@
     "original116": "approved-with-source-notes",
     "BelgeeAndTenetReferenceAddition": "approved",
     "runtimeImport": "not-authorized",
-    "ownerAnswer": "Утверждаю",
+    "ownerAnswer": "Исходные 116 строк и добавление Belgee/TENET добавить и утвердить",
     "date": "2026-11-16",
-    "approvalQuestion": "Утверждаете эти 15 дополнений и предложенные условия?",
     "approvedProposalCommit": "47dde60122dcb03734351c43c957603b8cca3291",
     "approvedProposalCsvSha256": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99",
-    "scope": "Exactly 15 additional rules: 6 comfort, 9 business, minYear2023, all listed conditions retained. This is model-rule approval, not approval of individual vehicles.",
+    "scope": "All131 listed model rules approved: original116 with exact years and source notes, previous15 with year2023 and listed conditions. Belgee/TENET addition approved. This does not approve individual vehicles or runtime activation.",
     "bodyCondition": "The listed separate body-approval condition for Avatr12 and Zeekr001 is retained; no condition is silently waived.",
     "original116Approval": {
       "ownerAnswer": "Исходные 116 строк и добавление Belgee/TENET добавить и утвердить",
       "date": "2026-11-16",
       "sourceCsvSha256": "3f8297f7b750816e13a3ceb82182e10f33bc42cdc308feb8e8ae2f1fa27ecc7d",
       "sourceSnapshotCommit": "ba98b93285ade5706a64772d40b1f8d510d41387"
+    },
+    "additional15Approval": {
+      "ownerAnswer": "Утверждаю",
+      "date": "2026-11-16",
+      "approvalQuestion": "Утверждаете эти 15 дополнений и предложенные условия?",
+      "approvedProposalCommit": "47dde60122dcb03734351c43c957603b8cca3291",
+      "approvedProposalCsvSha256": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99",
+      "scope": "Exactly 15 additional rules: 6 comfort, 9 business, minYear2023, all listed conditions retained. This is model-rule approval, not approval of individual vehicles."
     }
   },
   "sourceScope": "Official pages identify models and describe equipment; owner approved the 15 listed Transfer Servis model rules and conditions. They do not certify other operators tariffs or every 2023 trim.",

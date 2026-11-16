@@ -2768,3 +2768,9 @@ APK/runtime/live E2E/merge/deploy не выполнялись. G1paused/D4–D7p
 Обычный git diff --check отметил CR в сохранённом CRLF CSV как trailing
 whitespace. Повтор с cr-at-eol (остальные whitespace checks сохранены) PASS;
 BOM/CRLF исходника не менялись, внешние пробелы в ячейках проверены отдельно.
+
+Финальная сверка receipt: общий approval.scope явно указывает All131,
+последнее поручение сохранено как ownerAnswer; первая запись Exactly15
+сохранена отдельно как additional15Approval с вопросом/source/hash. Это
+устраняет неоднозначность области двух решений, без изменения CSV/состава/условий.
+JSON scope/history consistency PASS.
