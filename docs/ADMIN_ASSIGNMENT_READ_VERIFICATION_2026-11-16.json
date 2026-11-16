@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-16",
+  "approval": {
+    "quote": "Вариант A утверждаю",
+    "document": "TransferDriver/docs/ADMIN_ASSIGNMENT_READ_API_PROPOSAL_2026-11-15.md",
+    "version": 2,
+    "variant": "A"
+  },
+  "scope": "Two minimal paginated GETs for manual Admin assignment; D3 active-driver account defect fixed",
+  "sourceCommit": "dda85d2937f385cc7b0cccbc88d4282d50481485",
+  "sourceTree": "3fe4f5bb685d221ac7f1d6b92fedd636ec06e32c",
+  "draftPr": "https://github.com/lobanov0710-blip/uber-v3/pull/30",
+  "ci": {
+    "runId": 43854087967,
+    "jobId": 133253772715,
+    "conclusion": "success",
+    "url": "https://github.com/lobanov0710-blip/uber-v3/actions/runs/43854087967",
+    "unitRouterScripts": 68,
+    "newActualSqliteHttpCases": 15,
+    "migrations": 18,
+    "stagingPreflightCases": 12,
+    "dependencyAdvisories": 0,
+    "nativeWorkerD1Checks": 5,
+    "protectedCliScenarios": 5,
+    "workerBundle": "dry-run passed; no deployment"
+  },
+  "nativeReadSmoke": {
+    "engine": "bundled Worker + local workerd/native D1",
+    "minimalProjection": true,
+    "keysetPagination": true,
+    "offlineNotExcluded": true,
+    "disabledDriverBlocked": true,
+    "grantRevocation": true,
+    "ownerMfaEnforced": true,
+    "readAuditRows": 4
+  },
+  "local": {
+    "newReadCases": "15/15 PASS",
+    "relatedRegressionScripts": 8,
+    "migrations": "18 PASS",
+    "stagingPreflight": "12 PASS",
+    "fullSuite": "stopped on sandbox spawnSync EPERM in existing CLI tests; not a full local pass",
+    "nativeD1": "sandbox listen EPERM",
+    "wranglerDryRun": "global config path unavailable; not a local pass",
+    "currentCiIsAuthoritative": true
+  },
+  "checks": [
+    "Actual HTTP authentication, OWNER enrollment/recovery evidence, revoked MFA family and current grants",
+    "Exact allowed response keys; no passenger name/phone/comment, VIN, documents, provider text or credentials",
+    "1106 orders enumerated with strict keyset pagination; vehicle/driver keyset boundary",
+    "Malformed/duplicate/unknown query and cursor scope/type/bounds rejected",
+    "Shared read/mutation eligibility and photo-control grace; offline remains eligible",
+    "Inactive candidate plus actual atomic assign/reassign suspension race",
+    "Audit failure withholds response projection; no SQL/provider disclosure",
+    "OWNER-only STAGING rejects both new routes"
+  ],
+  "intermediateFailures": [
+    "Wrong audit-prefix assertion in new fixture corrected to actual before/after row count",
+    "Multi-driver fixture INSERT SELECT corrected to an explicit column list"
+  ],
+  "limitations": [
+    "Read pages are current advisory snapshots; concurrent changes are checked again by existing revision/idempotency mutation guards",
+    "Opaque cursors are scoped pagination tokens, not credentials or cryptographic authorization",
+    "No D6 recommendation/ranking or new scheduling rules; current assignment index is per order",
+    "No deploy, remote migrations, new dependencies, production Android changes or new APK",
+    "Admin assignment UI not implemented by this backend checkpoint",
+    "G1 paused, D4-D7 pending, ADMIN_PHONE_TEST_ONLY whitelist unchanged; new routes remain closed on current OWNER-only staging"
+  ],
+  "documentationOnlyFinalCommit": "Final docs/journal updates [skip ci] preserve tested application, test and workflow code."
+}
