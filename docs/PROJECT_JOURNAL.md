@@ -2366,3 +2366,40 @@ CI debug APK подписан ephemeral CI key; совместимость об�
 содержит checksums/provenance. Lint PASS не означает ноль исторических warnings.
 
 Опубликованные Android docs: ff628f71a561841a5d0ae80fef3ea2b6ba2de549, tree b5756c771322f110c91100e5244ac32da38c7626.
+
+
+## Следующий G2 срез — предложение фотоконтроля, 2026-11-16
+
+По поручению «Далее по плану» сверены ТЗ§§14–15/28–30, D1–D3, актуальные
+план/журналы и GitHub heads. После завершённого Admin manual assignment
+подготовлен возможный следующий Admin срез: внеплановый фотоконтроль.
+Реализация нового среза НЕ начата; порядок/объём и новые GET не выбирались
+за владельца. Прежнее утверждение варианта A относится только к назначениям.
+
+Есть POST create, GET известной проверки, POST review; нет общего Admin
+vehicle catalogue и GET коллекции photo-checks (существующий path POST-only).
+Подготовлены два конкретных варианта: каталог+список с двумя minimal GET
+(рекомендуется) либо ограниченное создание из существующей карточки регистрации.
+Order-scoped assignment-options и выдача лишних moderation permissions не
+используются как подмена каталога. Требуется явный выбор по AGENTS.md п.3.
+
+Draft PR#11 https://github.com/lobanov0710-blip/TransferDriver/pull/11,
+arch/g2-admin-photo-control-proposal, base arch/g2-admin-assignment-ui;
+docs sourcebe1cb4332866882b279522f5b38008ffa4b48dc6,
+tree8cfe59eaf554b41313b518e6889d57aa1162e259. Изменены только4 docs files:
+предложение/JSON readiness/план/журнал. Ссылки, receipt и local/remote tree
+проверены; в плане исправлена устаревшая строка16 по существующему PR#9.
+
+Backend source506d7523c61e86cfb703a9a0eaffae5d36787294: Node24.22.1,
+photoControlSupport.sqlite5 PASS (включая2 support regressions),
+photoControlLifecycle.sqlite6 PASS;11 tests,failures/skipped/cancelled0.
+Это actual SQLite/service synthetic fixtures, не новые GET, не Android build,
+не native Worker/HTTP-MFA E2E и не exhaustive обоих restriction modes.
+Source/log hashes и точные пределы — G2_PHOTO_CONTROL_READINESS_2026-11-16.json;
+контракты/варианты/будущие проверки — G2_PHOTO_CONTROL_NEXT_SLICE_PROPOSAL_2026-11-16.md
+в PR#11. Числа прежнего CI assignment не выдаются за новые проверки.
+
+Executable code/dependencies/schema/whitelist не менялись. G1paused,
+D4–D7pending; фото/document/биометрия/удалённые ресурсы не использовались,
+новый APK/merge/deploy не выполнялись. Существующая phone-only404 сохранена.
+Следующая зависимая реализация ожидает отдельного решения владельца.
