@@ -1953,3 +1953,57 @@ owner-reported acceptance, независимый live factor read не выпо
 Merge/production deploy не выполняются без отдельного решения владельца.
 Финальные commits меняют только документы/журналы и помечаются [skip ci]:
 проверки закреплены за exact code source выше, повтор unchanged code не нужен.
+
+
+### 2026-11-16 — G2 availability: итог проверенного среза
+
+Рабочая ветка arch/g2-availability-assignment, Draft PR#9:
+https://github.com/lobanov0710-blip/TransferDriver/pull/9 .
+Проверенный code source e3c6f0c3bde6ac77c5527e4e69c7f65fecd07e69,
+tree9425fc9174e786c7c2055158d52288a8c501b1d2; CI43779524059/job133013316916
+SUCCESS:246 JVM (Driver48×3, Admin34×3),67 API35 runtime (Driver38,Admin29),
+0fail/skipped. Полные6 lint suites, сборки debug/staging/release и staging AAB,
+security guards7+5, endpoint/AppCheck/package/signing/UID checks PASS.
+Исторические54 Driver lint warnings из предыдущих local suites остаются
+известным ограничением; CI lint PASS не выдаётся за новый warning count.
+
+Driver: нижний slider/approved-car selector, radar только после server ack+GET,
+off_line сохраняет ID текущего авто. Revision/idempotency/session epoch,
+no auto refresh/replay; background отменяет pending work/очищает данные.
+Availability subtree исключён из Autofill; фактическая утечка не установлена.
+Нет новых dependencies/backend API/schema/deploy/merge. Production app tree
+cad37e46bc1200df7a850bf5cec0a1d02847d814; Admin production tree
+5e612dfc4e515aaf46ecdd99814548d8a44dd817 не менялся.
+
+Промежуточные CI43752677606/43774408323/43775678761 FAIL сохранены в истории:
+test fixture accessibility stub, ручной onStop вместо lifecycle и cached
+Spinner count. Исправлены без удаления assertions/кейсов. CI43776899566 и
+43778224200 затем SUCCESS246+67, но визуальный review выявил initial system-bar
+contrast. Fresh generic reviewer/documenter по Impeccable fallback; первый
+scoring PARTIAL/fix. После API30+ platform appearance и test-only ожидания
+устойчивого unmodified framebuffer второй scoring RESOLVED, disposition ship
+ТОЛЬКО для исходного contrast finding. Все4 actual native captures просмотрены,
+новых регрессий batch reviewer не наблюдал. Это не full-product security clearance.
+
+Artifact14188321054,882728bytes, SHA256
+921c49e9470bd5e16faec27130e6d996366f765482f6c873db5c601c839deb0f.
+8 fixed PNG1080×2400 signature/IHDR/CRC/IEND/archive-digest PASS.
+Provenance: docs/DRIVER_AVAILABILITY_VERIFICATION_2026-11-16.json и
+docs/DRIVER_AVAILABILITY_UI_REVIEW_2026-11-16.md в Draft PR#9.
+Это main XML/panel в secure synthetic host, не full Main auth/order routing,
+не live Driver/physical-device/tablet E2E. CI Firebase config синтетический,
+новый user-installable Driver APK этим checkpoint не выдавался.
+Локальный текущий compile ограничен Gradle sandbox service socket; CI —
+фактическая проверка current source.6 прежних backend contract scripts, включая
+7 actual SQLite cases, PASS на неизменённом backend code; повтор не требовался.
+
+G1 остаётся на паузе; D4–D7 не утверждены. ADMIN_PHONE_TEST_ONLY неизменён.
+Admin assignment read API version2 A/B всё ещё ожидает явного выбора владельца.
+Исправлено первоначальное неверное утверждение о роли legacy GET /orders:
+OWNER/DISPATCHER сохраняют auth-category admin; реальный пробел — selection
+snapshot, cutoff1000 и extra PII старого списка. Предложение A:2 minimal
+paginated GET; B:1 options GET + legacy limitations. Зависящие новые endpoints
+не реализованы. Основание AGENTS.md п.3: «Не выполнять предложенный вариант до
+утверждения». Общие команды продолжения не трактуются как выбор A/B.
+Финальные docs/journal updates — [skip ci], без изменения проверенного app/test/
+workflow кода; результаты CI относятся к exact code source выше.
