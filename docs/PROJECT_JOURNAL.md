@@ -2828,3 +2828,70 @@ service read и batch. Никаких новых состояний/таймау
 Добавлены2 проверки различия режимов и1 race regression; native D1 harness
 проверяет оба режима на SQL реального workerd/D1. Следующий CI должен подтвердить
 новый source; первый успешный run не заявляется проверкой этого исправления.
+
+
+## Backend G2 фотоконтроль: финальный code CI PASS — 2026-11-16
+
+Source080d4b49bb902d782efe2615d92bf05fa3d64dc6/tree245d64159221583438201d2d51804064d8d45a60,
+CI43947136962/job133579673172 SUCCESS. Полный npm test, dependency audit0,
+migrations18/preflight12,12 новых SQLite/HTTP tests,6 native Worker/D1 workflows
+(включая vehicle/check lists и оба restriction modes),5 protected CLI scenarios
+и Worker dry-run PASS. Локальный EPERM не обходился; эти проверки выполнил CI.
+Исправление immediate подтверждено новым CI, не старым baseline run.
+Receipt ADMIN_PHOTO_CONTROL_VERIFICATION_2026-11-16.json содержит exact source
+hashes/run/job/границы. Android UI ещё проверяется отдельно; общий G2/live E2E
+не объявлены завершёнными. Merge/deploy/phone scope/real materials неизменны.
+
+Independent documenter отметил устаревшую общую pending формулировку в конце
+ADMIN_PHOTO_CONTROL_READ_API.md после backend CI. Исправлено: подтверждённый
+backend отделён от ещё проверяемого Android; значения source/run/counts точные.
+
+
+## G2 каталог и список фотопроверок: проверенный component/synthetic срез — 2026-11-16
+
+Утверждение «Утверждают каталог и список» реализовано в Draft PR12 (Android)
+и PR32 (backend): безопасные metadata GET, каталог/история/явное создание
+manual/complaint с подтверждением режима и причины, актуальными правами/MFA,
+контролем ревизий и сессии, без автоматического повторения mutation.
+
+Backend code080d4b49bb902d782efe2615d92bf05fa3d64dc6,
+tree245d64159221583438201d2d51804064d8d45a60,
+CI43947136962/job133579673172 SUCCESS:69 npm test scripts,
+12 новых SQLite/HTTP cases,18 migrations/12 preflight,6 native Worker/D1
+workflows,5 protected CLI scenarios, dependency audit0 и bundle dry-run PASS.
+Исправлен воспроизведённый прежний immediate bypass перехода активной поездки;
+atomic SQL также проверен при race. after_current_trip сохраняет текущую поездку.
+
+Android codea0308bec394cd28d821f52bbcfdc05e5e09f4be7,
+treed6de5082865d0932c2e754bffb2fd78dc179b951,
+CI43950844261/job133592621453 SUCCESS:318 JVM executions (48×3 Driver,
+58×3 Admin),99 native cases (38 Driver/61 Admin),6 build/lint variants и
+security/config/variant gates PASS. Новые9 JVM cases ×3 и15 native cases.
+Предыдущие Android runs43948185690/43949225817 отменены после исправлений,
+не считаются финальным PASS. Локальные sandbox socket/spawn EPERM ограничения
+не обходились; полноценные native/CLI проверки выполнены штатным CI.
+
+Артефакты точного Android source загружены, ZIP CRC/path/size и GitHub SHA256
+проверены: native artifact14267604781 содержит28 PNG, APK artifact14270860090.
+Все10 новых native кадров просмотрены независимыми documenter/reviewer,
+их SHA256 независимо совпали с CI logs. Светлая тема и dark/font1.3 читаемы;
+полные режимы перенесены, подтверждение содержит автомобиль/основание/режим/
+причину/действия. Reviewer: SHIP только для утверждённого component/synthetic
+среза, подтверждённых blockers нет. Spinner finding закрыт кодом/кадрами;
+MFA UX finding закрыт guard/очисткой и выполненным native regression.
+Сокращение toolbar title при font1.3 не скрывает операционную информацию.
+
+Receipt ADMIN_PHOTO_CONTROL_VERIFICATION_2026-11-16.json фиксирует проверенный
+code SHA/tree отдельно от последующих docs-only commits. Исторические pending
+записи и readiness11 не являются актуальным статусом реализации.
+G1paused/D4–D7pending; OWNER-only operational whitelist не расширен (404/hidden).
+Нет merge/deploy/remote migrations/реальных материалов/R2/биометрии/live phone
+E2E или полного закрытия G2. CI debug подпись временная; обновление уже
+установленного телефонного APK не проверялось. Прежние Driver lint warnings
+не объявлены исправленными. Утверждённые131 правила/142 марки не менялись и
+не активировались в runtime. Следующий зависимый шаг не выбирается за владельца.
+
+При подготовке docs-only публикации первый локальный JSON payload был
+отклонён парсером из-за предупреждения оболочки перед JSON. Изменений remote
+на этом шаге не было. Повтор с login=false дал корректный payload; создаваемые
+GitHub trees побайтно совпали с локальным staged tree. Код/проверки не изменены.

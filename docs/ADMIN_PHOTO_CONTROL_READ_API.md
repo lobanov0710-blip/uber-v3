@@ -26,5 +26,9 @@ OWNER-only phone-test staging denies these operations404 before DB/auth.
 No new tables, permissions, classifier activation, real material reads or deployment.
 
 Verification: tests/adminVehicleRead.test.mjs (actual SQLite/HTTP), shared native
-workflow tools/check_admin_vehicle_read_d1.mjs. Full final receipt is recorded
-only after actual CI results; current work is not declared fully verified yet.
+workflow tools/check_admin_vehicle_read_d1.mjs. Backend code080d4b49bb902d782efe2615d92bf05fa3d64dc6 is verified by
+CI43947136962/job133579673172 SUCCESS:69 scripts/12 new SQLite-HTTP tests,
+18 migrations/12 preflight,6 native Worker-D1 workflows (including both modes),
+5 CLI scenarios, audit0 and dry-run. See ADMIN_PHOTO_CONTROL_VERIFICATION_2026-11-16.json.
+Android verification is separate; a successful backend run does not establish
+Android UI/runtime acceptance or a live deployment.
