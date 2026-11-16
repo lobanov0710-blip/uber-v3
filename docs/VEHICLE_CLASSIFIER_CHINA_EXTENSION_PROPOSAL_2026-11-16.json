@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-16",
+  "status": "proposal-pending-owner-approval",
+  "sourceClassifier": {
+    "path": "vehicle-classifier-v1.csv",
+    "rows": 116,
+    "sha256": "3f8297f7b750816e13a3ceb82182e10f33bc42cdc308feb8e8ae2f1fa27ecc7d",
+    "eligibilityApproval": "pending"
+  },
+  "proposalCsv": {
+    "path": "vehicle-classifier-v2-proposed.csv",
+    "rows": 131,
+    "addedRows": 15,
+    "sha256": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99"
+  },
+  "yearDecision": {
+    "ownerAnswer": "Единый порог: 2023 год",
+    "scope": "Prepare the proposal for new models only; not an approval of candidates or runtime activation",
+    "minYear": 2023,
+    "appliesToOriginal116": false,
+    "isLaunchYearClaim": false
+  },
+  "counts": {
+    "new": {
+      "comfort": 6,
+      "business": 9
+    },
+    "combined": {
+      "comfort": 76,
+      "business": 31,
+      "minivan": 24
+    },
+    "candidateMakes": 15,
+    "newBrandSpellingsInCsv": 14
+  },
+  "candidates": [
+    {
+      "proposedTariff": "comfort",
+      "makeId": "baic",
+      "brand": "BAIC",
+      "model": "X7",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Осмотреть второй ряд и проверить комплектацию",
+      "officialSource": "https://www.baicglobal.com/models/30?id=82%3A1"
+    },
+    {
+      "proposedTariff": "comfort",
+      "makeId": "dongfeng",
+      "brand": "Dongfeng",
+      "model": "Huge",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить второй ряд и оснащение конкретной версии",
+      "officialSource": "https://dongfengmotor.ru/models/huge"
+    },
+    {
+      "proposedTariff": "comfort",
+      "makeId": "forthing",
+      "brand": "Forthing",
+      "model": "T5 EVO",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить место для ног и головы пассажиров второго ряда",
+      "officialSource": "https://www.forthingmotor.com/ru/t5-evo/"
+    },
+    {
+      "proposedTariff": "comfort",
+      "makeId": "jac",
+      "brand": "JAC",
+      "model": "JS6",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить поколение, комплектацию и второй ряд",
+      "officialSource": "https://jacen.jac.com.cn/models/js6/"
+    },
+    {
+      "proposedTariff": "comfort",
+      "makeId": "bestune",
+      "brand": "Bestune",
+      "model": "T90",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Марку Bestune не объединять автоматически с FAW",
+      "officialSource": "https://bestune.ru/models/new-bestune-t90/"
+    },
+    {
+      "proposedTariff": "comfort",
+      "makeId": "lynk_co",
+      "brand": "Lynk & Co",
+      "model": "08",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить комплектацию, второй ряд и готовность гибрида к маршруту",
+      "officialSource": "https://www.lynkco.com/en/cars/08"
+    },
+    {
+      "proposedTariff": "business",
+      "makeId": "exlantix",
+      "brand": "Exlantix",
+      "model": "ES",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить конкретную версию и оснащение второго ряда",
+      "officialSource": "https://esteo.ru/exlantix/es/"
+    },
+    {
+      "proposedTariff": "business",
+      "makeId": "nio",
+      "brand": "NIO",
+      "model": "ET7",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить поколение, оснащение второго ряда и готовность электромобиля к маршруту",
+      "officialSource": "https://www.nio.com/et7"
+    },
+    {
+      "proposedTariff": "business",
+      "makeId": "im_motors",
+      "brand": "IM Motors",
+      "model": "L7",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить второй ряд, посадку и готовность электромобиля к маршруту",
+      "officialSource": "https://www.immotors.com/website/vehicle_config/l7"
+    },
+    {
+      "proposedTariff": "business",
+      "makeId": "luxeed",
+      "brand": "Luxeed",
+      "model": "S7",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить комплектацию второго ряда и готовность электромобиля к маршруту",
+      "officialSource": "https://hima.auto/zhijie/s7/configuration/"
+    },
+    {
+      "proposedTariff": "business",
+      "makeId": "stelato",
+      "brand": "Stelato",
+      "model": "S9",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить комплектацию, фактическое число мест и готовность автомобиля к маршруту",
+      "officialSource": "https://hima.auto/xiangjie/s9/configuration/"
+    },
+    {
+      "proposedTariff": "business",
+      "makeId": "avatr",
+      "brand": "Avatr",
+      "model": "12",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Отдельно утвердить кузов; проверить посадку, второй ряд и фактическое число мест",
+      "officialSource": "https://www.avatr.com/en/12"
+    },
+    {
+      "proposedTariff": "business",
+      "makeId": "zeekr",
+      "brand": "Zeekr",
+      "model": "001",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Отдельно утвердить кузов shooting brake; проверить второй ряд и готовность электромобиля к маршруту",
+      "officialSource": "https://www.zeekrlife.com/global/vehicles/001"
+    },
+    {
+      "proposedTariff": "business",
+      "makeId": "xpeng",
+      "brand": "Xpeng",
+      "model": "P7",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить высоту посадки и место над головой сзади; готовность электромобиля к маршруту",
+      "officialSource": "https://www.xpeng.com/p7"
+    },
+    {
+      "proposedTariff": "business",
+      "makeId": "xiaomi",
+      "brand": "Xiaomi",
+      "model": "SU7",
+      "minYear": 2023,
+      "status": "pending_approval",
+      "proposedConditions": "Проверить высоту посадки и место над головой сзади; готовность электромобиля к маршруту",
+      "officialSource": "https://www.xiaomiev.com/su7"
+    }
+  ],
+  "approval": {
+    "candidateEligibility": "pending",
+    "proposedConditions": "pending",
+    "original116": "pending",
+    "BelgeeAndTenetReferenceAddition": "pending",
+    "runtimeImport": "not-authorized"
+  },
+  "sourceScope": "Official manufacturer/distributor pages confirm models and describe equipment. Tariff assignments and proposed conditions are our proposal for owner review, not manufacturer certification or another operator tariff list. Current model pages do not establish the equipment of every 2023 vehicle.",
+  "checks": {
+    "base_csv_sha256_unchanged": "PASS",
+    "original_bytes_preserved_as_prefix": "PASS",
+    "original_116_rows_equal": "PASS",
+    "15_new_rows_131_total": "PASS",
+    "six_comfort_nine_business": "PASS",
+    "full_tariff_counts": "PASS",
+    "all_new_min_year_2023": "PASS",
+    "all_pending": "PASS",
+    "no_economy_tariff": "PASS",
+    "six_cells_per_record": "PASS",
+    "required_fields_present": "PASS",
+    "no_duplicate_make_model": "PASS",
+    "all_new_makes_in_approved_reference": "PASS",
+    "all_candidate_sources_https": "PASS",
+    "no_formula_prefixes": "PASS",
+    "no_control_or_outer_whitespace": "PASS",
+    "bom_and_crlf": "PASS",
+    "csv_round_trip": "PASS"
+  },
+  "checkCount": 18,
+  "runtimeChanged": false,
+  "originalCsvChanged": false,
+  "approved140MakeCompositionChanged": false,
+  "limits": [
+    "No on-car seating or equipment test performed.",
+    "No launch-year or older-trim verification for every model.",
+    "No APK/backend runtime/live E2E executed for this proposal.",
+    "Original 116 model rules and Belgee/TENET approval remain pending."
+  ]
+}
