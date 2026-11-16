@@ -2007,3 +2007,54 @@ paginated GET; B:1 options GET + legacy limitations. Зависящие новы
 утверждения». Общие команды продолжения не трактуются как выбор A/B.
 Финальные docs/journal updates — [skip ci], без изменения проверенного app/test/
 workflow кода; результаты CI относятся к exact code source выше.
+
+
+### 2026-11-16 — Утверждён и проверен вариант A Admin assignment read API
+
+Решение владельца: «Вариант A утверждаю». Утверждена version2 предложения
+ADMIN_ASSIGNMENT_READ_API_PROPOSAL_2026-11-15.md: два minimal paginated GET.
+Прежние pending A/B записи являются историей, решение A теперь явное.
+Backend ветка arch/g2-admin-assignment-read, Draft PR#30:
+https://github.com/lobanov0710-blip/uber-v3/pull/30 .
+Code source dda85d2937f385cc7b0cccbc88d4282d50481485,
+tree3fe4f5bb685d221ac7f1d6b92fedd636ec06e32c,
+CI43854087967/job133253772715 SUCCESS.
+
+GET /v1/admin/orders и GET /v1/admin/orders/{id}/assignment-options реализованы:
+keyset cursor/limit1–50/default20, строгие scope/types/unknown/duplicate params,
+минимальные SQL projections, server current grants и OWNER MFA, no-store,
+обязательный read audit без контактов/cursor/provider/SQL text.
+Actual test перечислил1106 orders без legacy cutoff1000. Options читает одну
+страницу одним SELECT с общей mutation SQL eligibility projection, без N+1,
+score/rank/автовыбора/новых D6 правил. Offline сам по себе не исключается.
+
+Обнаружен и исправлен существующий D3 defect account active: precheck и atomic
+assign/reassign теперь требуют role=driver/status=active. Read/mutation используют
+общую функцию blocker codes. Actual SQLite race после precheck подтверждает
+отказ обоих UPDATE при отключении кандидата без изменения order/audit.
+Старая фраза «atomic busy» уточнена: current-assignment unique index относится
+к order_id, новые критерии scheduling/future assignment не добавлялись.
+
+Полный CI: все68 unit/router scripts PASS, включая15 новых actual SQLite/HTTP
+cases;18 migration checks,12 fail-closed staging tests, npm audit0 vulnerabilities.
+Все5 native Worker/D1 checks (availability,OWNER MFA,moderation,new read API,
+OWNER phone scope), protected CLI5 scenarios и Worker dry-run bundle PASS.
+Новый bundled Worker/D1 smoke подтвердил minimal payload/pagination/offline/
+disabled-driver/current grants/OWNER MFA/read audit4rows. Deploy не выполнялся.
+
+Локально15 новых cases и8 связанных regression suites PASS; полный npm suite
+остановился на sandbox spawnSync EPERM старых CLI тестов, native Miniflare —
+на listen EPERM127.0.0.1, Wrangler dry-run — global config path. Эти ограничения
+не скрывались/не обходились; обязательные проверки затем реально прошли в CI.
+Первоначальные2 FAIL новых fixtures (неверный audit action-prefix и INSERT
+без списка колонок staff_accounts) исправлены, assertions/кейсы сохранены.
+Контракт: docs/ADMIN_ASSIGNMENT_READ_API.md; provenance:
+docs/ADMIN_ASSIGNMENT_READ_VERIFICATION_2026-11-16.json в backend PR#30.
+
+G1paused, D4–D7pending, ADMIN_PHONE_TEST_ONLY whitelist неизменён: оба новых GET
+по-прежнему недоступны на текущем OWNER-only STAGING. Реальные Cloudflare
+ресурсы, schema/dependencies и Android production code не менялись.
+Admin UI ручного назначения — следующий плановый срез, этим API checkpoint
+не объявляется готовым; новый APK не выпускался. Merge/deploy требуют отдельного
+решения. Финальные docs/journal commits [skip ci] не меняют проверенный код;
+результаты относятся к exact code source выше.
