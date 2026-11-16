@@ -2219,3 +2219,40 @@ length≤80/no controls, Markdown/JSON parity, metadata/source snapshot checksum
 API/schema/dependencies/правила допуска/phone whitelist не менялись.
 G1paused/D4–D7pending; merge/deploy не выполнялись. Запись фиксирует решение
 для следующих шагов, а не объявляет реализацию справочника завершённой.
+
+
+## Эконом исключён; классификатор искали по репозиториям — 2026-11-16
+
+Владелец указал исключить Эконом, затем на вопрос об источнике таблицы
+поручил: «нужно поискать по репозиторию». Проверены read-only текущие снимки
+всех60 доступных GitHub веток (14TransferDriver/46uber-v3),821 уникальное
+текстовое содержимое (376/445):776 Git blobs локально +45 через GitHub.
+Recursive trees не усечены; CSV/XLS/XLSX/ODS/PDF/DOC/DOCX/архивов с таблицей
+в этих снимках нет. Дополнительно reachable local history215+536 commits,
+538+736 text blobs. Granta совпадения9 версий push test — переменная grantA,
+не классификатор автомобилей. Default code search econom — только negative tests.
+
+Утверждённая таблица марка→модель→год/комплектация→тариф не найдена в указанном
+объёме. Полная remote ancestry/внешние документы/private D1/R2 не проверялись.
+Фактически pricing.js, driverRegistrationService, migration0005, Android class
+choices уже только comfort/business/minivan. Existing pricing27 checks PASS,
+driverRegistrationService suite PASS (одна отчётная группа). Прямой probe
+подтвердил3 тарифа и отказ econom/economy/ECONOMY/Эконом. Это не модельная проверка.
+
+В справочнике140 марок теперь явный tariffPolicy: Эконом исключён,
+referenceMayNotServeAsVehicleAllowlist=true/vehicleModelEligibilityApproved=false.
+Сами марки/groups/прежнее composition approval сохранены. В справочнике нет
+моделей/годов/тарифных присвоений; конкретные строки не удалялись по догадке.
+Модельный список допуска только для Комфорт/Бизнес/Минивэн требует отдельной
+утверждённой таблицы. Готовый фильтр эконом-моделей/операционный каталог не
+объявляются реализованными. Указание об исключении тарифа принято без переподтверждения.
+
+Документы: VEHICLE_TARIFF_CLASSIFICATION_SEARCH_2026-11-16.{md,json},
+справочник марок, PRODUCT/план/журнал в Android Draft PR#11.
+Опубликованный source9eb8b6c5afada4e481cce3cfcfee718fc906502e,
+tree0ee3e55ad5ac33a9067b5d9f3d4e0483853975a9. JSON/links/parity/coverage и exact Git tree
+проверены. Общий PR9 documentation files; текущий commit7 docs/PRODUCT files.
+Executable code/API/schema/dependencies/автомобили/phone whitelist не менялись.
+Новые APK/Android runtime/native Worker/live E2E не выполнялись. G1paused,
+D4–D7pending, merge/deploy не выполнялись. Результат поиска и реальный предел
+выполненной задачи сохранены для следующих решений владельца.
