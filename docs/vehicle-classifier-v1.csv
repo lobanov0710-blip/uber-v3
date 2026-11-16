@@ -1,0 +1,117 @@
+﻿tariff;brand;model;min_year;status;notes
+Комфорт;Toyota;Camry;2020;pending_approval;
+Комфорт;Toyota;Corolla;2022;pending_approval;Комплектация с достаточным местом на заднем ряду
+Комфорт;Toyota;RAV4;2021;pending_approval;
+Комфорт;Toyota;Avalon;2020;pending_approval;
+Комфорт;Kia;K5;2020;pending_approval;
+Комфорт;Kia;Optima;2020;pending_approval;
+Комфорт;Kia;Cerato;2022;pending_approval;
+Комфорт;Kia;Sportage;2021;pending_approval;
+Комфорт;Kia;Sorento;2020;pending_approval;
+Комфорт;Kia;K8;2022;pending_approval;
+Комфорт;Hyundai;Sonata;2020;pending_approval;
+Комфорт;Hyundai;Elantra;2022;pending_approval;
+Комфорт;Hyundai;Tucson;2021;pending_approval;
+Комфорт;Hyundai;Santa Fe;2020;pending_approval;
+Комфорт;Hyundai;Grandeur;2020;pending_approval;
+Комфорт;Skoda;Octavia;2021;pending_approval;
+Комфорт;Skoda;Superb;2020;pending_approval;
+Комфорт;Skoda;Kodiaq;2020;pending_approval;
+Комфорт;Volkswagen;Passat;2020;pending_approval;
+Комфорт;Volkswagen;Jetta;2022;pending_approval;
+Комфорт;Volkswagen;Tiguan;2021;pending_approval;
+Комфорт;Volkswagen;Teramont;2020;pending_approval;
+Комфорт;Volkswagen;Arteon;2020;pending_approval;
+Комфорт;Mazda;6;2020;pending_approval;
+Комфорт;Mazda;CX-5;2021;pending_approval;
+Комфорт;Mazda;CX-9;2020;pending_approval;
+Комфорт;Nissan;Altima;2020;pending_approval;
+Комфорт;Nissan;Teana;2020;pending_approval;
+Комфорт;Nissan;X-Trail;2021;pending_approval;
+Комфорт;Nissan;Qashqai;2022;pending_approval;
+Комфорт;Nissan;Murano;2020;pending_approval;
+Комфорт;Honda;Accord;2020;pending_approval;
+Комфорт;Honda;CR-V;2021;pending_approval;
+Комфорт;Mitsubishi;Outlander;2021;pending_approval;
+Комфорт;Ford;Mondeo;2020;pending_approval;
+Комфорт;Ford;Kuga;2021;pending_approval;
+Комфорт;Geely;Preface;2022;pending_approval;
+Комфорт;Geely;Monjaro;2022;pending_approval;
+Комфорт;Geely;Atlas;2022;pending_approval;
+Комфорт;Geely;Atlas Pro;2022;pending_approval;
+Комфорт;Geely;Okavango;2022;pending_approval;
+Комфорт;Geely;Tugella;2022;pending_approval;
+Комфорт;Chery;Arrizo 8;2023;pending_approval;
+Комфорт;Chery;Tiggo 7 Pro;2022;pending_approval;
+Комфорт;Chery;Tiggo 7 Pro Max;2023;pending_approval;
+Комфорт;Chery;Tiggo 8 Pro;2022;pending_approval;
+Комфорт;Chery;Tiggo 8 Pro Max;2023;pending_approval;
+Комфорт;Chery;Tiggo 9;2023;pending_approval;
+Комфорт;Haval;F7;2022;pending_approval;
+Комфорт;Haval;F7x;2022;pending_approval;
+Комфорт;Haval;Dargo;2022;pending_approval;
+Комфорт;Haval;Jolion;2023;pending_approval;
+Комфорт;Changan;UNI-V;2023;pending_approval;
+Комфорт;Changan;UNI-K;2022;pending_approval;
+Комфорт;Changan;CS75 Plus;2022;pending_approval;
+Комфорт;Changan;UNI-S;2024;pending_approval;
+Комфорт;EXEED;TXL;2021;pending_approval;
+Комфорт;EXEED;RX;2023;pending_approval;
+Комфорт;EXEED;VX;2022;pending_approval;
+Комфорт;EXEED;LX;2022;pending_approval;
+Комфорт;Omoda;C5;2023;pending_approval;
+Комфорт;Omoda;S5;2023;pending_approval;
+Комфорт;GAC;GS8;2022;pending_approval;
+Комфорт;Belgee;X70;2024;pending_approval;
+Комфорт;TENET;T7;2025;pending_approval;
+Комфорт;TENET;T8;2025;pending_approval;
+Комфорт;Jaecoo;J7;2023;pending_approval;
+Комфорт;Jaecoo;J8;2024;pending_approval;
+Комфорт;Jetour;X90 Plus;2022;pending_approval;
+Комфорт;FAW;Bestune B70;2022;pending_approval;
+Бизнес;Mercedes-Benz;E-Class;2020;pending_approval;"Только седан; премиальный салон"
+Бизнес;Mercedes-Benz;S-Class;2020;pending_approval;
+Бизнес;Mercedes-Benz;Maybach S-Class;2020;pending_approval;
+Бизнес;Mercedes-Benz;EQS;2022;pending_approval;
+Бизнес;BMW;5 Series;2020;pending_approval;Только седан
+Бизнес;BMW;7 Series;2020;pending_approval;
+Бизнес;BMW;i5;2024;pending_approval;
+Бизнес;BMW;i7;2023;pending_approval;
+Бизнес;Audi;A6;2020;pending_approval;Только седан
+Бизнес;Audi;A8;2020;pending_approval;
+Бизнес;Lexus;ES;2020;pending_approval;
+Бизнес;Lexus;LS;2020;pending_approval;
+Бизнес;Genesis;G80;2020;pending_approval;
+Бизнес;Genesis;G90;2020;pending_approval;
+Бизнес;Volvo;S90;2020;pending_approval;
+Бизнес;Kia;K9;2020;pending_approval;
+Бизнес;Hongqi;H9;2021;pending_approval;
+Бизнес;Hongqi;H5;2023;pending_approval;Только II поколение и премиальная комплектация
+Бизнес;BYD;Han;2022;pending_approval;Проверить удобство задних сидений
+Бизнес;Voyah;Passion;2023;pending_approval;
+Бизнес;Li Auto;L7;2023;pending_approval;"Только комфортные комплектации; проверка салона"
+Бизнес;Li Auto;L9;2023;pending_approval;"Только комфортные комплектации; проверка салона"
+Минивэн;Mercedes-Benz;V-Class;2019;pending_approval;Только пассажирская версия
+Минивэн;Mercedes-Benz;Vito Tourer;2020;pending_approval;Только пассажирская версия
+Минивэн;Volkswagen;Caravelle;2019;pending_approval;
+Минивэн;Volkswagen;Multivan;2019;pending_approval;
+Минивэн;Hyundai;Staria;2021;pending_approval;
+Минивэн;Hyundai;H-1;2019;pending_approval;
+Минивэн;Kia;Carnival;2021;pending_approval;
+Минивэн;Toyota;Alphard;2019;pending_approval;
+Минивэн;Toyota;Vellfire;2019;pending_approval;
+Минивэн;Toyota;Sienna;2020;pending_approval;
+Минивэн;Toyota;Hiace;2019;pending_approval;Только пассажирская версия до 8 пассажирских мест
+Минивэн;Toyota;Granvia;2019;pending_approval;Только пассажирская версия до 8 пассажирских мест
+Минивэн;Peugeot;Traveller;2019;pending_approval;
+Минивэн;Citroën;SpaceTourer;2019;pending_approval;
+Минивэн;Opel;Zafira Life;2019;pending_approval;
+Минивэн;Ford;Tourneo Custom;2019;pending_approval;
+Минивэн;GAC;M8;2023;pending_approval;
+Минивэн;Voyah;Dream;2022;pending_approval;
+Минивэн;Zeekr;009;2023;pending_approval;
+Минивэн;Denza;D9;2023;pending_approval;
+Минивэн;Lexus;LM;2020;pending_approval;
+Минивэн;Hongqi;HQ9;2023;pending_approval;
+Минивэн;Chrysler;Pacifica;2020;pending_approval;
+Минивэн;Maxus;G10;2020;pending_approval;Только пассажирская версия

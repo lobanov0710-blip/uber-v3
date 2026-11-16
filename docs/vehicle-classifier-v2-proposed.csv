@@ -1,0 +1,132 @@
+﻿tariff;brand;model;min_year;status;notes
+Комфорт;Toyota;Camry;2020;approved;
+Комфорт;Toyota;Corolla;2022;approved;Комплектация с достаточным местом на заднем ряду
+Комфорт;Toyota;RAV4;2021;approved;
+Комфорт;Toyota;Avalon;2020;approved;
+Комфорт;Kia;K5;2020;approved;
+Комфорт;Kia;Optima;2020;approved;
+Комфорт;Kia;Cerato;2022;approved;
+Комфорт;Kia;Sportage;2021;approved;
+Комфорт;Kia;Sorento;2020;approved;
+Комфорт;Kia;K8;2022;approved;
+Комфорт;Hyundai;Sonata;2020;approved;
+Комфорт;Hyundai;Elantra;2022;approved;
+Комфорт;Hyundai;Tucson;2021;approved;
+Комфорт;Hyundai;Santa Fe;2020;approved;
+Комфорт;Hyundai;Grandeur;2020;approved;
+Комфорт;Skoda;Octavia;2021;approved;
+Комфорт;Skoda;Superb;2020;approved;
+Комфорт;Skoda;Kodiaq;2020;approved;
+Комфорт;Volkswagen;Passat;2020;approved;
+Комфорт;Volkswagen;Jetta;2022;approved;
+Комфорт;Volkswagen;Tiguan;2021;approved;
+Комфорт;Volkswagen;Teramont;2020;approved;
+Комфорт;Volkswagen;Arteon;2020;approved;
+Комфорт;Mazda;6;2020;approved;
+Комфорт;Mazda;CX-5;2021;approved;
+Комфорт;Mazda;CX-9;2020;approved;
+Комфорт;Nissan;Altima;2020;approved;
+Комфорт;Nissan;Teana;2020;approved;
+Комфорт;Nissan;X-Trail;2021;approved;
+Комфорт;Nissan;Qashqai;2022;approved;
+Комфорт;Nissan;Murano;2020;approved;
+Комфорт;Honda;Accord;2020;approved;
+Комфорт;Honda;CR-V;2021;approved;
+Комфорт;Mitsubishi;Outlander;2021;approved;
+Комфорт;Ford;Mondeo;2020;approved;
+Комфорт;Ford;Kuga;2021;approved;
+Комфорт;Geely;Preface;2022;approved;
+Комфорт;Geely;Monjaro;2022;approved;
+Комфорт;Geely;Atlas;2022;approved;
+Комфорт;Geely;Atlas Pro;2022;approved;
+Комфорт;Geely;Okavango;2022;approved;
+Комфорт;Geely;Tugella;2022;approved;
+Комфорт;Chery;Arrizo 8;2023;approved;
+Комфорт;Chery;Tiggo 7 Pro;2022;approved;
+Комфорт;Chery;Tiggo 7 Pro Max;2023;approved;
+Комфорт;Chery;Tiggo 8 Pro;2022;approved;
+Комфорт;Chery;Tiggo 8 Pro Max;2023;approved;
+Комфорт;Chery;Tiggo 9;2023;approved;
+Комфорт;Haval;F7;2022;approved;
+Комфорт;Haval;F7x;2022;approved;
+Комфорт;Haval;Dargo;2022;approved;
+Комфорт;Haval;Jolion;2023;approved;
+Комфорт;Changan;UNI-V;2023;approved;
+Комфорт;Changan;UNI-K;2022;approved;
+Комфорт;Changan;CS75 Plus;2022;approved;
+Комфорт;Changan;UNI-S;2024;approved;
+Комфорт;EXEED;TXL;2021;approved;
+Комфорт;EXEED;RX;2023;approved;
+Комфорт;EXEED;VX;2022;approved;
+Комфорт;EXEED;LX;2022;approved;
+Комфорт;Omoda;C5;2023;approved;
+Комфорт;Omoda;S5;2023;approved;
+Комфорт;GAC;GS8;2022;approved;
+Комфорт;Belgee;X70;2024;approved;
+Комфорт;TENET;T7;2025;approved;
+Комфорт;TENET;T8;2025;approved;
+Комфорт;Jaecoo;J7;2023;approved;
+Комфорт;Jaecoo;J8;2024;approved;
+Комфорт;Jetour;X90 Plus;2022;approved;
+Комфорт;FAW;Bestune B70;2022;approved;
+Бизнес;Mercedes-Benz;E-Class;2020;approved;"Только седан; премиальный салон"
+Бизнес;Mercedes-Benz;S-Class;2020;approved;
+Бизнес;Mercedes-Benz;Maybach S-Class;2020;approved;
+Бизнес;Mercedes-Benz;EQS;2022;approved;
+Бизнес;BMW;5 Series;2020;approved;Только седан
+Бизнес;BMW;7 Series;2020;approved;
+Бизнес;BMW;i5;2024;approved;
+Бизнес;BMW;i7;2023;approved;
+Бизнес;Audi;A6;2020;approved;Только седан
+Бизнес;Audi;A8;2020;approved;
+Бизнес;Lexus;ES;2020;approved;
+Бизнес;Lexus;LS;2020;approved;
+Бизнес;Genesis;G80;2020;approved;
+Бизнес;Genesis;G90;2020;approved;
+Бизнес;Volvo;S90;2020;approved;
+Бизнес;Kia;K9;2020;approved;
+Бизнес;Hongqi;H9;2021;approved;
+Бизнес;Hongqi;H5;2023;approved;Только II поколение и премиальная комплектация
+Бизнес;BYD;Han;2022;approved;Проверить удобство задних сидений
+Бизнес;Voyah;Passion;2023;approved;
+Бизнес;Li Auto;L7;2023;approved;"Только комфортные комплектации; проверка салона"
+Бизнес;Li Auto;L9;2023;approved;"Только комфортные комплектации; проверка салона"
+Минивэн;Mercedes-Benz;V-Class;2019;approved;Только пассажирская версия
+Минивэн;Mercedes-Benz;Vito Tourer;2020;approved;Только пассажирская версия
+Минивэн;Volkswagen;Caravelle;2019;approved;
+Минивэн;Volkswagen;Multivan;2019;approved;
+Минивэн;Hyundai;Staria;2021;approved;
+Минивэн;Hyundai;H-1;2019;approved;
+Минивэн;Kia;Carnival;2021;approved;
+Минивэн;Toyota;Alphard;2019;approved;
+Минивэн;Toyota;Vellfire;2019;approved;
+Минивэн;Toyota;Sienna;2020;approved;
+Минивэн;Toyota;Hiace;2019;approved;Только пассажирская версия до 8 пассажирских мест
+Минивэн;Toyota;Granvia;2019;approved;Только пассажирская версия до 8 пассажирских мест
+Минивэн;Peugeot;Traveller;2019;approved;
+Минивэн;Citroën;SpaceTourer;2019;approved;
+Минивэн;Opel;Zafira Life;2019;approved;
+Минивэн;Ford;Tourneo Custom;2019;approved;
+Минивэн;GAC;M8;2023;approved;
+Минивэн;Voyah;Dream;2022;approved;
+Минивэн;Zeekr;009;2023;approved;
+Минивэн;Denza;D9;2023;approved;
+Минивэн;Lexus;LM;2020;approved;
+Минивэн;Hongqi;HQ9;2023;approved;
+Минивэн;Chrysler;Pacifica;2020;approved;
+Минивэн;Maxus;G10;2020;approved;Только пассажирская версия
+Комфорт;BAIC;X7;2023;approved;"Утверждённые условия: Осмотреть второй ряд и проверить комплектацию; требуется проверка конкретного автомобиля"
+Комфорт;Dongfeng;Huge;2023;approved;"Утверждённые условия: Проверить второй ряд и оснащение конкретной версии; требуется проверка конкретного автомобиля"
+Комфорт;Forthing;T5 EVO;2023;approved;"Утверждённые условия: Проверить место для ног и головы пассажиров второго ряда; требуется проверка конкретного автомобиля"
+Комфорт;JAC;JS6;2023;approved;"Утверждённые условия: Проверить поколение, комплектацию и второй ряд; требуется проверка конкретного автомобиля"
+Комфорт;Bestune;T90;2023;approved;"Утверждённые условия: Марку Bestune не объединять автоматически с FAW; требуется проверка конкретного автомобиля"
+Комфорт;Lynk & Co;08;2023;approved;"Утверждённые условия: Проверить комплектацию, второй ряд и готовность гибрида к маршруту; требуется проверка конкретного автомобиля"
+Бизнес;Exlantix;ES;2023;approved;"Утверждённые условия: Проверить конкретную версию и оснащение второго ряда; требуется проверка конкретного автомобиля"
+Бизнес;NIO;ET7;2023;approved;"Утверждённые условия: Проверить поколение, оснащение второго ряда и готовность электромобиля к маршруту; требуется проверка конкретного автомобиля"
+Бизнес;IM Motors;L7;2023;approved;"Утверждённые условия: Проверить второй ряд, посадку и готовность электромобиля к маршруту; требуется проверка конкретного автомобиля"
+Бизнес;Luxeed;S7;2023;approved;"Утверждённые условия: Проверить комплектацию второго ряда и готовность электромобиля к маршруту; требуется проверка конкретного автомобиля"
+Бизнес;Stelato;S9;2023;approved;"Утверждённые условия: Проверить комплектацию, фактическое число мест и готовность автомобиля к маршруту; требуется проверка конкретного автомобиля"
+Бизнес;Avatr;12;2023;approved;"Утверждённые условия: Отдельно утвердить кузов; проверить посадку, второй ряд и фактическое число мест; требуется проверка конкретного автомобиля"
+Бизнес;Zeekr;001;2023;approved;"Утверждённые условия: Отдельно утвердить кузов shooting brake; проверить второй ряд и готовность электромобиля к маршруту; требуется проверка конкретного автомобиля"
+Бизнес;Xpeng;P7;2023;approved;"Утверждённые условия: Проверить высоту посадки и место над головой сзади; готовность электромобиля к маршруту; требуется проверка конкретного автомобиля"
+Бизнес;Xiaomi;SU7;2023;approved;"Утверждённые условия: Проверить высоту посадки и место над головой сзади; готовность электромобиля к маршруту; требуется проверка конкретного автомобиля"
