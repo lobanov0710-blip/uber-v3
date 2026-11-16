@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-11-16",
-  "status": "proposal-pending-owner-approval",
+  "status": "approved-15-model-rules-with-conditions",
   "sourceClassifier": {
     "path": "vehicle-classifier-v1.csv",
     "rows": 116,
@@ -12,11 +12,14 @@
     "path": "vehicle-classifier-v2-proposed.csv",
     "rows": 131,
     "addedRows": 15,
-    "sha256": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99"
+    "sha256": "e394d8cea41376f16e2a35962b42af5de910ecb6a36bb70dca0847060768aa34",
+    "sha256BeforeApproval": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99",
+    "approvedRows": 15,
+    "pendingRows": 116
   },
   "yearDecision": {
     "ownerAnswer": "Единый порог: 2023 год",
-    "scope": "Prepare the proposal for new models only; not an approval of candidates or runtime activation",
+    "scope": "Approved minimum year for the 15 additional model rules only; original116 years unchanged; no runtime activation",
     "minYear": 2023,
     "appliesToOriginal116": false,
     "isLaunchYearClaim": false
@@ -41,7 +44,7 @@
       "brand": "BAIC",
       "model": "X7",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Осмотреть второй ряд и проверить комплектацию",
       "officialSource": "https://www.baicglobal.com/models/30?id=82%3A1"
     },
@@ -51,7 +54,7 @@
       "brand": "Dongfeng",
       "model": "Huge",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить второй ряд и оснащение конкретной версии",
       "officialSource": "https://dongfengmotor.ru/models/huge"
     },
@@ -61,7 +64,7 @@
       "brand": "Forthing",
       "model": "T5 EVO",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить место для ног и головы пассажиров второго ряда",
       "officialSource": "https://www.forthingmotor.com/ru/t5-evo/"
     },
@@ -71,7 +74,7 @@
       "brand": "JAC",
       "model": "JS6",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить поколение, комплектацию и второй ряд",
       "officialSource": "https://jacen.jac.com.cn/models/js6/"
     },
@@ -81,7 +84,7 @@
       "brand": "Bestune",
       "model": "T90",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Марку Bestune не объединять автоматически с FAW",
       "officialSource": "https://bestune.ru/models/new-bestune-t90/"
     },
@@ -91,7 +94,7 @@
       "brand": "Lynk & Co",
       "model": "08",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить комплектацию, второй ряд и готовность гибрида к маршруту",
       "officialSource": "https://www.lynkco.com/en/cars/08"
     },
@@ -101,7 +104,7 @@
       "brand": "Exlantix",
       "model": "ES",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить конкретную версию и оснащение второго ряда",
       "officialSource": "https://esteo.ru/exlantix/es/"
     },
@@ -111,7 +114,7 @@
       "brand": "NIO",
       "model": "ET7",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить поколение, оснащение второго ряда и готовность электромобиля к маршруту",
       "officialSource": "https://www.nio.com/et7"
     },
@@ -121,7 +124,7 @@
       "brand": "IM Motors",
       "model": "L7",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить второй ряд, посадку и готовность электромобиля к маршруту",
       "officialSource": "https://www.immotors.com/website/vehicle_config/l7"
     },
@@ -131,7 +134,7 @@
       "brand": "Luxeed",
       "model": "S7",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить комплектацию второго ряда и готовность электромобиля к маршруту",
       "officialSource": "https://hima.auto/zhijie/s7/configuration/"
     },
@@ -141,7 +144,7 @@
       "brand": "Stelato",
       "model": "S9",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить комплектацию, фактическое число мест и готовность автомобиля к маршруту",
       "officialSource": "https://hima.auto/xiangjie/s9/configuration/"
     },
@@ -151,7 +154,7 @@
       "brand": "Avatr",
       "model": "12",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Отдельно утвердить кузов; проверить посадку, второй ряд и фактическое число мест",
       "officialSource": "https://www.avatr.com/en/12"
     },
@@ -161,7 +164,7 @@
       "brand": "Zeekr",
       "model": "001",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Отдельно утвердить кузов shooting brake; проверить второй ряд и готовность электромобиля к маршруту",
       "officialSource": "https://www.zeekrlife.com/global/vehicles/001"
     },
@@ -171,7 +174,7 @@
       "brand": "Xpeng",
       "model": "P7",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить высоту посадки и место над головой сзади; готовность электромобиля к маршруту",
       "officialSource": "https://www.xpeng.com/p7"
     },
@@ -181,37 +184,44 @@
       "brand": "Xiaomi",
       "model": "SU7",
       "minYear": 2023,
-      "status": "pending_approval",
+      "status": "approved",
       "proposedConditions": "Проверить высоту посадки и место над головой сзади; готовность электромобиля к маршруту",
       "officialSource": "https://www.xiaomiev.com/su7"
     }
   ],
   "approval": {
-    "candidateEligibility": "pending",
-    "proposedConditions": "pending",
+    "candidateEligibility": "approved-with-listed-conditions",
+    "proposedConditions": "approved",
     "original116": "pending",
     "BelgeeAndTenetReferenceAddition": "pending",
-    "runtimeImport": "not-authorized"
+    "runtimeImport": "not-authorized",
+    "ownerAnswer": "Утверждаю",
+    "date": "2026-11-16",
+    "approvalQuestion": "Утверждаете эти 15 дополнений и предложенные условия?",
+    "approvedProposalCommit": "47dde60122dcb03734351c43c957603b8cca3291",
+    "approvedProposalCsvSha256": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99",
+    "scope": "Exactly 15 additional rules: 6 comfort, 9 business, minYear2023, all listed conditions retained. This is model-rule approval, not approval of individual vehicles.",
+    "bodyCondition": "The listed separate body-approval condition for Avatr12 and Zeekr001 is retained; no condition is silently waived."
   },
-  "sourceScope": "Official manufacturer/distributor pages confirm models and describe equipment. Tariff assignments and proposed conditions are our proposal for owner review, not manufacturer certification or another operator tariff list. Current model pages do not establish the equipment of every 2023 vehicle.",
+  "sourceScope": "Official pages identify models and describe equipment; owner approved the 15 listed Transfer Servis model rules and conditions. They do not certify other operators tariffs or every 2023 trim.",
   "checks": {
-    "base_csv_sha256_unchanged": "PASS",
-    "original_bytes_preserved_as_prefix": "PASS",
-    "original_116_rows_equal": "PASS",
-    "15_new_rows_131_total": "PASS",
-    "six_comfort_nine_business": "PASS",
-    "full_tariff_counts": "PASS",
+    "original_v1_hash_unchanged": "PASS",
+    "original_116_bytes_and_rows_unchanged": "PASS",
+    "131_rows_and_tariff_counts": "PASS",
+    "only_15_status_transitions": "PASS",
+    "original116_pending_new15_approved": "PASS",
+    "six_approved_comfort_nine_approved_business": "PASS",
     "all_new_min_year_2023": "PASS",
-    "all_pending": "PASS",
+    "approved_rule_content_unchanged": "PASS",
+    "only_status_and_note_changes_in_csv": "PASS",
+    "six_columns_and_required_fields": "PASS",
     "no_economy_tariff": "PASS",
-    "six_cells_per_record": "PASS",
-    "required_fields_present": "PASS",
     "no_duplicate_make_model": "PASS",
-    "all_new_makes_in_approved_reference": "PASS",
-    "all_candidate_sources_https": "PASS",
     "no_formula_prefixes": "PASS",
-    "no_control_or_outer_whitespace": "PASS",
+    "no_controls_or_outer_whitespace": "PASS",
     "bom_and_crlf": "PASS",
+    "notes_match_approved_conditions": "PASS",
+    "csv_json_status_parity": "PASS",
     "csv_round_trip": "PASS"
   },
   "checkCount": 18,
@@ -223,5 +233,30 @@
     "No launch-year or older-trim verification for every model.",
     "No APK/backend runtime/live E2E executed for this proposal.",
     "Original 116 model rules and Belgee/TENET approval remain pending."
-  ]
+  ],
+  "proposalValidation": {
+    "checkCount": 18,
+    "checks": {
+      "base_csv_sha256_unchanged": "PASS",
+      "original_bytes_preserved_as_prefix": "PASS",
+      "original_116_rows_equal": "PASS",
+      "15_new_rows_131_total": "PASS",
+      "six_comfort_nine_business": "PASS",
+      "full_tariff_counts": "PASS",
+      "all_new_min_year_2023": "PASS",
+      "all_pending": "PASS",
+      "no_economy_tariff": "PASS",
+      "six_cells_per_record": "PASS",
+      "required_fields_present": "PASS",
+      "no_duplicate_make_model": "PASS",
+      "all_new_makes_in_approved_reference": "PASS",
+      "all_candidate_sources_https": "PASS",
+      "no_formula_prefixes": "PASS",
+      "no_control_or_outer_whitespace": "PASS",
+      "bom_and_crlf": "PASS",
+      "csv_round_trip": "PASS"
+    },
+    "csvSha256": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99",
+    "historical": true
+  }
 }
