@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-11-16",
-  "status": "reviewed-draft-pending-owner-approval",
+  "status": "original116-approved-in-combined-classifier",
   "source": {
     "kind": "owner-upload",
     "fileName": "Transfer_Servis_vehicle_whitelist_v1_draft _1_.csv",
@@ -36,15 +36,12 @@
   },
   "brandReference": {
     "repository": "lobanov0710-blip/TransferDriver",
-    "ref": "79d95ff371b8bdbf192931c2b106879cf0ab4d2d",
+    "ref": "arch/g2-admin-photo-control-proposal",
     "path": "docs/VEHICLE_MAKES_CATALOG_PROPOSAL_2026-11-16.json",
-    "compositionSha256": "20c245092f7299e051616d1ade2c71aab8bd233578c2f5c47edab721b54e6d46",
-    "referenceMakeCount": 140,
+    "compositionSha256": "abc564d91b94a69e3c213f153fc2aa2179df74e992b226fe9f6a2e55178fd3b1",
+    "referenceMakeCount": 142,
     "comparison": "casefold and accent folding for audit only; no runtime mapping implemented",
-    "unlistedMakes": [
-      "Belgee",
-      "TENET"
-    ],
+    "unlistedMakes": [],
     "displayVariants": [
       {
         "source": "EXEED",
@@ -57,13 +54,20 @@
         "catalogId": "skoda"
       }
     ],
-    "referenceChanged": false
+    "referenceChanged": true,
+    "normalizationApplied": false
   },
   "approval": {
-    "modelTariffYearEligibility": "pending",
-    "newMakesBelgeeAndTenet": "pending",
-    "canonicalNameMapping": "pending",
-    "operationalImportApproved": false
+    "modelTariffYearEligibility": "approved-with-source-notes",
+    "newMakesBelgeeAndTenet": "approved",
+    "canonicalNameMapping": "source values approved as written; automatic normalization not authorized",
+    "operationalImportApproved": false,
+    "ownerAnswer": "Исходные 116 строк и добавление Belgee/TENET добавить и утвердить",
+    "date": "2026-11-16",
+    "approvedSourceSha256": "3f8297f7b750816e13a3ceb82182e10f33bc42cdc308feb8e8ae2f1fa27ecc7d",
+    "approvedSnapshotCommit": "ba98b93285ade5706a64772d40b1f8d510d41387",
+    "approvedClassifierPath": "docs/vehicle-classifier-v2-proposed.csv",
+    "scope": "Original116 rules and source spellings/years/notes approved, Belgee/TENET added; previous15 approval retained; no runtime activation"
   },
   "changes": {
     "addedRows": 0,
@@ -73,7 +77,8 @@
     "runtimeChanged": false,
     "databaseChanged": false,
     "mergePerformed": false,
-    "deployPerformed": false
+    "deployPerformed": false,
+    "statusesChangedInActiveClassifier": 116
   },
   "checks": {
     "utf8_bom_preserved": "PASS",
@@ -98,9 +103,72 @@
   },
   "checkCount": 19,
   "limits": [
-    "Structural validation does not approve vehicle eligibility, equipment, passenger capacity or model production years.",
+    "Source v1 retained byte-for-byte with original pending statuses for provenance; v2 is the current approved document.",
+    "Model-rule approval is not approval of individual vehicles.",
     "Free-text notes are not enforced by runtime.",
-    "No APK, runtime tests, live E2E or deployment performed for this documentation-only import.",
-    "Earlier repository search receipt remains a historical snapshot; this source was supplied afterwards as an attachment."
-  ]
+    "No APK/runtime/live E2E/merge/deploy performed."
+  ],
+  "countsScope": "Immutable source v1 snapshot at upload; current approval is applied in v2",
+  "checksHistorical": true,
+  "historicalBrandReference": {
+    "repository": "lobanov0710-blip/TransferDriver",
+    "ref": "79d95ff371b8bdbf192931c2b106879cf0ab4d2d",
+    "path": "docs/VEHICLE_MAKES_CATALOG_PROPOSAL_2026-11-16.json",
+    "compositionSha256": "20c245092f7299e051616d1ade2c71aab8bd233578c2f5c47edab721b54e6d46",
+    "referenceMakeCount": 140,
+    "comparison": "casefold and accent folding for audit only; no runtime mapping implemented",
+    "unlistedMakes": [
+      "Belgee",
+      "TENET"
+    ],
+    "displayVariants": [
+      {
+        "source": "EXEED",
+        "catalog": "Exeed",
+        "catalogId": "exeed"
+      },
+      {
+        "source": "Skoda",
+        "catalog": "Škoda",
+        "catalogId": "skoda"
+      }
+    ],
+    "referenceChanged": false
+  },
+  "currentClassifier": {
+    "path": "docs/vehicle-classifier-v2-proposed.csv",
+    "rows": 131,
+    "approvedRows": 131,
+    "pendingRows": 0,
+    "sha256": "1e4955a6f7250f0e5183f99d105a5c5b235eaa51b7ee432e2f29ad2a69af4901",
+    "tariffs": {
+      "comfort": 76,
+      "business": 31,
+      "minivan": 24
+    }
+  },
+  "currentValidationChecks": {
+    "source_v1_archive_hash_unchanged": "PASS",
+    "all131_rules_approved": "PASS",
+    "exact116_status_transitions": "PASS",
+    "original116_only_status_changed": "PASS",
+    "prior15_exact_bytes_preserved": "PASS",
+    "prior15_rows_preserved": "PASS",
+    "tariff_counts": "PASS",
+    "no_economy": "PASS",
+    "original_years_preserved": "PASS",
+    "added15_year2023": "PASS",
+    "original13_notes_preserved": "PASS",
+    "six_column_schema": "PASS",
+    "required_fields": "PASS",
+    "year_syntax_range": "PASS",
+    "no_duplicates": "PASS",
+    "all_brands_present_in_142_reference": "PASS",
+    "belgee_tenet_present_and_approved": "PASS",
+    "no_formula_prefixes": "PASS",
+    "no_controls_or_outer_spaces": "PASS",
+    "bom_crlf": "PASS",
+    "csv_round_trip": "PASS"
+  },
+  "currentValidationCheckCount": 21
 }

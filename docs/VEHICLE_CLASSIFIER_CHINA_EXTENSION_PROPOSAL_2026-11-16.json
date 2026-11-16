@@ -1,21 +1,23 @@
 {
   "schemaVersion": 1,
   "date": "2026-11-16",
-  "status": "approved-15-model-rules-with-conditions",
+  "status": "all131-model-rules-approved-with-conditions",
   "sourceClassifier": {
     "path": "vehicle-classifier-v1.csv",
     "rows": 116,
     "sha256": "3f8297f7b750816e13a3ceb82182e10f33bc42cdc308feb8e8ae2f1fa27ecc7d",
-    "eligibilityApproval": "pending"
+    "eligibilityApproval": "approved-in-combined-v2",
+    "archiveRetainsOriginalStatuses": true
   },
   "proposalCsv": {
     "path": "vehicle-classifier-v2-proposed.csv",
     "rows": 131,
     "addedRows": 15,
-    "sha256": "e394d8cea41376f16e2a35962b42af5de910ecb6a36bb70dca0847060768aa34",
+    "sha256": "1e4955a6f7250f0e5183f99d105a5c5b235eaa51b7ee432e2f29ad2a69af4901",
     "sha256BeforeApproval": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99",
-    "approvedRows": 15,
-    "pendingRows": 116
+    "approvedRows": 131,
+    "pendingRows": 0,
+    "sha256BeforeFullApproval": "e394d8cea41376f16e2a35962b42af5de910ecb6a36bb70dca0847060768aa34"
   },
   "yearDecision": {
     "ownerAnswer": "Единый порог: 2023 год",
@@ -192,8 +194,8 @@
   "approval": {
     "candidateEligibility": "approved-with-listed-conditions",
     "proposedConditions": "approved",
-    "original116": "pending",
-    "BelgeeAndTenetReferenceAddition": "pending",
+    "original116": "approved-with-source-notes",
+    "BelgeeAndTenetReferenceAddition": "approved",
     "runtimeImport": "not-authorized",
     "ownerAnswer": "Утверждаю",
     "date": "2026-11-16",
@@ -201,38 +203,47 @@
     "approvedProposalCommit": "47dde60122dcb03734351c43c957603b8cca3291",
     "approvedProposalCsvSha256": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99",
     "scope": "Exactly 15 additional rules: 6 comfort, 9 business, minYear2023, all listed conditions retained. This is model-rule approval, not approval of individual vehicles.",
-    "bodyCondition": "The listed separate body-approval condition for Avatr12 and Zeekr001 is retained; no condition is silently waived."
+    "bodyCondition": "The listed separate body-approval condition for Avatr12 and Zeekr001 is retained; no condition is silently waived.",
+    "original116Approval": {
+      "ownerAnswer": "Исходные 116 строк и добавление Belgee/TENET добавить и утвердить",
+      "date": "2026-11-16",
+      "sourceCsvSha256": "3f8297f7b750816e13a3ceb82182e10f33bc42cdc308feb8e8ae2f1fa27ecc7d",
+      "sourceSnapshotCommit": "ba98b93285ade5706a64772d40b1f8d510d41387"
+    }
   },
   "sourceScope": "Official pages identify models and describe equipment; owner approved the 15 listed Transfer Servis model rules and conditions. They do not certify other operators tariffs or every 2023 trim.",
   "checks": {
-    "original_v1_hash_unchanged": "PASS",
-    "original_116_bytes_and_rows_unchanged": "PASS",
-    "131_rows_and_tariff_counts": "PASS",
-    "only_15_status_transitions": "PASS",
-    "original116_pending_new15_approved": "PASS",
-    "six_approved_comfort_nine_approved_business": "PASS",
-    "all_new_min_year_2023": "PASS",
-    "approved_rule_content_unchanged": "PASS",
-    "only_status_and_note_changes_in_csv": "PASS",
-    "six_columns_and_required_fields": "PASS",
-    "no_economy_tariff": "PASS",
-    "no_duplicate_make_model": "PASS",
+    "source_v1_archive_hash_unchanged": "PASS",
+    "all131_rules_approved": "PASS",
+    "exact116_status_transitions": "PASS",
+    "original116_only_status_changed": "PASS",
+    "prior15_exact_bytes_preserved": "PASS",
+    "prior15_rows_preserved": "PASS",
+    "tariff_counts": "PASS",
+    "no_economy": "PASS",
+    "original_years_preserved": "PASS",
+    "added15_year2023": "PASS",
+    "original13_notes_preserved": "PASS",
+    "six_column_schema": "PASS",
+    "required_fields": "PASS",
+    "year_syntax_range": "PASS",
+    "no_duplicates": "PASS",
+    "all_brands_present_in_142_reference": "PASS",
+    "belgee_tenet_present_and_approved": "PASS",
     "no_formula_prefixes": "PASS",
-    "no_controls_or_outer_whitespace": "PASS",
-    "bom_and_crlf": "PASS",
-    "notes_match_approved_conditions": "PASS",
-    "csv_json_status_parity": "PASS",
+    "no_controls_or_outer_spaces": "PASS",
+    "bom_crlf": "PASS",
     "csv_round_trip": "PASS"
   },
-  "checkCount": 18,
+  "checkCount": 21,
   "runtimeChanged": false,
   "originalCsvChanged": false,
-  "approved140MakeCompositionChanged": false,
+  "approved140MakeCompositionChanged": true,
   "limits": [
     "No on-car seating or equipment test performed.",
     "No launch-year or older-trim verification for every model.",
     "No APK/backend runtime/live E2E executed for this proposal.",
-    "Original 116 model rules and Belgee/TENET approval remain pending."
+    "Source v1 is archived unchanged; current v2 has all131 rules approved. No runtime import authorized by approval alone."
   ],
   "proposalValidation": {
     "checkCount": 18,
@@ -258,5 +269,39 @@
     },
     "csvSha256": "eb175c7fa79a33ca3a6ee6546b717178b84722771ddbba408b7610ba734ebd99",
     "historical": true
+  },
+  "partialApprovalValidation": {
+    "csvSha256": "e394d8cea41376f16e2a35962b42af5de910ecb6a36bb70dca0847060768aa34",
+    "checks": {
+      "original_v1_hash_unchanged": "PASS",
+      "original_116_bytes_and_rows_unchanged": "PASS",
+      "131_rows_and_tariff_counts": "PASS",
+      "only_15_status_transitions": "PASS",
+      "original116_pending_new15_approved": "PASS",
+      "six_approved_comfort_nine_approved_business": "PASS",
+      "all_new_min_year_2023": "PASS",
+      "approved_rule_content_unchanged": "PASS",
+      "only_status_and_note_changes_in_csv": "PASS",
+      "six_columns_and_required_fields": "PASS",
+      "no_economy_tariff": "PASS",
+      "no_duplicate_make_model": "PASS",
+      "no_formula_prefixes": "PASS",
+      "no_controls_or_outer_whitespace": "PASS",
+      "bom_and_crlf": "PASS",
+      "notes_match_approved_conditions": "PASS",
+      "csv_json_status_parity": "PASS",
+      "csv_round_trip": "PASS"
+    },
+    "checkCount": 18,
+    "historical": true
+  },
+  "makeReference": {
+    "approvedMakeCount": 142,
+    "addedMakeIds": [
+      "belgee",
+      "tenet"
+    ],
+    "compositionSha256": "abc564d91b94a69e3c213f153fc2aa2179df74e992b226fe9f6a2e55178fd3b1",
+    "scope": "Existing140 records preserved; only two added"
   }
 }
