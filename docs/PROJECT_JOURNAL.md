@@ -2569,3 +2569,48 @@ treea6d14387bccb3ac262c427179c4acba15d550ba8 — UI/test implementation, CI в �
 явный same-key retry, ACK/revision и onStop очистка. OWNER-only routes404/entryhidden.
 Классификатор131/142 не активирован в runtime. G1paused/D4–D7pending,
 реальные материалы/биометрия/R2 E2E/phone scope/merge/deploy не выполнялись.
+
+
+## G2 Admin: финальная передача утверждённого каталога/списка фотопроверок — 2026-11-16
+
+Решение владельца «Утверждают каталог и список» выполнено в отдельных
+Draft PR12 (TransferDriver) и PR32 (uber-v3). Metadata GET/каталог/история/
+явное complaint/manual назначение с подтверждением, session/revision/permissions/
+OWNER MFA/audit/no-store и foreground-only/no-auto-replay guards реализованы.
+
+Backend code080d4b49bb902d782efe2615d92bf05fa3d64dc6 / tree245d64159221583438201d2d51804064d8d45a60:
+CI43947136962/job133579673172 SUCCESS:69 npm test scripts,12 новых SQLite/HTTP
+cases,18 migrations/12 preflight,6 native Worker/D1 workflows,5 protected CLI
+scenarios, dependency audit0 и bundle dry-run. Прежний immediate phase bypass
+воспроизведён/исправлен atomic SQL и проверен включая race; after_current_trip
+сохраняет продолжение текущей поездки, заказ не отменяется.
+
+Android codea0308bec394cd28d821f52bbcfdc05e5e09f4be7 / treed6de5082865d0932c2e754bffb2fd78dc179b951:
+CI43950844261/job133592621453 SUCCESS.318 JVM executions (Driver48×3/Admin58×3),
+99 native cases (Driver38/Admin61),6 build/lint variants и security/variant gates.
+Новые9 JVM×3 и15 native cases. Предыдущие Android runs43948185690/43949225817
+отменены после fixes; их не выдаём за проверку финального source. Sandbox
+socket/spawn EPERM не обходились: необходимые native/CLI проверки исполнил CI.
+
+APK artifact14270860090 и native artifact14267604781 загружены, ZIP SHA256
+сверены с GitHub digest, CRC/path/size PASS;28 PNG, из них10 нового среза.
+Все10 actual PNG независимо просмотрены documenter/reviewer, их hashes сверены
+с CI logs. Режимы/подтверждение/uncertain читаемы light/dark font1.3. Spinner
+обрезание и P3 неверное сообщение expired MFA исправлены и закрыты финальным
+source/runtime/visual evidence; блокирующих замечаний нет. Reviewer SHIP только
+для утверждённого component/synthetic среза. Полный G2/live/phone/release не принят.
+
+Финальные docs-only [skip ci] checkpoints:
+TransferDriver 59342d8ea55580f0c73e7b28e337b8f46d7cd138; backend 9b2fae5b81dc75fdf5eae7962352915a4a9616f9.
+Они изменяют документацию, не проверенный code; local/remote staged tree parity
+и file scope проверены. PLAN/PRODUCT/readiness сохраняют исторические pending
+записи, но ссылаются на актуальный ADMIN_PHOTO_CONTROL_VERIFICATION_2026-11-16.json
+и HANDOFF. Первый локальный JSON payload публикации встретил shell warning;
+remote изменений не было; исправлено login=false, повторная tree parity PASS.
+
+G1paused, D4–D7pending; OWNER-only whitelist не расширен (operational404/hidden).
+Нет merge/deploy/remote migrations/private photo/R2/biometrics/live phone E2E.
+CI debug signing identity временная; phone APK upgrade совместимость не проверена.
+Старые Driver lint warnings не объявлены исправленными. Утверждённые131 правила/
+142 марки неизменны и не активированы в runtime. Следующий зависимый объём
+не выбирается за владельца.
