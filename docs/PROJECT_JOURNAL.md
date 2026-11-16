@@ -2330,3 +2330,39 @@ CI43877768185 — RUNNING; прежний успех не доказывает �
 G1paused/D4–D7pending. Это synthetic Activity/component evidence, не live/hardware
 приёмка. На OWNER-only STAGING operational routes остаются404. Merge/deploy
 и расширение телефонного scope не выполнялись; требуют отдельного решения.
+
+
+## G2 Admin manual assignment — финальный synthetic checkpoint, 2026-11-16
+
+Android Draft PR#10 https://github.com/lobanov0710-blip/TransferDriver/pull/10,
+source86ae9b46fe6b7918eb28cf00b822a34f26f3b52c,
+tree0ae36dab6748f49ddc73080a755d8d57b590d518,
+CI43877768185/job133335205029 SUCCESS. Заново291 JVM executions
+(Driver48×3/Admin49×3),84 API35 runtime (Driver38/Admin46), все6 build/lint,
+bundles/debug test APKs, security/endpoint/AppCheck/signing/UID gates;
+failures/errors/skipped0. Предыдущие RUNNING и reviewer FIX — история.
+
+Устранены UI-неоднозначность одинаковых маршрутов (полный orderId) и
+legacy confirmation (существующий Material3 builder).18 actual native PNG
+проверены по ZIP digest/PNG CRC/IEND/dimensions/SHA256;10 Admin кадров лично
+открыты. Тот же independent reviewer закрыл единственное material замечание
+RESOLVED, disposition SHIP только для scored confirmation correction, без
+наблюдённых introduced visual regressions. Fresh documenter отдельно прочитал
+код/контекст и все10 кадров, проверил hashes; UI record завершён. Generic-role
+fallback раскрыт, native detector не применялся, DESIGN/system files не менялись.
+
+Receipt: https://github.com/lobanov0710-blip/TransferDriver/blob/arch/g2-admin-assignment-ui/docs/ADMIN_ASSIGNMENT_UI_VERIFICATION_2026-11-16.json
+UI record: https://github.com/lobanov0710-blip/TransferDriver/blob/arch/g2-admin-assignment-ui/docs/ADMIN_ASSIGNMENT_UI_REVIEW_2026-11-16.md
+План и PRODUCT отражают реализованный срез и границы. Финальная публикация —
+только документы [skip ci]; исполняемый код остаётся точно проверенным source86ae.
+
+Это synthetic Activity/Keystore/HTTP evidence, не live backend/hardware/tablet/
+TalkBack acceptance и не завершение всего G2. G1paused, D4–D7pending. Backend
+кроме журнала не менялся; ADMIN_PHONE_TEST_ONLY whitelist не расширён,
+operational routes остаются404 на телефонном OWNER-only STAGING. Merge/deploy,
+remote migrations, реальные документы/биометрия/назначения не выполнялись.
+CI debug APK подписан ephemeral CI key; совместимость обновления телефона не
+проверена. Артефакты14231790908/14231448349 хранятся до2026-11-23; receipt
+содержит checksums/provenance. Lint PASS не означает ноль исторических warnings.
+
+Опубликованные Android docs: ff628f71a561841a5d0ae80fef3ea2b6ba2de549, tree b5756c771322f110c91100e5244ac32da38c7626.
