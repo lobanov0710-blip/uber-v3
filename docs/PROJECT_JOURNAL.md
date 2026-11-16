@@ -2774,3 +2774,40 @@ BOM/CRLF исходника не менялись, внешние пробелы
 сохранена отдельно как additional15Approval с вопросом/source/hash. Это
 устраняет неоднозначность области двух решений, без изменения CSV/состава/условий.
 JSON scope/history consistency PASS.
+
+
+## Утверждён следующий G2 срез: каталог автомобилей и список фотопроверок — 2026-11-16
+
+На вопрос об утверждении варианта «Каталог и список проверок» по подготовленному
+предложению владелец ответил «Утверждают каталог и список». Утверждён вариант
+с2 GET по G2_PHOTO_CONTROL_NEXT_SLICE_PROPOSAL_2026-11-16.md, source
+6f4e3caf0ce283bbcca086ccf9b9e18f48935796: метаданные/permissions/MFA/audit/
+scoped cursor/параметры/UX назначения и проверки. Отдельный повтор не требуется.
+Созданы изолированные arch/g2-admin-photo-control-read (backend) и
+arch/g2-admin-photo-control-ui (Android). Merge/deploy не выполняются.
+
+Backend: добавлены GET /v1/admin/vehicles и GET /v1/admin/vehicles/{id}/photo-checks.
+Проекция исключает VIN/телефоны/имена/причины/photos/storage keys; чтение
+проверяет актуальные vehicles.read (+vehicles.verify для списка проверок),
+OWNER server MFA, строгие параметры/IDs/безопасные integer. Keyset limit1–50,
+cursor scoped к фильтру/vehicle, audit без произвольного текста; ошибка audit
+не выдаёт проекцию. Две SELECT для vehicleRevision/check page выполняются batch.
+OWNER-only staging остаётся404. Действующие mutations сохраняются.
+
+Новые9 SQLite/HTTP тестов PASS, миграции18 PASS, D3 preflight12 PASS.
+Первый прогон новых tests выявил неполную SQLite D1 test adapter реализацию:
+batch SELECT не возвращал rows, и проверка requestId ошибочно применялась к
+старому staff/login. Адаптер дополнен чтением SELECT в той же транзакции,
+проверка requestId ограничена v1; повтор9/9 PASS. Новый native workerd/D1
+workflow добавлен для CI на реальном D1 adapter. Первые поиски упомянули
+отсутствующие scripts Android и migration/adminAssignmentService имена;
+пути уточнены через существующее дерево. Большой первый read был усечён,
+зависимые фрагменты прочитаны отдельно.
+
+Полный npm test локально дошёл до ownerMfaControlPlaneCli, где sandbox
+spawnSync возвращает EPERM с пустыми потоками (подтверждено безопасным --help).
+Эти checks не объявляются PASS и не ослабляются/не пропускаются; полный
+прогон и native Worker/D1 выполняются в GitHub CI. Локальная Android/Gradle
+socket граница известна ранее; сборка/lint/runtime выполняются через штатный CI.
+Данные131/142 не меняются; G1paused/D4–D7pending, phone whitelist неизменён.
+Реальные фото/private R2/biometrics/remote migrations/merge/deploy не выполнялись.

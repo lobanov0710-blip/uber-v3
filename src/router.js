@@ -1,4 +1,5 @@
 import { getAdminOrders, getAdminAssignmentOptions } from './core/adminAssignmentReadService.js';
+import { getAdminVehicles, getAdminVehiclePhotoChecks } from './core/adminVehicleReadService.js';
 import { ownerPhoneTestEnabled } from './core/adminPhoneTestScope.js';
 import { startOwnerMfaEnrollment, confirmOwnerMfaEnrollment, verifyOwnerMfa } from './core/ownerMfaService.js';
 import { boundedAuthJson } from './core/ownerMfaTransport.js';
@@ -1857,6 +1858,21 @@ export default async function router(
   // =========================
   // ADMIN VEHICLE PHOTO CONTROL V1
   // =========================
+
+  const vehicleChecksList = path.match(/^\/v1\/admin\/vehicles\/([^/]+)\/photo-checks$/);
+  if (path === '/v1/admin/vehicles' || (vehicleChecksList && req.method === 'GET')) {
+    const requestId='req_'+crypto.randomUUID();
+    if(req.method!=='GET')return json({ok:false,error:'method not allowed',code:'method_not_allowed',requestId},405,cors);
+    try {
+      const auth=await authenticateStaffRequest(req,env);
+      if(auth?.ok!==true)return json({ok:false,error:'authorization required',code:'authorization_required',requestId},auth?.status||401,cors);
+      let id;
+      if(vehicleChecksList){try{id=decodeURIComponent(vehicleChecksList[1]);}catch{return json({ok:false,error:'invalid request',code:'invalid_vehicle_id',requestId},400,cors);}}
+      const options={requestId,mfa:auth.mfa};
+      const result=vehicleChecksList?await getAdminVehiclePhotoChecks(env,auth.user,id,url.searchParams,options):await getAdminVehicles(env,auth.user,url.searchParams,options);
+      return json({...result,requestId},result.ok?200:result.status||500,cors);
+    }catch{return json({ok:false,error:'vehicle metadata read failed',code:'admin_vehicle_read_failed',requestId},500,cors);}
+  }
 
   const adminVehiclePhotoCheckReviewMatch =
     path.match(
