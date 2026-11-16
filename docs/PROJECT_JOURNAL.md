@@ -2811,3 +2811,20 @@ spawnSync возвращает EPERM с пустыми потоками (под�
 socket граница известна ранее; сборка/lint/runtime выполняются через штатный CI.
 Данные131/142 не меняются; G1paused/D4–D7pending, phone whitelist неизменён.
 Реальные фото/private R2/biometrics/remote migrations/merge/deploy не выполнялись.
+
+
+## Исправлена немедленная блокировка переходов активного назначения — 2026-11-16
+
+После первого backend CI43945819112 SUCCESS по b9e6164bea8d026ec8aa5901002e5a06ebd414bc
+дополнительная сверка ТЗ §15 выявила воспроизводимый дефект старого phase SQL:
+при pending immediate фотопроверке активное назначение en_route_to_pickup
+продолжало переход arrived. Новый regression до исправления получилtrue вместоfalse.
+В atomic assignment UPDATE добавлен NOT EXISTS незавершённого immediate check
+для того же vehicle. Заказ не отменяется; after_current_trip и monthly не
+блокируют продолжение активных фаз. Уже существующее terminal завершение
+не изменялось. Условие проверяется в той же SQL mutation, включая race между
+service read и batch. Никаких новых состояний/таймаутов/политик не введено.
+
+Добавлены2 проверки различия режимов и1 race regression; native D1 harness
+проверяет оба режима на SQL реального workerd/D1. Следующий CI должен подтвердить
+новый source; первый успешный run не заявляется проверкой этого исправления.

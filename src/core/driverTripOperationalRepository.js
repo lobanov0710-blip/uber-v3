@@ -843,6 +843,15 @@ export async function advanceDriverAssignmentPhase(
 
           ${verificationGuard}
 
+          -- Immediate photo-control blocks further operational movement, even if
+          -- the check was created after the service precheck. Do not cancel the order.
+          AND NOT EXISTS (
+            SELECT 1 FROM vehicle_photo_checks pc
+            WHERE pc.vehicle_id = a.vehicle_id
+              AND pc.restriction_mode = 'immediate'
+              AND pc.result <> 'passed'
+          )
+
           AND EXISTS (
             SELECT 1
             FROM mutation_idempotency mi

@@ -74,3 +74,28 @@ test('wrong method and owner-phone scope preserve the existing boundary',async t
   const {send,token}=await setup(t);assert.equal((await send(list,token,undefined,undefined,'POST')).status,405);
   for(const path of [list,checks]){const r=await worker.fetch(new Request('https://uber-v3-staging.lobanov0710.workers.dev'+path),{APP_ENV:'staging',ADMIN_PHONE_TEST_ONLY:'true'},{});assert.equal(r.status,404);assert.equal((await r.json()).code,'admin_phone_route_unavailable');}
 });
+
+// The two approved restriction modes must differ for an already active trip.
+for(const mode of ['after_current_trip','immediate'])test('active assignment phase respects '+mode,async t=>{
+  const {DB,env}=await setup(t);
+  DB.sqlite.prepare("INSERT INTO orders(id,name,phone,route,trip_date,status,driver_id,created_at,updated_at) VALUES('order_photo_active','Test','+79990000000','Test','2030-01-01','taken',?,1,1)").run(driverId);
+  DB.sqlite.prepare("INSERT INTO order_assignments(id,order_id,driver_id,vehicle_id,state,assigned_by,reason,created_at,phase) VALUES('assignment_photo_active','order_photo_active',?,?,'active',?,'Synthetic',1,'en_route_to_pickup')").run(driverId,car,moderator);
+  DB.sqlite.prepare("INSERT INTO vehicle_photo_checks(id,vehicle_id,kind,reason,due_at,grace_until,result,created_at,updated_at,restriction_mode) VALUES('photo-check_active001',?,'manual','Synthetic',1,1,'pending',1,1,?)").run(car,mode);
+  const {changeDriverAssignmentPhase}=await import('../src/core/driverTripOperationalService.js');
+  const result=await changeDriverAssignmentPhase(env,{id:driverId,role:'driver'},'assignment_photo_active',{phase:'arrived',expectedRevision:1},{idempotencyKey:'photo-active-'+mode});
+  assert.equal(result.ok,mode==='after_current_trip');
+  assert.equal(DB.sqlite.prepare("SELECT phase FROM order_assignments WHERE id='assignment_photo_active'").get().phase,mode==='after_current_trip'?'arrived':'en_route_to_pickup');
+  assert.equal(DB.sqlite.prepare("SELECT state FROM order_assignments WHERE id='assignment_photo_active'").get().state,'active');
+});
+
+test('immediate restriction created after phase precheck still blocks atomic SQL mutation',async t=>{
+  const {DB,env}=await setup(t);
+  DB.sqlite.prepare("INSERT INTO orders(id,name,phone,route,trip_date,status,driver_id,created_at,updated_at) VALUES('order_photo_race','Test','+79990000000','Test','2030-01-01','taken',?,1,1)").run(driverId);
+  DB.sqlite.prepare("INSERT INTO order_assignments(id,order_id,driver_id,vehicle_id,state,assigned_by,reason,created_at,phase) VALUES('assignment_photo_race','order_photo_race',?,?,'active',?,'Synthetic',1,'en_route_to_pickup')").run(driverId,car,moderator);
+  const batch=DB.batch.bind(DB);DB.batch=async statements=>{DB.sqlite.prepare("INSERT INTO vehicle_photo_checks(id,vehicle_id,kind,reason,due_at,grace_until,result,created_at,updated_at,restriction_mode) VALUES('photo-check_phase_race',?,'manual','Synthetic',1,1,'pending',1,1,'immediate')").run(car);return batch(statements);};
+  const {changeDriverAssignmentPhase}=await import('../src/core/driverTripOperationalService.js');
+  const result=await changeDriverAssignmentPhase(env,{id:driverId,role:'driver'},'assignment_photo_race',{phase:'arrived',expectedRevision:1},{idempotencyKey:'photo-phase-race'});
+  assert.equal(result.ok,false);assert.equal(result.status,409);
+  assert.equal(DB.sqlite.prepare("SELECT revision FROM order_assignments WHERE id='assignment_photo_race'").get().revision,1);
+  assert.equal(DB.sqlite.prepare("SELECT count(*) n FROM audit_events WHERE action='driver.assignment.phase'").get().n,0);
+});
