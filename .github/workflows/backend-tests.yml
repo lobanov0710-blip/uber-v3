@@ -5,6 +5,7 @@ on:
     branches:
       - 'fix/**'
       - 'arch/g2-owner-totp-mfa'
+      - 'arch/g2-admin-assignment-read'
   pull_request:
     branches:
       - main
@@ -47,6 +48,8 @@ jobs:
         run: node tools/check_owner_mfa_d1.mjs
       - name: Verify Admin moderation workflow with local workerd and D1
         run: node tools/check_admin_moderation_d1.mjs
+      - name: Verify approved assignment read APIs with local workerd and D1
+        run: node tools/check_admin_assignment_read_d1.mjs
       - name: Verify OWNER-only phone scope with local workerd and D1
         run: node tools/check_owner_phone_d1.mjs
       - name: Verify protected OWNER CLI with actual Wrangler import output

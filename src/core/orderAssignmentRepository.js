@@ -387,30 +387,12 @@ export async function getOrderAssignmentState(
 }
 
 
-export async function getAssignmentCandidateEligibility(
-  env,
-  driverId,
-  vehicleId,
-  nowMs
-) {
-  const db =
-    requireDatabase(env);
-
-  const timestamp =
-    requirePositiveInteger(
-      nowMs,
-      "nowMs"
-    );
-
-  const row =
-    await db
-      .prepare(`
-        SELECT
-          p.staff_account_id,
+// Shared, fixed SQL projection: mutation precheck and a paginated read use identical eligibility.
+export const ASSIGNMENT_ELIGIBILITY_COLUMNS = `
+          sa.role AS account_role, sa.status AS account_status,
           p.registration_status,
           p.identity_status,
 
-          v.id AS vehicle_id,
           v.status AS vehicle_status,
           v.next_photo_check_due_at,
 
@@ -459,8 +441,32 @@ export async function getAssignmentCandidateEligibility(
 
           a.state AS availability_state,
           a.active_vehicle_id
+`;
 
+export async function getAssignmentCandidateEligibility(
+  env,
+  driverId,
+  vehicleId,
+  nowMs
+) {
+  const db =
+    requireDatabase(env);
+
+  const timestamp =
+    requirePositiveInteger(
+      nowMs,
+      "nowMs"
+    );
+
+  const row =
+    await db
+      .prepare(`
+        SELECT
+          p.staff_account_id,
+          v.id AS vehicle_id,
+          ${ASSIGNMENT_ELIGIBILITY_COLUMNS}
         FROM driver_profiles p
+        JOIN staff_accounts sa ON sa.id=p.staff_account_id
 
         LEFT JOIN vehicles v
           ON v.driver_id = p.staff_account_id
@@ -488,12 +494,19 @@ export async function getAssignmentCandidateEligibility(
       .first();
 
 
+  return assignmentCandidateFromRow(row);
+}
+
+
+export function assignmentCandidateFromRow(row) {
   if (!row) {
     return null;
   }
 
 
   return {
+    accountRole: row.account_role,
+    accountStatus: row.account_status,
     driverId:
       clean(
         row.staff_account_id
@@ -1004,6 +1017,11 @@ export async function assignOrderToDriverVehicle(
           )
 
           AND EXISTS (
+            SELECT 1 FROM staff_accounts sa
+            WHERE sa.id=?2 AND sa.role='driver' AND sa.status='active'
+          )
+
+          AND EXISTS (
             SELECT 1
             FROM driver_profiles p
             WHERE p.staff_account_id = ?2
@@ -1306,6 +1324,11 @@ export async function reassignOrderToDriverVehicle(
                 current.driver_id != ?2
                 OR current.vehicle_id != ?6
               )
+          )
+
+          AND EXISTS (
+            SELECT 1 FROM staff_accounts sa
+            WHERE sa.id=?2 AND sa.role='driver' AND sa.status='active'
           )
 
           AND EXISTS (

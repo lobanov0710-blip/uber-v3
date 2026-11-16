@@ -2205,3 +2205,54 @@ paginated GET; B:1 options GET + legacy limitations. Зависящие новы
 утверждения». Общие команды продолжения не трактуются как выбор A/B.
 Финальные docs/journal updates — [skip ci], без изменения проверенного app/test/
 workflow кода; результаты CI относятся к exact code source выше.
+
+
+### 2026-11-16 — Владелец утвердил Admin assignment read API, вариант A
+
+Явное сообщение: «Вариант A утверждаю». Утверждена версия2 предложения
+ADMIN_ASSIGNMENT_READ_API_PROPOSAL_2026-11-15.md: два минимальных paginated GET
+orders и assignment-options, server permissions/OWNER MFA, read audit без PII.
+Создана отдельная arch/g2-admin-assignment-read от проверенного backend checkpoint.
+Реализация и тесты ведутся локально; успешные проверки ещё не заявляются.
+G1paused, ADMIN_PHONE_TEST_ONLY, D4–D7 и запрет merge/deploy сохраняются.
+Сверка actual SQL уточнила старую формулировку «atomic busy»: текущая схема
+ограничивает current assignment по order_id, а не произвольное число будущих
+назначений водителя. Новые scheduling/ranking/занятость критерии D6 не вводятся.
+Read snapshot остаётся advisory, mutation повторяет собственные current guards.
+
+Сверка также выявила реальную ошибку D3: assignment eligibility/atomic UPDATE
+проверяли profile/vehicle, но не active driver account. Согласно утверждённому
+ТЗ account active обязателен. Добавляется role=driver/status=active в общий
+eligibility и оба atomic UPDATE assign/reassign, без новых критериев D6.
+Read/mutation используют общий список blocker codes; отдельные SQLite тесты
+проверят disabled/suspended и race после precheck. Это исправление действующего
+требования, не изменение выбранного варианта или схемы/permissions.
+
+Первый новый SQLite/HTTP прогон:14/15 PASS,1 FAIL в assert audit-count race
+reassign. Assertion использовал неверный action prefix, тогда как реальный
+audit исходного assign уже существовал. Заменён на сравнение фактического
+общего count до/после отклонённой операции; rollback assertions сохранены.
+MFA fixture также ставит тестовое время ДО создания session, чтобы401
+проверял отсутствие MFA, а не случайно просроченный JWT. Добавлен переход
+keyset через два автомобиля одного водителя и следующего водителя.
+Второй прогон14/15 PASS: новая multi-driver fixture использовала INSERT SELECT
+без списка колонок, не учитывая17-column актуальную staff_accounts. Исправлен
+явный список13 нужных колонок; production SQL и схема от этого не меняются.
+
+Local full npm test дошёл до OWNER control-plane CLI: два старых child_process
+теста остановились из-за sandbox spawnSync EPERM (stdout/stderr пустые),
+не из-за нового API. Прямой --help работает. Miniflare local-native check
+также остановлен sandbox listen EPERM127.0.0.1. Защита не ослабляется; full suite/
+реальный workerd/D1 будут выполнены утверждённым CI.18 migrations и12 staging
+preflight tests локально PASS, новый read suite15/15 PASS.
+
+До публикации устранён N+1 для options: единый paginated SELECT использует
+общую с mutation SQL eligibility projection. Это сохраняет одинаковые правила
+фотоконтроля и снимает риск превышения D1 query budget на limit50; новые
+критерии не добавлены. Требуется повтор meaningful read/assignment regression.
+
+После общего SQL projection новые15 read cases и8 связанных assignment/auth/
+privacy/CORS suites PASS. Dry-run Wrangler локально остановился на недоступном
+global config path, до bundle/deploy; успешная Wrangler сборка не заявляется.
+Native smoke и dry-run остаются обязательными в CI, без изменения sandbox или
+запроса пользовательских credentials. Новых runtime dependencies нет.

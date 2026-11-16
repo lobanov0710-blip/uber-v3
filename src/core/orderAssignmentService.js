@@ -237,84 +237,28 @@ async function requireAdminPermission(
 }
 
 
-async function checkCandidate(
-  env,
-  driverId,
-  vehicleId,
-  nowMs
-) {
-  const candidate =
-    await getAssignmentCandidateEligibility(
-      env,
-      driverId,
-      vehicleId,
-      nowMs
-    );
-
-  if (!candidate) {
-    return notFound(
-      "driver_not_found"
-    );
+// Shared by mutation and advisory read; this is current D3 eligibility, not D6 ranking.
+export function assignmentCandidateBlockers(candidate, vehicleId) {
+  if (!candidate) return ['driver_not_found'];
+  const blockers = [];
+  if (candidate.accountRole !== 'driver' || candidate.accountStatus !== 'active') blockers.push('driver_not_active');
+  if (candidate.registrationStatus !== 'approved') blockers.push('driver_not_approved');
+  if (candidate.identityStatus !== 'verified') blockers.push('identity_verification_required');
+  if (!candidate.vehicleId) blockers.push('vehicle_not_found');
+  else {
+    if (candidate.vehicleStatus !== 'approved') blockers.push('vehicle_not_approved');
+    if (candidate.photoControlBlocked) blockers.push('vehicle_photo_control_required');
+    if (candidate.availabilityState === 'on_line' && candidate.activeVehicleId && candidate.activeVehicleId !== vehicleId) blockers.push('active_vehicle_mismatch');
   }
+  return blockers;
+}
 
-  if (
-    candidate.registrationStatus !==
-      "approved"
-  ) {
-    return unprocessable(
-      "driver_not_approved"
-    );
-  }
-
-  if (
-    candidate.identityStatus !==
-      "verified"
-  ) {
-    return unprocessable(
-      "identity_verification_required"
-    );
-  }
-
-  if (
-    !candidate.vehicleId
-  ) {
-    return notFound(
-      "vehicle_not_found"
-    );
-  }
-
-  if (
-    candidate.vehicleStatus !==
-      "approved"
-  ) {
-    return unprocessable(
-      "vehicle_not_approved"
-    );
-  }
-
-  if (
-    candidate.photoControlBlocked
-  ) {
-    return unprocessable(
-      "vehicle_photo_control_required"
-    );
-  }
-
-  if (
-    candidate.availabilityState ===
-      "on_line"
-    &&
-    candidate.activeVehicleId
-    &&
-    candidate.activeVehicleId !==
-      vehicleId
-  ) {
-    return conflict(
-      "active_vehicle_mismatch"
-    );
-  }
-
-  return null;
+async function checkCandidate(env, driverId, vehicleId, nowMs) {
+  const candidate = await getAssignmentCandidateEligibility(env, driverId, vehicleId, nowMs);
+  const code = assignmentCandidateBlockers(candidate, vehicleId)[0];
+  if (!code) return null;
+  if (code === 'driver_not_found' || code === 'vehicle_not_found') return notFound(code);
+  return code === 'active_vehicle_mismatch' ? conflict(code) : unprocessable(code);
 }
 
 

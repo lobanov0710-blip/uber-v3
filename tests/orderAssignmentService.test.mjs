@@ -99,6 +99,8 @@ function dbFor({
             )
           ) {
             return {
+              account_role: 'driver',
+              account_status: 'active',
               staff_account_id:
                 DRIVER_ID,
               registration_status:
