@@ -1953,3 +1953,255 @@ owner-reported acceptance, независимый live factor read не выпо
 Merge/production deploy не выполняются без отдельного решения владельца.
 Финальные commits меняют только документы/журналы и помечаются [skip ci]:
 проверки закреплены за exact code source выше, повтор unchanged code не нужен.
+
+
+## 2026-11-15 — G2 availability/manual assignment: следующий срез, без возобновления G1
+
+Владелец поручил «далее». По принятой последовательности после анкеты/автомобилей
+начата Driver availability в отдельной arch/g2-availability-assignment от
+проверенного registration checkpoint. ТЗ §§16–18 и D3: выбор одобренного авто
+перед on_line, нижний slider, Радар активен только по backend state, off_line
+перед сменой и запрет смены при активном назначении. Реальные Driver routes на
+OWNER-only STAGING не открываются; D4–D7/G1/merge/production решения не меняются.
+
+Driver реализован по существующим GET /v1/driver/me и PUT /v1/driver/availability:
+independent availability.revision, Idempotency-Key, исходный staff/access/refresh
+и lifecycle epoch; без auth refresh/HTTP replay/optimistic radar. Off_line
+сохраняет activeVehicleId, не очищает его при активной assignment. Нет approved
+авто/identity/revision — нет локального разрешения on_line; окончательный допуск
+и busy/photo checks серверные. Неизвестный результат требует explicit GET.
+Background удаляет snapshot/выбор и инвалидирует операции; поздний auth callback
+не начинает availability network вне STARTED lifecycle. Нативный main footer
+сворачивается online и размещён с учётом system bars/IME; keys/data не пишутся
+в SavedState/autofill/logs.
+
+Admin read-контракт ещё не выбран. Подготовлено
+ADMIN_ASSIGNMENT_READ_API_PROPOSAL_2026-11-15.md version2 и async вопрос A/B.
+Ошибка первоначального анализа: GET /orders НЕ запрещён OWNER/DISPATCHER из-за
+роли. core/adminAuthorization.js и AdminSession подтвердили legacy auth category
+admin с отдельными server operational role/permissions; неверное утверждение
+отозвано, предложение и вопрос исправлены ДО реализации API. Действительные
+пробелы: нет selection snapshot driver+vehicle; legacy orders extra PII и cutoff
+1000 без cursor. A:2 минимальных paginated GET; B:1 options GET + старый список
+с явными ограничениями. Пока решения нет, зависящие endpoints не реализуются;
+RAW ID/revision ручной ввод или новые moderation grants не используются как обход.
+Основание — AGENTS.md п.3, новые детали требуют явного решения владельца.
+
+Локально debug build/instrumentation compile/48 Driver JVM и lint PASS:
+0errors/54 прежних warnings. Driver7+Admin5 security guards PASS. Backend
+availability service/repository/actualSQLite(7cases) и assignment service/
+repository/migration —6 scripts PASS. Backend code/API/schema не менялись.
+Добавлены5 JVM availability boundary cases и11 native protocol/lifecycle/UI cases
+(включая настоящий Slider swipe и TalkBack setProgress). Runtime пока не запускался.
+Native main XML/panel тестируется в отдельном secure host с synthetic transport;
+это layout/component evidence, не live Main login/orders routing. Немокированная
+сеть запрещена test-only guard; никаких production test hooks/реальных данных.
+Screenshot fixture временно clear/restore FLAG_SECURE только в test APK.
+CI запланирован с8 fixed PNG paths/validator marker и regression обеих apps.
+
+При предыдущей попытке tooling прерван пользователем во время запуска compile:
+изменения теста сохранились, compile log не появился. После «Далее» состояние
+сверено, сборка запущена заново и завершилась PASS(42s). Это не отмена G2 и
+не утверждение pending Admin API. Окончательный runtime/visual verdict ожидаются.
+
+
+### Availability runtime1: неверный вызов accessibility provider в test fixture
+
+Source208ebfad4235f1ab5f29396347083c941bf2647c, CI43752677606/job132929903193:
+FAILURE на Driver connected.11 новых cases реально выполнены:4PASS (включая
+настоящий Slider swipe и выбор другого авто),7FAIL в общем onlineAction helper.
+Старые27 Driver cases PASS; Admin runtime ещё не запускался. Build/unit/lint
+этап прошёл. Никакой визуальный/полный runtime PASS пока не заявляется.
+
+По actual locked Material1.14/AndroidX core1.18 bytecode проверено: метод
+AccessibilityNodeProviderCompat.performAction у wrapper возвращает false,
+не делегируя обёрнутому framework provider. Test вызывал этот stub из
+ViewCompat.getAccessibilityNodeProvider; это неверная тестовая точка входа.
+Исправлено на slider.getAccessibilityNodeProvider().performAction, то есть
+реальный Android virtual-thumb ACTION_SET_PROGRESS. Assertions, ожидаемый
+backend state/допуск/одиночная отправка и реальный swipe case сохранены.
+Production app code не меняется; новый instrumentation compile/CI ожидаются.
+
+
+### Возобновление после tooling interruption; проверка через утверждённый CI
+
+После команды «Продолжаем» сверены git status/test helper/logs. Исправленный
+framework provider вызов сохранился, но предыдущая попытка compile log не
+создала: tooling была прервана до команды. Локальный повтор без дополнительных
+разрешений, с --offline, завершился до compilation: Gradle FileLockContentionHandler
+не смог определить usable wildcard IP. Это sandbox/network limitation служебного
+сокета, не ошибка Java и не успешная локальная компиляция. Sandbox/сетевые
+настройки не менялись. Следующая полная проверка — существующий авторизованный
+GitHub CI build/runtime pipeline; результат будет привязан к новому source.
+Локальная предыдущая variants сборка staging/release/unit/lint PASS(3m15s),
+но она предшествовала test-only correction. Admin read API всё ещё не выбран;
+команда продолжения не трактуется как новое утверждение A/B.
+
+
+### Availability runtime2: реальный lifecycle вместо ручного onStop в fixture
+
+Source87b0acb949b31acffd3aa83b7e8e143ed1f01045, CI43774408323/job132997285290:
+FAILURE на одном из11 новых native cases.10PASS, включая настоящий swipe,
+framework accessibility action, отсутствие optimistic radar, ack loss/late401.
+backgroundClearsVehicleAndInvalidatesPendingOperation ожидал GONE, получил
+VISIBLE. Build/unit/lint этап PASS; общий runtime/visual acceptance не объявлен.
+
+Fixture вручную вызывал Instrumentation.callActivityOnStop. Такой вызов метода
+не воспроизводит framework Activity lifecycle transition/ON_STOP Registry,
+к которому подписан DefaultLifecycleObserver панели (наAPI35 dispatch через
+pre-stopped callbacks). Прежний Registration тест собственный onStop проверял
+напрямую, но это не корректный lifecycle тест observer-компонента.
+
+Fixture теперь запускается ActivityScenario и переводится moveToState(CREATED);
+дополнительно assert фактического Lifecycle.State.CREATED перед проверкой
+GONE/empty vehicle/FLAG_SECURE. Teardown закрывает scenario; сброс выбора и
+инвалидация незавершённой mutation, assertion count/таймауты не ослаблены.
+Production Java/XML/security policy не меняются, новый полный CI обязателен.
+
+
+### Privacy review: исключение availability subtree из Autofill
+
+Обнаружено несоответствие source/scope формулировке: saveEnabled=false не
+отключает Android Autofill. Новый Spinner мог участвовать в Autofill structure
+со списком автомобилей, хотя локальное сохранение/Parcel уже исключено.
+Исправлено root importantForAutofill=noExcludeDescendants для availability
+subtree (API26, соответствует minSdk), не затрагивая TalkBack/slider accessibility.
+Это не утверждение фактически произошедшей утечки; устранена возможность
+непредусмотренной передачи новых полей autofill service. Новых permissions/
+SDK/dependencies нет. Требуется compile/runtime нового source; текущий CI
+проверяет предыдущий source, его результат не будет выдан за эту правку.
+
+
+### Availability runtime3: проверка очищенных данных вместо cached Spinner count
+
+Sourcef15aa56a0af983bd8330544ef955af8f1fe600f9, CI43775678761/job133001307324:
+FAILURE в одном из11 новых native cases.10PASS; фактический lifecycle CREATED
+и GONE уже подтверждены. Background case затем ожидал getCount=0, получил3.
+Проверен AOSP android-15.0.0_r1 AbsSpinner.setAdapter/resetList/getCount и
+AdapterView.getSelectedItem: null adapter удаляет selection/children, однако
+mItemCount в этой ветке не сбрасывается. Числовой cached count не означает
+сохранение списка автомобилей. Тест проверяет фактические privacy условия:
+null adapter, null selectedItem, null selectedView, CREATED/GONE/FLAG_SECURE,
+отмену одного pending PUT. Assertions на данные сохранены, timeout не увеличен.
+Добавлен assert importantForAutofill=NO_EXCLUDE_DESCENDANTS. Новый source включает
+ранее найденную privacy XML правку; build/unit/lint/runtime будут проверены CI.
+Локальная Gradle compilation остаётся ограничена sandbox service socket;
+повторные запросы сетевых разрешений не используются для обхода ограничения.
+
+
+### 2026-11-16 — Availability CI PASS и независимый UI review: fix
+
+Source12fd1c216d7284f783f28f527820d5ff0d93eafa/tree4f6e65daeb5a9f825239d413d442820f1eaa9320,
+CI43776899566/job133005125151 SUCCESS. Реально выполнены246 JVM (Driver48×3,
+Admin34×3) и67 API35 runtime (Driver38, Admin29), skipped/failures отсутствуют.
+Полные6 lint suites/builds/endpoints/AppCheck/package/signing/UID/security guards
+PASS. Это включает XML Autofill fix и все11 новых availability native cases.
+Local7+5 security guards PASS. Локальный текущий compile не заявляется из-за
+sandbox service socket; CI — фактическая проверка текущего кода.54 старых Driver
+lint warnings известны из предшествовавших локальных6 suites, не объявляются
+устранёнными; CI lint PASS сам по себе не даёт новый warning count.
+
+Artifact14186633067,876738bytes, SHA256
+eb14a3425dc519a2e33a956e7b8d90e35ddaf1e1aebc71c34be623e57242c951:
+8 actual native PNG1080×2400 проверены signature/IHDR/CRC/IEND и archive digest,
+просмотрены. Это component/layout evidence в secure host с synthetic transport,
+не live Main auth/orders routing. FLAG_SECURE clear/restore — только test APK.
+
+По требованию Impeccable new-work §7 запущен независимый fresh reviewer без
+истории. Harness не позволяет выбрать shipped agent type: generic agent использовал
+fallback finish-reviewer contract, native platform/craft-floor,5 sections.
+Disposition fix: панель fits offline/online light/dark/font1.3; initial system
+bars имеют неверный контраст (offline-light status white, offline-dark nav black),
+в online captures контраст правильный. Это window/host integration finding,
+не clipping нового компонента; полная UI acceptance пока не заявляется.
+
+Проверен locked AndroidX core1.18 bytecode Impl30.setAppearanceLight: wrapper с
+Window пишет legacy decorView flags, а wrapper без Window вызывает platform
+setSystemBarsAppearance. ДляAPI30+ MainWindow теперь явно использует platform
+appearance, API26–29 сохраняет compat path. Это исправляет прямую настройку
+контраста; точная причина compositor timing по одним PNG не установлена.
+Fixture перед снимком проверяет window focus и platform appearance mask, затем
+ждёт UI idle вместо произвольного250ms; состояние не подменяет. Все4 native
+captures будут заменены по тем же путям и возвращены тому же reviewer для scoring
+единственного замечания. Новый source/full CI и actual screenshots обязательны.
+G1paused, Admin A/Bpending; deploy/merge/backend code/schema не меняются.
+
+
+### Availability visual fix round1: CI PASS, scoring PARTIAL
+
+Source800065ead78621e62b10a0ad78e083a4635d8a00/treea3a842095e7bd7807c44583087a2fc489245e209,
+CI43778224200/job133009304957 SUCCESS:246 JVM+67 runtime, full6 lint/builds и
+security/endpoint/signing/UID guards PASS. Artifact14187751524,876930bytes,
+SHA256d02ea094bb90c75f914b485f715c76edf72458822ad8e9a4770bf41e8905ddf3;
+8 PNG validated,4 availability replacements inspected. Same reviewer scoring:
+PARTIAL, disposition fix. Light status icons и dark navigation handle исправлены;
+на первом dark offline capture Wi-Fi/notification icons остаются black, в
+следующем online — white. Единственное замечание contrast остаётся открытым,
+UI ship не заявляется. Platform appearance/focus assertions прошли, однако
+они и accessibility idle не доказывают завершённый render всех SystemUI layers.
+
+Round2 меняет только screenshot synchronization: перед сохранением требуется
+не менее1s одинаковых actual native framebuffers (poll200ms, bounded8s).
+Никакого ожидания желаемого цвета, recolor/crop/image generation, принудительных
+OS/theme/demo icon settings либо изменения server offline state нет. Если
+неверный цвет устойчив, он попадёт в PNG и reviewer сможет снова отклонить.
+Точная причина SystemUI частичного tint по PNG не доказана; это проверка
+устойчивого состояния compositor, не утверждение об исправленном production баге.
+Production Java/XML остаются source800065e; окна/FLAG_SECURE/security guards
+не ослабляются. Новый CI,4 замены по тем же путям, same-reviewer scoring требуются.
+Если второй verdict оставит замечание, по Impeccable §7 будет предъявлен владельцу
+открытый результат и выбор дальнейшего раунда; бесконечный polish не выполняется.
+
+
+### 2026-11-16 — G2 availability: итог проверенного среза
+
+Рабочая ветка arch/g2-availability-assignment, Draft PR#9:
+https://github.com/lobanov0710-blip/TransferDriver/pull/9 .
+Проверенный code source e3c6f0c3bde6ac77c5527e4e69c7f65fecd07e69,
+tree9425fc9174e786c7c2055158d52288a8c501b1d2; CI43779524059/job133013316916
+SUCCESS:246 JVM (Driver48×3, Admin34×3),67 API35 runtime (Driver38,Admin29),
+0fail/skipped. Полные6 lint suites, сборки debug/staging/release и staging AAB,
+security guards7+5, endpoint/AppCheck/package/signing/UID checks PASS.
+Исторические54 Driver lint warnings из предыдущих local suites остаются
+известным ограничением; CI lint PASS не выдаётся за новый warning count.
+
+Driver: нижний slider/approved-car selector, radar только после server ack+GET,
+off_line сохраняет ID текущего авто. Revision/idempotency/session epoch,
+no auto refresh/replay; background отменяет pending work/очищает данные.
+Availability subtree исключён из Autofill; фактическая утечка не установлена.
+Нет новых dependencies/backend API/schema/deploy/merge. Production app tree
+cad37e46bc1200df7a850bf5cec0a1d02847d814; Admin production tree
+5e612dfc4e515aaf46ecdd99814548d8a44dd817 не менялся.
+
+Промежуточные CI43752677606/43774408323/43775678761 FAIL сохранены в истории:
+test fixture accessibility stub, ручной onStop вместо lifecycle и cached
+Spinner count. Исправлены без удаления assertions/кейсов. CI43776899566 и
+43778224200 затем SUCCESS246+67, но визуальный review выявил initial system-bar
+contrast. Fresh generic reviewer/documenter по Impeccable fallback; первый
+scoring PARTIAL/fix. После API30+ platform appearance и test-only ожидания
+устойчивого unmodified framebuffer второй scoring RESOLVED, disposition ship
+ТОЛЬКО для исходного contrast finding. Все4 actual native captures просмотрены,
+новых регрессий batch reviewer не наблюдал. Это не full-product security clearance.
+
+Artifact14188321054,882728bytes, SHA256
+921c49e9470bd5e16faec27130e6d996366f765482f6c873db5c601c839deb0f.
+8 fixed PNG1080×2400 signature/IHDR/CRC/IEND/archive-digest PASS.
+Provenance: docs/DRIVER_AVAILABILITY_VERIFICATION_2026-11-16.json и
+docs/DRIVER_AVAILABILITY_UI_REVIEW_2026-11-16.md в Draft PR#9.
+Это main XML/panel в secure synthetic host, не full Main auth/order routing,
+не live Driver/physical-device/tablet E2E. CI Firebase config синтетический,
+новый user-installable Driver APK этим checkpoint не выдавался.
+Локальный текущий compile ограничен Gradle sandbox service socket; CI —
+фактическая проверка current source.6 прежних backend contract scripts, включая
+7 actual SQLite cases, PASS на неизменённом backend code; повтор не требовался.
+
+G1 остаётся на паузе; D4–D7 не утверждены. ADMIN_PHONE_TEST_ONLY неизменён.
+Admin assignment read API version2 A/B всё ещё ожидает явного выбора владельца.
+Исправлено первоначальное неверное утверждение о роли legacy GET /orders:
+OWNER/DISPATCHER сохраняют auth-category admin; реальный пробел — selection
+snapshot, cutoff1000 и extra PII старого списка. Предложение A:2 minimal
+paginated GET; B:1 options GET + legacy limitations. Зависящие новые endpoints
+не реализованы. Основание AGENTS.md п.3: «Не выполнять предложенный вариант до
+утверждения». Общие команды продолжения не трактуются как выбор A/B.
+Финальные docs/journal updates — [skip ci], без изменения проверенного app/test/
+workflow кода; результаты CI относятся к exact code source выше.
