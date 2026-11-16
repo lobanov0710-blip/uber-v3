@@ -2495,3 +2495,39 @@ treec66cbc9ca6c9a5be2cdcb0a9734f47580172ecc9; Android docs source
 3f9fad6f1be32b54674bdfe7bd56317e5d3760dd, treeabad017859ef912e4921f44295fc388a4ee4bf41.
 Оба remote/local tree совпали. Draft PR31/PR11 описания обновлены по полному
 решению131/142; executable code/merge/deploy не выполнялись.
+
+
+## Продолжение плана: фотоконтроль подготовлен, требуется выбор объёма — 2026-11-16
+
+На поручение «Продолжаем по плану» сверены AGENTS п.3, последние решения,
+план/журнал, ТЗ §§14–15 и предложение следующего G2 среза.131 модельное правило
+и142 марки утверждены полностью; повтор этого утверждения не запрашивается.
+Следующий подготовленный срез — внеплановый фотоконтроль Admin. Два объёма
+(каталог/список с2 GET либо действие из карточки регистрации без новых GET)
+не выбраны владельцем. Прежний вариант A назначений и утверждение справочника
+не использованы как разрешение новых GET. Рекомендуемый контракт полностью
+подготовлен в G2_PHOTO_CONTROL_NEXT_SLICE_PROPOSAL_2026-11-16.md.
+
+Независимая проверка выполнена на backend412591d0d633e25ead8596cb8121ea703f12ca09:
+photoControlSupport.sqlite5 PASS и photoControlLifecycle.sqlite6 PASS,
+failures/skipped/cancelled0, Node24.22.1. Семь source hashes совпали с предыдущим
+readiness.2 из11 tests относятся к support. Проверены существующие service/SQLite
+fixtures; новые GET, Android/native Worker, HTTP/MFA E2E, полная работа обоих
+режимов на активной поездке не выполнялись и не заявлены PASS.
+Новых дефектов этими проверками не воспроизведено; это не полный security audit.
+В начальном rg был указан отсутствующий adminAssignmentService.js; повтор по
+rg --files и действующим orderAssignment/availability/operational файлам выполнен.
+Android поиск новых endpoint методов вернул0 совпадений, не сбой инструмента.
+
+Readiness JSON обновлён с лог-хэшами и прежним историческим snapshot; план и
+предложение согласованы с данными131/142. Общий каталог автомобилей требует
+server IDs/revisions и не подменяется справочником марок/моделей. Код/API/БД/
+реальные материалы/classifier runtime/phone whitelist не менялись. G1paused,
+D4–D7pending; APK/runtime/merge/deploy/remote migrations не выполнялись.
+Следующий зависимый шаг — явный выбор владельца из уже подготовленных вариантов;
+до него реализация новых GET/UI не начата согласно AGENTS п.3.
+
+Обновлённый checkpoint опубликован в Android docs source6f4e3caf0ce283bbcca086ccf9b9e18f48935796,
+tree0fd686b3d670a755cb12d29aba2b63d71ffe0919; remote/local tree equality проверена. PR11 описание
+актуализировано; прямой Git ref подтверждает новый head. Выбор следующего
+объёма/контрактов владельцем пока не получен, merge/deploy отсутствуют.
