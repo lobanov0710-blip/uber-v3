@@ -2531,3 +2531,41 @@ D4–D7pending; APK/runtime/merge/deploy/remote migrations не выполнял
 tree0fd686b3d670a755cb12d29aba2b63d71ffe0919; remote/local tree equality проверена. PR11 описание
 актуализировано; прямой Git ref подтверждает новый head. Выбор следующего
 объёма/контрактов владельцем пока не получен, merge/deploy отсутствуют.
+
+
+## Владелец выбрал каталог и список: G2 реализация и backend CI — 2026-11-16
+
+Ответ «Утверждают каталог и список» утверждает полный вариант G2 фотоконтроля
+по proposal6f4e3caf0ce283bbcca086ccf9b9e18f48935796: два minimal GET, permissions/
+MFA/no-store/audit/scoped paging и metadata/create Admin UI с указанными проверками.
+Pending выбора в прежних записях теперь исторический; повтор не запрашивается.
+Рабочие ветки arch/g2-admin-photo-control-read и arch/g2-admin-photo-control-ui,
+Draft backend PR32 / Android PR12; merge/deploy отсутствуют.
+
+Backend source080d4b49bb902d782efe2615d92bf05fa3d64dc6,
+tree245d64159221583438201d2d51804064d8d45a60, CI43947136962/job133579673172 SUCCESS:
+69 test scripts,12 новых SQLite/HTTP cases,18 migrations/12 preflight,
+6 native Worker/D1 workflows,5 protected CLI scenarios,audit0 и Worker dry-run.
+Локальный полный прогон останавливался на sandbox spawnSync EPERM; эти проверки
+успешно выполнил CI, ограничения среды не обходились и tests не ослаблялись.
+Первый новый test-run выявил недостающий SELECT result в SQLite D1 test adapter;
+исправлено без изменения mutation semantics, CI подтвердил полный набор.
+
+Дополнительная сверка ТЗ §15 воспроизвела старый дефект: immediate check
+запрещал новые назначения, но не останавливал phase advance уже активного.
+Исправлен atomic SQL NOT EXISTS nonpassed immediate для того же vehicle;
+after_current_trip разрешает продолжить текущую поездку. Нет отмены заказа
+или новых terminal правил. Регрессии двух режимов и service-to-batch race,
+а также оба режима на native D1 прошли по новому source/CI выше.
+
+Admin sourcea196387945c2966d8929cbee9f4983c1e5a2f859,
+treea6d14387bccb3ac262c427179c4acba15d550ba8 — UI/test implementation, CI в работе.
+9 новых JVM и14 native cases,10 native frames; PASS пока не заявляется.
+Первый source-level independent review не нашёл session/permission blocker,
+но отметил длинный spinner mode. SDK singleLine/fixed height подтверждён;
+заменён native multiline wrap/min48dp, компактная identity summary сохраняет
+в подтверждении vehicle/основание/полный режим/причину. Нужны final CI/PNG/review.
+Проверяются current session/grants/MFA перед GET/POST, immutable uncertain intent,
+явный same-key retry, ACK/revision и onStop очистка. OWNER-only routes404/entryhidden.
+Классификатор131/142 не активирован в runtime. G1paused/D4–D7pending,
+реальные материалы/биометрия/R2 E2E/phone scope/merge/deploy не выполнялись.
