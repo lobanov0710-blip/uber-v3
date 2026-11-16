@@ -1,3 +1,4 @@
+import { getAdminOrders, getAdminAssignmentOptions } from './core/adminAssignmentReadService.js';
 import { ownerPhoneTestEnabled } from './core/adminPhoneTestScope.js';
 import { startOwnerMfaEnrollment, confirmOwnerMfaEnrollment, verifyOwnerMfa } from './core/ownerMfaService.js';
 import { boundedAuthJson } from './core/ownerMfaTransport.js';
@@ -1631,6 +1632,29 @@ export default async function router(
     }
   }
 
+
+  // Approved variant A: minimal read projections for human assignment, never recommendations.
+  const assignmentOptionsMatch = path.match(/^\/v1\/admin\/orders\/([^/]+)\/assignment-options$/);
+  if (path === '/v1/admin/orders' || assignmentOptionsMatch) {
+    const requestId = 'req_' + crypto.randomUUID();
+    if (req.method !== 'GET') return json({ok:false,error:'method not allowed',code:'method_not_allowed',requestId},405,cors);
+    try {
+      const auth = await authenticateStaffRequest(req, env);
+      if (auth?.ok !== true) return json({ok:false,error:'authorization required',code:'authorization_required',requestId},auth?.status || 401,cors);
+      let orderId;
+      if (assignmentOptionsMatch) {
+        try { orderId = decodeURIComponent(assignmentOptionsMatch[1]); }
+        catch { return json({ok:false,error:'invalid request',code:'invalid_order_id',requestId},400,cors); }
+      }
+      const context = {requestId,mfa:auth.mfa};
+      const result = assignmentOptionsMatch
+        ? await getAdminAssignmentOptions(env,auth.user,orderId,url.searchParams,context)
+        : await getAdminOrders(env,auth.user,url.searchParams,context);
+      return json({...result,requestId},result.ok ? 200 : result.status || 500,cors);
+    } catch {
+      return json({ok:false,error:'operational read failed',code:'admin_assignment_read_failed',requestId},500,cors);
+    }
+  }
 
   // =========================
   // ADMIN ORDER ASSIGNMENT V1

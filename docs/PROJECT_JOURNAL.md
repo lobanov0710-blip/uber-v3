@@ -2205,3 +2205,357 @@ paginated GET; B:1 options GET + legacy limitations. Зависящие новы
 утверждения». Общие команды продолжения не трактуются как выбор A/B.
 Финальные docs/journal updates — [skip ci], без изменения проверенного app/test/
 workflow кода; результаты CI относятся к exact code source выше.
+
+
+### 2026-11-16 — Владелец утвердил Admin assignment read API, вариант A
+
+Явное сообщение: «Вариант A утверждаю». Утверждена версия2 предложения
+ADMIN_ASSIGNMENT_READ_API_PROPOSAL_2026-11-15.md: два минимальных paginated GET
+orders и assignment-options, server permissions/OWNER MFA, read audit без PII.
+Создана отдельная arch/g2-admin-assignment-read от проверенного backend checkpoint.
+Реализация и тесты ведутся локально; успешные проверки ещё не заявляются.
+G1paused, ADMIN_PHONE_TEST_ONLY, D4–D7 и запрет merge/deploy сохраняются.
+Сверка actual SQL уточнила старую формулировку «atomic busy»: текущая схема
+ограничивает current assignment по order_id, а не произвольное число будущих
+назначений водителя. Новые scheduling/ranking/занятость критерии D6 не вводятся.
+Read snapshot остаётся advisory, mutation повторяет собственные current guards.
+
+Сверка также выявила реальную ошибку D3: assignment eligibility/atomic UPDATE
+проверяли profile/vehicle, но не active driver account. Согласно утверждённому
+ТЗ account active обязателен. Добавляется role=driver/status=active в общий
+eligibility и оба atomic UPDATE assign/reassign, без новых критериев D6.
+Read/mutation используют общий список blocker codes; отдельные SQLite тесты
+проверят disabled/suspended и race после precheck. Это исправление действующего
+требования, не изменение выбранного варианта или схемы/permissions.
+
+Первый новый SQLite/HTTP прогон:14/15 PASS,1 FAIL в assert audit-count race
+reassign. Assertion использовал неверный action prefix, тогда как реальный
+audit исходного assign уже существовал. Заменён на сравнение фактического
+общего count до/после отклонённой операции; rollback assertions сохранены.
+MFA fixture также ставит тестовое время ДО создания session, чтобы401
+проверял отсутствие MFA, а не случайно просроченный JWT. Добавлен переход
+keyset через два автомобиля одного водителя и следующего водителя.
+Второй прогон14/15 PASS: новая multi-driver fixture использовала INSERT SELECT
+без списка колонок, не учитывая17-column актуальную staff_accounts. Исправлен
+явный список13 нужных колонок; production SQL и схема от этого не меняются.
+
+Local full npm test дошёл до OWNER control-plane CLI: два старых child_process
+теста остановились из-за sandbox spawnSync EPERM (stdout/stderr пустые),
+не из-за нового API. Прямой --help работает. Miniflare local-native check
+также остановлен sandbox listen EPERM127.0.0.1. Защита не ослабляется; full suite/
+реальный workerd/D1 будут выполнены утверждённым CI.18 migrations и12 staging
+preflight tests локально PASS, новый read suite15/15 PASS.
+
+До публикации устранён N+1 для options: единый paginated SELECT использует
+общую с mutation SQL eligibility projection. Это сохраняет одинаковые правила
+фотоконтроля и снимает риск превышения D1 query budget на limit50; новые
+критерии не добавлены. Требуется повтор meaningful read/assignment regression.
+
+После общего SQL projection новые15 read cases и8 связанных assignment/auth/
+privacy/CORS suites PASS. Dry-run Wrangler локально остановился на недоступном
+global config path, до bundle/deploy; успешная Wrangler сборка не заявляется.
+Native smoke и dry-run остаются обязательными в CI, без изменения sandbox или
+запроса пользовательских credentials. Новых runtime dependencies нет.
+
+
+### 2026-11-16 — Утверждён и проверен вариант A Admin assignment read API
+
+Решение владельца: «Вариант A утверждаю». Утверждена version2 предложения
+ADMIN_ASSIGNMENT_READ_API_PROPOSAL_2026-11-15.md: два minimal paginated GET.
+Прежние pending A/B записи являются историей, решение A теперь явное.
+Backend ветка arch/g2-admin-assignment-read, Draft PR#30:
+https://github.com/lobanov0710-blip/uber-v3/pull/30 .
+Code source dda85d2937f385cc7b0cccbc88d4282d50481485,
+tree3fe4f5bb685d221ac7f1d6b92fedd636ec06e32c,
+CI43854087967/job133253772715 SUCCESS.
+
+GET /v1/admin/orders и GET /v1/admin/orders/{id}/assignment-options реализованы:
+keyset cursor/limit1–50/default20, строгие scope/types/unknown/duplicate params,
+минимальные SQL projections, server current grants и OWNER MFA, no-store,
+обязательный read audit без контактов/cursor/provider/SQL text.
+Actual test перечислил1106 orders без legacy cutoff1000. Options читает одну
+страницу одним SELECT с общей mutation SQL eligibility projection, без N+1,
+score/rank/автовыбора/новых D6 правил. Offline сам по себе не исключается.
+
+Обнаружен и исправлен существующий D3 defect account active: precheck и atomic
+assign/reassign теперь требуют role=driver/status=active. Read/mutation используют
+общую функцию blocker codes. Actual SQLite race после precheck подтверждает
+отказ обоих UPDATE при отключении кандидата без изменения order/audit.
+Старая фраза «atomic busy» уточнена: current-assignment unique index относится
+к order_id, новые критерии scheduling/future assignment не добавлялись.
+
+Полный CI: все68 unit/router scripts PASS, включая15 новых actual SQLite/HTTP
+cases;18 migration checks,12 fail-closed staging tests, npm audit0 vulnerabilities.
+Все5 native Worker/D1 checks (availability,OWNER MFA,moderation,new read API,
+OWNER phone scope), protected CLI5 scenarios и Worker dry-run bundle PASS.
+Новый bundled Worker/D1 smoke подтвердил minimal payload/pagination/offline/
+disabled-driver/current grants/OWNER MFA/read audit4rows. Deploy не выполнялся.
+
+Локально15 новых cases и8 связанных regression suites PASS; полный npm suite
+остановился на sandbox spawnSync EPERM старых CLI тестов, native Miniflare —
+на listen EPERM127.0.0.1, Wrangler dry-run — global config path. Эти ограничения
+не скрывались/не обходились; обязательные проверки затем реально прошли в CI.
+Первоначальные2 FAIL новых fixtures (неверный audit action-prefix и INSERT
+без списка колонок staff_accounts) исправлены, assertions/кейсы сохранены.
+Контракт: docs/ADMIN_ASSIGNMENT_READ_API.md; provenance:
+docs/ADMIN_ASSIGNMENT_READ_VERIFICATION_2026-11-16.json в backend PR#30.
+
+G1paused, D4–D7pending, ADMIN_PHONE_TEST_ONLY whitelist неизменён: оба новых GET
+по-прежнему недоступны на текущем OWNER-only STAGING. Реальные Cloudflare
+ресурсы, schema/dependencies и Android production code не менялись.
+Admin UI ручного назначения — следующий плановый срез, этим API checkpoint
+не объявляется готовым; новый APK не выпускался. Merge/deploy требуют отдельного
+решения. Финальные docs/journal commits [skip ci] не меняют проверенный код;
+результаты относятся к exact code source выше.
+
+
+## G2 Admin manual assignment UI — 2026-11-16, проверка Material3 исправления
+
+Android Draft PR#10 https://github.com/lobanov0710-blip/TransferDriver/pull/10,
+ветка arch/g2-admin-assignment-ui, base arch/g2-availability-assignment.
+Утверждённый вариант A/D1–D3: явные order+driver/vehicle, reason, confirmation,
+orderRevision/idempotency, no automatic replay, session-bound/current grants/MFA,
+onStop privacy, закрытый owner_phone scope. Backend API/whitelist не менялись.
+Устранена неоднозначность одинаковых маршрутов: в UI показан полный orderId.
+
+Проверенный source1a26fb5950eab915f05230e306b05c60fb6d6041,
+CI43875519388 SUCCESS:291 JVM,84 API35 native (Driver38/Admin46),6 build/lint,
+endpoint/AppCheck/signing/UID/security gates,18 validated native PNG.
+Fresh Impeccable reviewer проверил10 Admin captures, disposition FIX только
+для legacy confirmation surface. Builder заменён на существующий Material3
+компонент, runtime защиты не менялись. Текущий source86ae9b46fe6b7918eb28cf00b822a34f26f3b52c,
+CI43877768185 — RUNNING; прежний успех не доказывает новую версию.
+Требуются recaptures и scoring того же reviewer, затем fresh documenter/receipt.
+
+G1paused/D4–D7pending. Это synthetic Activity/component evidence, не live/hardware
+приёмка. На OWNER-only STAGING operational routes остаются404. Merge/deploy
+и расширение телефонного scope не выполнялись; требуют отдельного решения.
+
+
+## G2 Admin manual assignment — финальный synthetic checkpoint, 2026-11-16
+
+Android Draft PR#10 https://github.com/lobanov0710-blip/TransferDriver/pull/10,
+source86ae9b46fe6b7918eb28cf00b822a34f26f3b52c,
+tree0ae36dab6748f49ddc73080a755d8d57b590d518,
+CI43877768185/job133335205029 SUCCESS. Заново291 JVM executions
+(Driver48×3/Admin49×3),84 API35 runtime (Driver38/Admin46), все6 build/lint,
+bundles/debug test APKs, security/endpoint/AppCheck/signing/UID gates;
+failures/errors/skipped0. Предыдущие RUNNING и reviewer FIX — история.
+
+Устранены UI-неоднозначность одинаковых маршрутов (полный orderId) и
+legacy confirmation (существующий Material3 builder).18 actual native PNG
+проверены по ZIP digest/PNG CRC/IEND/dimensions/SHA256;10 Admin кадров лично
+открыты. Тот же independent reviewer закрыл единственное material замечание
+RESOLVED, disposition SHIP только для scored confirmation correction, без
+наблюдённых introduced visual regressions. Fresh documenter отдельно прочитал
+код/контекст и все10 кадров, проверил hashes; UI record завершён. Generic-role
+fallback раскрыт, native detector не применялся, DESIGN/system files не менялись.
+
+Receipt: https://github.com/lobanov0710-blip/TransferDriver/blob/arch/g2-admin-assignment-ui/docs/ADMIN_ASSIGNMENT_UI_VERIFICATION_2026-11-16.json
+UI record: https://github.com/lobanov0710-blip/TransferDriver/blob/arch/g2-admin-assignment-ui/docs/ADMIN_ASSIGNMENT_UI_REVIEW_2026-11-16.md
+План и PRODUCT отражают реализованный срез и границы. Финальная публикация —
+только документы [skip ci]; исполняемый код остаётся точно проверенным source86ae.
+
+Это synthetic Activity/Keystore/HTTP evidence, не live backend/hardware/tablet/
+TalkBack acceptance и не завершение всего G2. G1paused, D4–D7pending. Backend
+кроме журнала не менялся; ADMIN_PHONE_TEST_ONLY whitelist не расширён,
+operational routes остаются404 на телефонном OWNER-only STAGING. Merge/deploy,
+remote migrations, реальные документы/биометрия/назначения не выполнялись.
+CI debug APK подписан ephemeral CI key; совместимость обновления телефона не
+проверена. Артефакты14231790908/14231448349 хранятся до2026-11-23; receipt
+содержит checksums/provenance. Lint PASS не означает ноль исторических warnings.
+
+Опубликованные Android docs: ff628f71a561841a5d0ae80fef3ea2b6ba2de549, tree b5756c771322f110c91100e5244ac32da38c7626.
+
+
+## Следующий G2 срез — предложение фотоконтроля, 2026-11-16
+
+По поручению «Далее по плану» сверены ТЗ§§14–15/28–30, D1–D3, актуальные
+план/журналы и GitHub heads. После завершённого Admin manual assignment
+подготовлен возможный следующий Admin срез: внеплановый фотоконтроль.
+Реализация нового среза НЕ начата; порядок/объём и новые GET не выбирались
+за владельца. Прежнее утверждение варианта A относится только к назначениям.
+
+Есть POST create, GET известной проверки, POST review; нет общего Admin
+vehicle catalogue и GET коллекции photo-checks (существующий path POST-only).
+Подготовлены два конкретных варианта: каталог+список с двумя minimal GET
+(рекомендуется) либо ограниченное создание из существующей карточки регистрации.
+Order-scoped assignment-options и выдача лишних moderation permissions не
+используются как подмена каталога. Требуется явный выбор по AGENTS.md п.3.
+
+Draft PR#11 https://github.com/lobanov0710-blip/TransferDriver/pull/11,
+arch/g2-admin-photo-control-proposal, base arch/g2-admin-assignment-ui;
+docs sourcebe1cb4332866882b279522f5b38008ffa4b48dc6,
+tree8cfe59eaf554b41313b518e6889d57aa1162e259. Изменены только4 docs files:
+предложение/JSON readiness/план/журнал. Ссылки, receipt и local/remote tree
+проверены; в плане исправлена устаревшая строка16 по существующему PR#9.
+
+Backend source506d7523c61e86cfb703a9a0eaffae5d36787294: Node24.22.1,
+photoControlSupport.sqlite5 PASS (включая2 support regressions),
+photoControlLifecycle.sqlite6 PASS;11 tests,failures/skipped/cancelled0.
+Это actual SQLite/service synthetic fixtures, не новые GET, не Android build,
+не native Worker/HTTP-MFA E2E и не exhaustive обоих restriction modes.
+Source/log hashes и точные пределы — G2_PHOTO_CONTROL_READINESS_2026-11-16.json;
+контракты/варианты/будущие проверки — G2_PHOTO_CONTROL_NEXT_SLICE_PROPOSAL_2026-11-16.md
+в PR#11. Числа прежнего CI assignment не выдаются за новые проверки.
+
+Executable code/dependencies/schema/whitelist не менялись. G1paused,
+D4–D7pending; фото/document/биометрия/удалённые ресурсы не использовались,
+новый APK/merge/deploy не выполнялись. Существующая phone-only404 сохранена.
+Следующая зависимая реализация ожидает отдельного решения владельца.
+
+
+## Расширенный справочник марок для утверждения — 2026-11-16
+
+По запросу владельца «Каталог автомобилей нужно расширить. Haval, Cherry и т.д.
+Подготовь расширенный список для утверждения» подготовлены отдельные Markdown/JSON
+VEHICLE_MAKES_CATALOG_PROPOSAL_2026-11-16 в Android docs ветке PR#11.
+Sourceb5fa627ab31f5c8da65788d60e788f9ea1d824c5,
+tree817644b0ddef869a035b7c576bbf97f442fc99fc. Git local/remote tree совпал;
+commit меняет только5 docs files, общий PR теперь содержит6 docs files.
+
+Итог140 марок:64 расширенный китайский блок,14 региональных/исторических,
+18 японских/корейских,29 европейских,15 американских. Включены Haval/Chery;
+Cherry/Черри/Чери предложены как поисковые варианты Chery. Полный состав
+ожидает утверждения. Современные EV/subbrands и старые марки сохранены раздельно,
+связь автогрупп не приводит к автоматическому объединению. Модели/поколения
+этим списком не утверждаются. Ручной ввод другой марки предложен без hard whitelist.
+
+Форма Driver и backend/migration0005 сейчас принимают make/model как строки1–80;
+Haval/Chery не исключаются проверками. Перечень готовится для удобного выбора/
+поиска, а не для автоматического допуска/тарифа/приоритета. Существующие записи
+и регистрационные данные не переписываются. Наличие всех марок в продаже/полнота
+мирового рынка не проверялись; это вручную подготовленный состав для утверждения.
+
+Проверены JSON parse,140 unique IDs/names,5 group counts,188 search entries
+без cross-brand alias collisions, length≤80/no controls; отдельные assertions
+Haval/Хавал и Chery/Cherry/Черри/Чери. Все140 строк Markdown совпали с JSON,
+links/diff PASS. Новые APK/JVM/runtime/backend suites не запускались для
+этого docs-only изменения; прежние11 SQLite readiness cases остаются историей.
+
+План/фотоконтроль proposal и журналы обновлены. Список и внедрение pending;
+этот запрос не утверждает новые GET/объём фотоконтроля. Executable code/API/
+schema/dependencies/phone whitelist не менялись. G1paused/D4–D7pending,
+merge/deploy/remote resources/обработка реальных документов не выполнялись.
+
+
+## Состав140 марок явно утверждён владельцем — 2026-11-16
+
+Ответ владельца на опубликованный список: «Состав справочника утверждают.».
+Это явное утверждение полного состава140 марок, включая Haval/Chery.
+Утверждённый исходный список: b5fa627ab31f5c8da65788d60e788f9ea1d824c5,
+VEHICLE_MAKES_CATALOG_PROPOSAL_2026-11-16.{md,json}, Android Draft PR#11.
+Повторное подтверждение не запрашивалось; прежние pending записи — история.
+
+Статус изменён на approved-composition, сохранены дата/точная формулировка,
+source и SHA256 состава id/name/group:
+20c245092f7299e051616d1ade2c71aab8bd233578c2f5c47edab721b54e6d46.
+Все140 makes/5 groups и предложенные aliases/proposedBehavior сохранены
+без изменения. PRODUCT/план/справочник и фотоконтроль proposal актуализированы.
+Документы опубликованы: b4a9e8999ffabeda5b5aef45c073deeefe73d39a,
+tree334399045540fa868fece18fb4490036bb3a4f0a; local/remote tree совпадают.
+
+Проверены140 unique IDs/names,5 counts,188 search entries/no collisions,
+length≤80/no controls, Markdown/JSON parity, metadata/source snapshot checksum,
+неизменность состава и links/diff. Это фиксация решения, не новая сборка:
+новые APK/JVM/native/backend tests не запускались и не заявляются выполненными.
+Служебный JS publisher первоначально остановился на SyntaxError до любых
+инструментов/записей, затем исправлен; ref изменён только после проверки tree.
+
+Объём утверждения: состав марок. Поиск/aliases, модели, внедрение UI/API,
+миграция старых данных и новые GET/выбор объёма фотоконтроля этим сообщением
+не утверждены. implementationChanged=false/photoControlApiApprovalImplied=false.
+API/schema/dependencies/правила допуска/phone whitelist не менялись.
+G1paused/D4–D7pending; merge/deploy не выполнялись. Запись фиксирует решение
+для следующих шагов, а не объявляет реализацию справочника завершённой.
+
+
+## Эконом исключён; классификатор искали по репозиториям — 2026-11-16
+
+Владелец указал исключить Эконом, затем на вопрос об источнике таблицы
+поручил: «нужно поискать по репозиторию». Проверены read-only текущие снимки
+всех60 доступных GitHub веток (14TransferDriver/46uber-v3),821 уникальное
+текстовое содержимое (376/445):776 Git blobs локально +45 через GitHub.
+Recursive trees не усечены; CSV/XLS/XLSX/ODS/PDF/DOC/DOCX/архивов с таблицей
+в этих снимках нет. Дополнительно reachable local history215+536 commits,
+538+736 text blobs. Granta совпадения9 версий push test — переменная grantA,
+не классификатор автомобилей. Default code search econom — только negative tests.
+
+Утверждённая таблица марка→модель→год/комплектация→тариф не найдена в указанном
+объёме. Полная remote ancestry/внешние документы/private D1/R2 не проверялись.
+Фактически pricing.js, driverRegistrationService, migration0005, Android class
+choices уже только comfort/business/minivan. Existing pricing27 checks PASS,
+driverRegistrationService suite PASS (одна отчётная группа). Прямой probe
+подтвердил3 тарифа и отказ econom/economy/ECONOMY/Эконом. Это не модельная проверка.
+
+В справочнике140 марок теперь явный tariffPolicy: Эконом исключён,
+referenceMayNotServeAsVehicleAllowlist=true/vehicleModelEligibilityApproved=false.
+Сами марки/groups/прежнее composition approval сохранены. В справочнике нет
+моделей/годов/тарифных присвоений; конкретные строки не удалялись по догадке.
+Модельный список допуска только для Комфорт/Бизнес/Минивэн требует отдельной
+утверждённой таблицы. Готовый фильтр эконом-моделей/операционный каталог не
+объявляются реализованными. Указание об исключении тарифа принято без переподтверждения.
+
+Документы: VEHICLE_TARIFF_CLASSIFICATION_SEARCH_2026-11-16.{md,json},
+справочник марок, PRODUCT/план/журнал в Android Draft PR#11.
+Опубликованный source9eb8b6c5afada4e481cce3cfcfee718fc906502e,
+tree0ee3e55ad5ac33a9067b5d9f3d4e0483853975a9. JSON/links/parity/coverage и exact Git tree
+проверены. Общий PR9 documentation files; текущий commit7 docs/PRODUCT files.
+Executable code/API/schema/dependencies/автомобили/phone whitelist не менялись.
+Новые APK/Android runtime/native Worker/live E2E не выполнялись. G1paused,
+D4–D7pending, merge/deploy не выполнялись. Результат поиска и реальный предел
+выполненной задачи сохранены для следующих решений владельца.
+
+
+## Проверка предоставленной OneDrive ссылки — 2026-11-16
+
+Владелец предоставил ссылку1drv.ms и поручил проверить её как возможный источник
+модельного классификатора. Источник в журнале идентифицирован без share-token:
+SHA256 URL88079d36eec6cccd80ba288962308d18c3d17d3f7ae61d0ed724635aec492497.
+Полная ссылка/токен общего доступа в Git не публикуются.
+
+Web opener сообщил unsupported/inaccessible URL; rendered read завершился
+timeout25s. Обычный read-only HTTPS GET с перенаправлением на onedrive.live.com
+получилHTTP403. Содержимое файла не прочитано, название/формат/таблицы/модели
+не подтверждены. Причина403 (права, вход, политика сервера или среды) не
+установлена; ссылка не объявляется недействительной или истёкшей.
+После403 попытки доступа остановлены; login/изменение sharing/API обходы
+не выполнялись. Для изучения потребуется предоставленный владельцем файл
+PPTX/PDF в чате либо доступный ему экспорт, без передачи паролей/кодов входа.
+
+Модельная таблица по этой ссылке не найдена и не опровергнута: содержимое
+недоступно. Никаких данных источника/новых тарифных правил в справочник не
+добавлялось. Эконом остаётся исключён; только Комфорт/Бизнес/Минивэн.
+Executable code/API/schema/автомобили/phone whitelist не менялись;
+новые APK/tests/merge/deploy не выполнялись. Это запись проверки доступа,
+не аудит содержания презентации и не утверждение внешнего классификатора.
+
+
+## Указан CSV vehicle-classifier-v1 — источник пока недоступен, 2026-11-16
+
+Владелец уточнил: «Ветка Uber-v3, а документ docs/vehicle-classifier-v1.csv.
+просмотри файл списка и его обнови». Поручение принято как чтение конкретного
+исходника и исключение Эконома по его реальной структуре, без выдумывания строк.
+
+GitHub contents GET для указанного пути в default main и рабочей
+arch/g2-admin-assignment-read вернули404. Чтение raw URL через GitHub connector
+также404; default code search имени файла — без результатов. Обновлён список
+всех46 доступных веток uber-v3; recursive trees всех46 без truncation не
+содержат CSV или совпадающего classifier path. В доступных локальных backend
+worktrees/shared/library-files/attachments выполнен no-ignore filename search,
+CSV не найден. Ветка с Uber в имени в TransferDriver не найдена, установленный
+репозиторий uber-v3 определён как lobanov0710-blip/uber-v3.
+
+Отсутствие файла вне доступного snapshot не утверждается. У владельца сразу
+запрошен полный GitHub blob URL с названием ветки. Содержимое/схема/строки CSV
+не прочитаны; обновление файла не выполнено и не выдаётся за готовое.
+Новый фиктивный классификатор вместо исходника не создавался. После доступного
+источника предстоит проверить кодировку/разделитель/header, тарифные значения,
+отфильтровать только Эконом с сохранением остальных данных и проверить результат.
+
+Во время восстановления helper состояния после смены окружения один metadata
+вызов завершился TypeError; мутаций до исправления не было. Helper восстановлен,
+последующие read-only проверки завершены. Code/schema/dependencies/автомобили/
+тарифные правила/phone whitelist не менялись. Новые APK/tests/merge/deploy
+не выполнялись; требуется точный доступный источник, не повторное утверждение
+уже исключённого тарифа Эконом. G1paused/D4–D7pending.

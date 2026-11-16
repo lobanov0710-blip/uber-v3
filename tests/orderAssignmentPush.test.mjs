@@ -146,6 +146,8 @@ function createDb({
             )
           ) {
             return {
+              account_role: 'driver',
+              account_status: 'active',
               staff_account_id:
                 NEW_DRIVER_ID,
               registration_status:
