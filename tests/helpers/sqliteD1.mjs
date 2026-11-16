@@ -37,6 +37,11 @@ export function sqliteD1() {
       try {
         const results = [];
         for (const statement of statements) {
+          // D1 batch returns SELECT rows too; keep reads in the same SQLite transaction.
+          if (/^\s*SELECT\b/i.test(statement.sql)) {
+            results.push({ success: true, results: execute(statement, 'all') });
+            continue;
+          }
           // No other statements may run between SQL mutations (changes() semantics).
           const result = execute(statement, 'run');
           results.push({ success: true, meta: { changes: Number(result.changes) } });

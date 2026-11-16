@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-16",
+  "status": "approved-component-synthetic-slice-verified",
+  "approval": {
+    "statement": "Утверждают каталог и список",
+    "proposalCommit": "6f4e3caf0ce283bbcca086ccf9b9e18f48935796"
+  },
+  "backend": {
+    "sourceCommit": "080d4b49bb902d782efe2615d92bf05fa3d64dc6",
+    "sourceTree": "245d64159221583438201d2d51804064d8d45a60",
+    "workflowRun": 43947136962,
+    "workflowJob": 133579673172,
+    "conclusion": "success",
+    "newSqliteHttpTests": 12,
+    "migrations": 18,
+    "preflightCases": 12,
+    "nativeWorkerChecks": [
+      "availability/audit",
+      "owner-mfa",
+      "admin-moderation",
+      "assignment-read",
+      "vehicle-photo-check-read-and-two-restriction-modes",
+      "owner-phone-scope"
+    ],
+    "ownerCliScenarios": 5,
+    "workerBundleDryRun": true,
+    "sourceSha256": {
+      "src/core/adminVehicleReadService.js": "5582bc4a30b38f03e9717453385db269fdc117ee578900c3acf17a9eed375689",
+      "src/core/adminVehicleReadRepository.js": "3905d293b09b61387aa71f62e4650762776a2666b3890f9b6bde5de3fc73b893",
+      "src/core/driverTripOperationalRepository.js": "816714f2b593856218fd3b31716111ebe97346348a41259caad6ca01e7514488",
+      "src/router.js": "f2b0d7139fb00f62f251637abfea003f0bd2041d8fd1e06688c79453243d943e",
+      "tests/adminVehicleRead.test.mjs": "ae2c04f93356a666a00c19709bbbaafa75ff8bc88f055ba9958d4082927c4818",
+      "tests/helpers/adminVehicleReadScenario.mjs": "fee74d2d572e24a5d15fae73671ecb68d245855e48f62790e27da0a802d1b88e",
+      "tests/helpers/sqliteD1.mjs": "85a52db179df5f7b29be1232f0d5fc956283293bf9f223ddcba1dc58869121f8",
+      "tools/check_admin_vehicle_read_d1.mjs": "a89f95b1e09a93852033ec3be0af2aee256f6eb65f438b1ed5b05e371ab244bd"
+    },
+    "npmTestScriptCount": 69,
+    "dependencyAuditVulnerabilities": 0
+  },
+  "fixedDefects": [
+    {
+      "issue": "Immediate photo control did not block phase advancement of an existing assignment",
+      "reproducedBeforeFix": true,
+      "fix": "Atomic SQL NOT EXISTS immediate nonpassed check for assignment vehicle",
+      "regressions": [
+        "after_current_trip continues active phase",
+        "immediate blocks active phase",
+        "immediate created after service precheck blocks SQL update"
+      ],
+      "nativeModesVerified": true,
+      "orderCancellationAdded": false
+    }
+  ],
+  "localLimits": [
+    "Full npm test blocked at CLI child spawn by sandbox EPERM, not recorded as PASS locally.",
+    "Native Worker/CLI checks executed successfully in CI."
+  ],
+  "boundaries": {
+    "g1Paused": true,
+    "d4ThroughD7Pending": true,
+    "ownerPhoneOperationalWhitelistExpanded": false,
+    "classifierActivated": false,
+    "realMaterialsRead": false,
+    "schemaChanged": false,
+    "mergePerformed": false,
+    "deployPerformed": false
+  },
+  "android": {
+    "sourceCommit": "a0308bec394cd28d821f52bbcfdc05e5e09f4be7",
+    "sourceTree": "d6de5082865d0932c2e754bffb2fd78dc179b951",
+    "workflowRun": 43950844261,
+    "workflowJob": 133592621453,
+    "conclusion": "success",
+    "jvmExecutions": 318,
+    "nativeCases": 99,
+    "newJvmCasesPerVariant": 9,
+    "newNativeCases": 15,
+    "nativePng": 10,
+    "independentReview": "ship-for-approved-component-synthetic-slice-no-blockers",
+    "receipt": "https://github.com/lobanov0710-blip/TransferDriver/blob/arch/g2-admin-photo-control-ui/docs/ADMIN_PHOTO_CONTROL_VERIFICATION_2026-11-16.json"
+  }
+}
