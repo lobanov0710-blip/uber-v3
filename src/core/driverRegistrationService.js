@@ -18,13 +18,6 @@ import {
 } from "./driverRegistrationRepository.js";
 
 
-const VEHICLE_CLASSES =
-  new Set([
-    "comfort",
-    "business",
-    "minivan"
-  ]);
-
 const BAGGAGE_CAPACITIES =
   new Set([
     "reduced",
@@ -54,7 +47,7 @@ const VEHICLE_CREATE_KEYS =
     "make",
     "model",
     "color",
-    "vehicleClass",
+    "modelYear",
     "capacity",
     "baggageCapacity",
     "usageBasis"
@@ -210,7 +203,7 @@ function normalizeVin(value) {
   return vin;
 }
 
-function normalizeVehicle(input) {
+function normalizeVehicle(input, allowMissingYear = false) {
   const vin = normalizeVin(input.vin);
   const plate = clean(input.plate);
   const make = clean(input.make);
@@ -219,7 +212,7 @@ function normalizeVehicle(input) {
     input.color == null || clean(input.color) === ""
       ? null
       : clean(input.color);
-  const vehicleClass = clean(input.vehicleClass).toLowerCase();
+  const modelYear = input.modelYear ?? null;
   const capacity = Number(input.capacity);
   const baggageCapacity = clean(input.baggageCapacity).toLowerCase();
   const usageBasis = clean(input.usageBasis).toLowerCase();
@@ -233,7 +226,8 @@ function normalizeVehicle(input) {
     model.length < 1 ||
     model.length > 80 ||
     (color !== null && color.length > 80) ||
-    !VEHICLE_CLASSES.has(vehicleClass) ||
+    (!(modelYear === null && allowMissingYear) &&
+      (!Number.isSafeInteger(modelYear) || modelYear < 1 || modelYear > 9999)) ||
     !Number.isSafeInteger(capacity) ||
     capacity < 1 ||
     capacity > 20 ||
@@ -249,7 +243,8 @@ function normalizeVehicle(input) {
     make,
     model,
     color,
-    vehicleClass,
+    modelYear,
+    vehicleClass: null,
     capacity,
     baggageCapacity,
     usageBasis
@@ -483,10 +478,10 @@ export async function patchDriverVehicle(
       Object.hasOwn(input, "color")
         ? input.color
         : current.color,
-    vehicleClass:
-      Object.hasOwn(input, "vehicleClass")
-        ? input.vehicleClass
-        : current.vehicleClass,
+    modelYear:
+      Object.hasOwn(input, "modelYear")
+        ? input.modelYear
+        : current.modelYear,
     capacity:
       Object.hasOwn(input, "capacity")
         ? input.capacity
@@ -502,17 +497,21 @@ export async function patchDriverVehicle(
   };
 
   const normalized =
-    normalizeVehicle(merged);
+    normalizeVehicle(merged, !Object.hasOwn(input, "modelYear"));
 
   if (!normalized) {
     return invalid("invalid_vehicle");
   }
 
+  const classificationChange = ["make", "model", "modelYear"].some(field =>
+    Object.hasOwn(input, field) && normalized[field] !== (current[field] ?? null));
+  normalized.vehicleClass = classificationChange ? null : current.vehicleClass;
+
   const criticalChange =
     providedFields.some(
       field =>
         CRITICAL_VEHICLE_FIELDS.has(field) &&
-        clean(current[field === "vehicleClass" ? "vehicleClass" : field])
+        clean(current[field])
           .toUpperCase() !==
         clean(normalized[field])
           .toUpperCase()
@@ -539,7 +538,9 @@ export async function patchDriverVehicle(
       {
         ...normalized,
         expectedRevision: Number(input.expectedRevision),
-        criticalChange,
+        criticalChange: criticalChange || classificationChange,
+        classificationChange,
+        requestId: options.requestId,
         updatedAt:
           Number.isSafeInteger(options.nowMs)
             ? options.nowMs
@@ -550,7 +551,8 @@ export async function patchDriverVehicle(
   if (result.ok) {
     return {
       ok: true,
-      vehicle: result.vehicle
+      vehicle: result.vehicle,
+      requiresDispatcherReassignment: result.requiresDispatcherReassignment === true
     };
   }
 

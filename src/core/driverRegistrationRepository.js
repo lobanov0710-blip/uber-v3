@@ -358,7 +358,7 @@ export async function insertDriverVehicle(
           model_year,
           powertrain
         )
-        VALUES (
+        SELECT
           ?1,
           ?2,
           ?3,
@@ -376,7 +376,8 @@ export async function insertDriverVehicle(
           ?12,
           ?13,
           ?14
-        )
+        WHERE EXISTS (SELECT 1 FROM staff_accounts sa
+          WHERE sa.id = ?2 AND sa.role = 'driver' AND sa.status = 'active')
       `)
       .bind(
         requireText(vehicle.id, "vehicleId"),
@@ -425,11 +426,14 @@ export async function updateDriverVehicle(
     model,
     color,
     vehicleClass,
+    modelYear,
     capacity,
     baggageCapacity,
     usageBasis,
     expectedRevision,
     criticalChange,
+    classificationChange = false,
+    requestId,
     updatedAt
   }
 ) {
@@ -439,7 +443,7 @@ export async function updateDriverVehicle(
   const timestamp = requireTimestamp(updatedAt);
   const db = requireDatabase(env);
 
-  const result =
+  const mutation =
     await db
       .prepare(`
         UPDATE vehicles
@@ -451,6 +455,7 @@ export async function updateDriverVehicle(
           model = ?7,
           color = ?8,
           class = ?9,
+          model_year = ?15,
           capacity = ?10,
           baggage_capacity = ?11,
           usage_basis = ?12,
@@ -476,6 +481,8 @@ export async function updateDriverVehicle(
             'suspended',
             'rejected'
           )
+          AND EXISTS (SELECT 1 FROM staff_accounts sa
+            WHERE sa.id = ?2 AND sa.role = 'driver' AND sa.status = 'active')
       `)
       .bind(
         vehicle,
@@ -486,14 +493,34 @@ export async function updateDriverVehicle(
         requireText(make, "make"),
         requireText(model, "model"),
         color == null ? null : clean(color),
-        requireText(vehicleClass, "class"),
+        vehicleClass == null ? null : requireText(vehicleClass, "class"),
         Number(capacity),
         requireText(baggageCapacity, "baggageCapacity"),
         requireText(usageBasis, "usageBasis"),
         criticalChange ? 1 : 0,
-        timestamp
-      )
-      .run();
+        timestamp,
+        modelYear ?? null
+      );
+
+  let result;
+  if (classificationChange) {
+    const auditId = 'audit_' + crypto.randomUUID();
+    const safeRequestId = requestId ?? ('req_' + crypto.randomUUID());
+    const results = await db.batch([
+      mutation,
+      db.prepare(`INSERT INTO audit_events
+        (id,actor_account_id,action,target_type,target_id,outcome,request_id,created_at)
+        SELECT ?1,?2,'driver.vehicle_reverification_required','vehicle',?3,'success',?4,?5
+        WHERE changes() = 1`).bind(auditId, driver, vehicle, safeRequestId, timestamp),
+      db.prepare(`UPDATE driver_availability SET state='off_line',revision=revision+1,updated_at=?1
+        WHERE driver_id=?2 AND active_vehicle_id=?3
+          AND EXISTS (SELECT 1 FROM audit_events WHERE id=?4)`)
+        .bind(timestamp, driver, vehicle, auditId)
+    ]);
+    result = results[0];
+  } else {
+    result = await mutation.run();
+  }
 
   const changed = changes(result);
   const persisted =
@@ -504,9 +531,13 @@ export async function updateDriverVehicle(
     );
 
   if (changed === 1) {
+    const active = classificationChange ? await db.prepare(`SELECT id FROM order_assignments
+      WHERE vehicle_id=?1 AND driver_id=?2 AND state='active' AND revoked_at IS NULL LIMIT 1`)
+      .bind(vehicle, driver).first() : null;
     return {
       ok: true,
-      vehicle: persisted
+      vehicle: persisted,
+      requiresDispatcherReassignment: active != null
     };
   }
 

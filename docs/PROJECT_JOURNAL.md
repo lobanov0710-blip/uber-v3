@@ -3219,3 +3219,36 @@ storage/read prerequisite, не полная классификация, не п
 не line/trip guards. Не включать null drafts через старые клиенты.
 Нет seed/полного BEV обзора/remote migration/merge/deploy/реальных данных,
 G1paused. Далее согласованно обновить API записи/клиент и trusted moderation.
+
+
+## Driver write API: класс системы и сброс допуска — 2026-11-17
+
+По поручению «Далее» продолжен утверждённый G2: отдельная ветка
+arch/g2-driver-system-class-contract от schema0020. POST/PATCH больше не
+принимают vehicleClass от водителя; POST требует numeric modelYear, draft
+имеет null-класс. Фактическая смена марки/модели/года атомарно очищает класс,
+отправляет approved/photo_check_required на pending_review, отключает линию
+активного автомобиля и пишет минимальный аудит. Audit failure откатывает batch.
+SQL записи повторно требует активного driver; revision/ownership сохранены.
+При активном назначении ACK требует ручного диспетчерского переназначения;
+phase и оба пути completion блокируются до восстановления допуска. Назначение
+не отменяется/не завершается автоматически. Это не законченный handoff уже
+идущего заказа и не проверка документов/классификация текущим справочником.
+
+Восемь новых real SQLite/HTTP cases PASS, existing registration PASS; phase
+repository/service, terminal SQLite7 и schema8 regression cases PASS. Первая
+проверка legacy completion вызвала функцию неверной сигнатурой; исправлен
+именно тест, затем8/8 PASS. Новый native Miniflare/D1 harness добавлен в CI,
+73-й npm script включён в полный набор. Локальный npm test достиг OWNER CLI,
+но protected child-process scenarios не прошли в sandbox (ограничение запуска
+дочернего Node); CI обязан выполнить полный набор без пропусков/ослаблений.
+Повторно8/8 и registration PASS после SQL active-account predicate; diff check
+PASS. При восстановлении контекста один агрегированный вывод инструмента
+превысил лимит: результат CI не предполагался, перечитан из API/локального лога.
+
+Android зависимая форма опубликована отдельно: Draft PR14, source
+58102355b24201f6eba06f2d5190341c7541be06, CI44060885312 ещё выполняется.
+Подробный контракт/границы: DRIVER_SYSTEM_CLASS_CONTRACT_2026-11-17.md.
+Trusted moderation/current-rule integration/legacy year guard, full in_progress
+handoff и оставшийся BEV обзор впереди; G1paused, D4–D7 не утверждены.
+Нет real data/seed/remote migration/merge/deploy. Финальный CI пока не объявлен.
