@@ -18,3 +18,8 @@ Migration0022 добавляет только immutable definitions с body type
 До завершения CI результат всего этапа не PASS. Итоговые source/tree SHA, run/job и hashes файлов фиксируются отдельным verification receipt после выполнения.
 
 Остаются следующие части утверждённого плана: POST classification/review, trusted assessment/evidence и история, атомарные approval/line/assignment guards, Admin UI/DTO; полный обзор силовых исполнений121 строк и план legacy. Пока этот этап не доказывает полную классификацию/допуск. Старый candidate helper не становится доверенным решением. OWNER-only phone STAGING allowlist не расширен, review POST закрыт. G1paused; D4–D7pending. Remote migration, seed, реальные документы, merge и deploy не выполнялись.
+
+
+## Проверка завершена
+
+CI44109843561/job134132126272 SUCCESS на source2a5e7b487e9b2a06923586de8230b6b7e63f5f17, tree0aca51165beb7557721a5988aa97132fa8834539:75 npm scripts,22 migrations,12 preflight,6 reference,11 native D1,6 protected CLI,audit0 и bundle PASS. Все26 шагов job успешны. Два первых run остановились на ошибках нового harness: чтение служебной provider metadata и неподдерживаемый integrity_check. В исправленном варианте сравниваются все application tables, native D1 требует quick_check и FK; populated SQLite требует полный integrity_check. Gates не отключены. Точные hashes и история в ADMIN_VEHICLE_RULE_API_VERIFICATION_2026-11-17.json. Поздний docs-only checkpoint не меняет проверенный code source.
