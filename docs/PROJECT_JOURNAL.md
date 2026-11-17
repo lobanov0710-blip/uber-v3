@@ -2711,3 +2711,61 @@ modelYear; Android DTO не готов к null. Это подготовка stor
 полный обзор электрических исполнений ещё не завершён. Нет remote migration,
 merge/deploy/реальных документов; G1paused/D4–D7pending. Следующий этап —
 согласованно обновить публичный контракт записи, клиент и trusted moderation.
+
+
+## G2: Driver без выбора класса — проверенный следующий срез, 2026-11-17
+
+По поручению «Далее» выполнен согласованный API/Android срез утверждённых
+правил владельца. Driver не выбирает/не передаёт vehicleClass; передаёт год
+modelYear. Сервер создаёт draft с null-классом, доверенная классификация
+остаётся отдельным следующим этапом. Изменение марки/модели/года атомарно
+снимает класс/линию и отправляет одобренное авто на проверку, пишет минимальный
+аудит. Stale revision/чужой/приостановленный driver не меняет запись;
+ошибка аудита откатывает всё. Phase и оба completion path не продолжают
+назначение на таком автомобиле. Назначение сохранено для ручного разбора:
+замену выбирает только диспетчер. Driver показывает безопасную остановку,
+включая потерянный ACK/failed GET после ACK, без автоматического replay.
+
+Backend Draft PR35 https://github.com/lobanov0710-blip/uber-v3/pull/35
+(basePR34). Проверенный code57c17bbc67b5c8aef3f137d9c13341f619dbd8a2,
+tree87b4af13798cb318bfcf4b9f8172eece63f88484,
+CI44062029259/job133966070138 SUCCESS:73 npm scripts,8 новых actual
+SQLite/HTTP cases,20 migrations,12 preflight,6 reference,9 native workerd/D1
+workflows,6 protected CLI scenarios,audit0 и Worker dry-run PASS.
+Финальные docs5adfd2a6fba68cffa9fe98f42129863ded417a78;
+receipt DRIVER_SYSTEM_CLASS_API_VERIFICATION_2026-11-17.json.
+
+Driver Draft PR14 https://github.com/lobanov0710-blip/TransferDriver/pull/14
+(basePR13). Проверенный code58102355b24201f6eba06f2d5190341c7541be06,
+tree104a42432e186fe881ecc1b0d89a9a6740d139f8,
+CI44060885312/job133962153709 SUCCESS:327 JVM executions (Driver51×3,
+Admin58×3),102 native (41+61),build/lint обеих apps debug/staging/release,
+security8/5,endpoint/signing/AppCheck policy PASS.30 actual nativePNG и
+tested DriverAPK сверены с GitHub archive digest/source, hashes PNG из CI.
+Primary agent осмотрел4 изменённых vehicle/class light/dark font1.3 кадра:
+год/подсказка/read-only системный класс читаемы; это не независимый обзор30.
+Финальные docs57f69b306bbf1df72ad8c58ea105dce4450a64f3;
+receipt DRIVER_SYSTEM_CLASS_VERIFICATION_2026-11-17.json. APK synthetic
+Firebase/ephemeral debug signing, не live build/release/phone upgrade test.
+Source trees сверены локально и удалённо; docs-only commits не подменяют
+проверенные code SHA. План/PRODUCT/scope актуализированы в feature PR.
+
+Ошибки/ограничения проверки сохранены в feature журналах: local npm test
+остановился на protected CLI из-за sandbox, полный CI прошёл без ослабления.
+Неверная сигнатура legacy completion fixture исправлена в тесте. Большие
+read/JSON output несколько раз превысили лимит; tree parity остановила
+неполную публикацию, чтение по файлам/частям восстановило точные trees.
+Admin security check по неверному пути исправлен,5/5 PASS. В техническом
+metadata выводе загрузчика ошибочно показаны временные ссылки двух synthetic
+CI ZIP (заявленный expiry10:19:35UTC); сами URL в журнал/PR/receipt не внесены,
+дальше только file_id. Это не реальные credentials/config/материалы Driver.
+Другие несостоявшиеся docs patches не изменяли исходники до исправления.
+
+Не завершены: trusted Admin проверка года/исполнения по документам,
+current-rule classification/snapshot, legacy unverified-year admission guard,
+Admin правило/исключение, полный dispatcher handoff уже in_progress и
+пассажирское уведомление, полный обзор BEV исполнений оставшихся121 моделей.
+Этот verified prerequisite не является полной приёмкой справочника/G2.
+Следующий этап — trusted Admin/system classification в рамках решений
+владельца. G1paused,D4–D7pending. Нет real documents/seed/remote migration/
+merge/deploy. Каноническая синхронизация меняет только append журнала.
