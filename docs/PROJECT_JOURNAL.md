@@ -3404,3 +3404,31 @@ legacy fake расширен для чтения top-level count в batch. New17
 Driver write и registration service PASS локально; полный native CI повторяется
 на исправленном source. Ошибка и первый failed run сохранены, проверка не
 пропущена/не ослаблена. Реальных данных/deploy в этом инциденте не было.
+
+
+## Binding/OWNER-only: итоговый CI PASS — 2026-11-17
+
+Проверенный sourcea52b83ba1da0e8024946f2d92288e6f6e52cc383,
+treedad21bcb855f8d49bc2446f6bbfc5a0eb9745c55, CI44078545851/
+job134022783461 SUCCESS.74 npm scripts,17 новых actual SQLite/HTTP cases,
+21 migrations,12 preflight,6 reference,10 native workerd/D1 workflows,6
+protected OWNER CLI scenarios,audit0 и Worker dry-run PASS. Native D1 реально
+подтвердил populated20→21/rollback, first-save binding, сохранение старой версии
+при unrelated edits, текущую при явной смене года, rollback history/audit и
+отказ новых dispatcher grants/игнорирование legacy ошибочных строк. Существующий
+native Driver contract после исправления meta.changes также PASS. Local CLI
+ограничение не обходилось: полный protected набор исполнился в штатном CI.
+
+Первый failed44077774303 не скрыт: trigger-inclusive D1 счётчик исправлен
+через top-level SQL changes() в той же транзакции,17-й regression добавлен.
+Docs-only checkpoint после CI не меняет verified code SHA. Scope и source
+hashes в VEHICLE_RULE_BINDING_VERIFICATION_2026-11-17.json. Draft PR37
+https://github.com/lobanov0710-blip/uber-v3/pull/37, baseapproved PR36.
+Tree parity локального/удалённого code проверена до публикации.
+
+Поправка владельца отражена в AGENTS и approved contracts обоих repo, не
+нуждается в повторном подтверждении. В Android изменены только документы,
+security guards8/5 PASS; новый APK/Android CI не создавались. Trusted assessment
+и его HTTP API/правила/evidence, admission guards, Admin UI и оставшийся BEV/
+legacy/in_progress handoff ещё не готовы. Нет seed/real materials/remote
+migration/merge/deploy/нового доступа OWNER-only STAGING; G1paused,D4–D7pending.
