@@ -3141,3 +3141,27 @@ OWNER-only scope или разрешать удалённую миграцию00
 При поиске теста один путь adminOwnerPhoneSetup.test.mjs отсутствовал, далее
 прочитан существующий helper и точное условие state(). Изменения только
 в feature-ветке; remote/production запуск и миграция не выполнялись.
+
+
+## Version store: финальный CI PASS — 2026-11-17
+
+Code aef9dfc77dc861a46e97792a27773cb4c5f6542b,
+tree c8bfbb39385e494e17112f2d0e87711cca0cf5dc,
+CI44052040564/job133931991226 SUCCESS.71 npm test scripts,7 evaluator cases,
+12 actual SQLite store cases,6 reference checks,19 migrations,12 preflight,
+7 native local workerd/D1 workflows,6 protected CLI scenarios,audit0 и
+Worker bundle dry-run PASS. Полный CI преодолел локальную spawnSync EPERM
+границу без ослабления assertions. Guard OWNER setup по18-миграциям не
+изменялся; шестой сценарий подтвердил отказ на19 до prompts/import/upload.
+Первый failed CI сохранён в истории, не считается успешным.
+
+Backend Draft PR33, Android docs Draft PR13. Опубликованные feature trees
+сравнены с local staged trees; Android docs payload сначала превысил лимит
+вывода и не распарсился, remote mutation не было; повторное чтение файлами/
+частями успешно дало точное tree parity. Локальные source hashes в receipt
+VEHICLE_CLASSIFICATION_VERSION_VERIFICATION_2026-11-17.json. Последующие
+изменения только документация; проверенный code SHA указан отдельно.
+Это внутренний компонент, не завершение регистрации/прав/MFA API/модерации/
+линии/поездки/Android. Ни snapshot candidate, ни CSV не дают допуска на линию.
+Не выполнялись seed, remote migration, реальные документы, merge/deploy.
+Полный обзор электрических исполнений и интеграция остаются дальнейшей работой.

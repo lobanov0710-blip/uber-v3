@@ -36,7 +36,11 @@
 PASS;19 migrations smoke и12 D3 preflight PASS. Добавлены native workerd/D1
 проверка хранения/триггеров и запуск в CI. Полный npm test локально остановился
 на существующих OWNER CLI тестах из-за spawnSync EPERM; ни один тест не ослаблен.
-Итог CI должен быть зафиксирован отдельно по точному code SHA.
+Итог CI: source aef9dfc77dc861a46e97792a27773cb4c5f6542b,
+run44052040564/job133931991226 SUCCESS.71 npm test scripts,19 migrations,
+12 preflight,6 reference,7 native D1 workflows и6 protected CLI scenarios,
+dependency audit0 и Worker bundle dry-run PASS. Точные hashes/границы — в
+VEHICLE_CLASSIFICATION_VERSION_VERIFICATION_2026-11-17.json.
 
 Нет подключения к регистрации, server grants/MFA API управления правилами,
 подтверждению года, стопу поездки/ручному назначению или Android; existing
