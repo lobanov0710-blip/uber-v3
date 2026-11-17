@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { authenticateStaffRequest } from '../../src/core/staffAuthorization.js';
 import { recordTrustedVehicleAssessment } from '../../src/core/trustedVehicleAssessmentRepository.js';
-import { ruleOwnerLogin,ruleBody,moderator,driverId,fixturePassword } from './adminVehicleRuleScenario.mjs';
+import { ruleOwnerLogin,ruleBody,moderator,driverId,fixturePassword,ownerId } from './adminVehicleRuleScenario.mjs';
 export async function trustedScenario(env,send){
   const ownerToken=await ruleOwnerLogin(env,send);
   const token=(await send('POST','/staff/login',{login:moderator,password:fixturePassword})).body.accessToken;
@@ -45,6 +45,18 @@ export async function trustedStorageWorkflow(env,send){
   await assert.rejects(s.capture({...s.body,expectedRevision:3},'trusted-audit-rollback'));
   assert.equal((await env.DB.prepare('SELECT revision FROM vehicles WHERE id=?1').bind(s.vehicle.id).first()).revision,3);
   assert.equal((await env.DB.prepare("SELECT count(*) n FROM mutation_idempotency WHERE operation='admin.vehicle_assessment.record'").first()).n,1);
+  await env.DB.prepare('DROP TRIGGER trusted_fixture_audit_failure').run();
+  const made=await send('POST','/v1/admin/vehicle-rules',{...ruleBody,make:'Li Auto',model:'L7',vehicleClass:'business',allowedBodyTypes:['crossover']},s.ownerToken,'trusted-native-li-rule');assert.equal(made.status,201);
+  await env.DB.prepare("UPDATE vehicles SET make='Li Auto',model='L8',revision=revision+1 WHERE id=?1").bind(s.vehicle.id).run();
+  const request={...s.body,expectedRevision:4,expectedInputRevision:2,expectedRuleVersion:null,mode:'exception',
+    parameters:{...s.body.parameters,make:'Li Auto',model:'L8',bodyType:'crossover'},
+    conditions:made.body.rule.conditions.map(c=>({conditionId:c.id,result:'satisfied'})),
+    exception:{basisRuleVersion:made.body.rule.version,yearBelowMinimum:false,waivedConditionIds:[]}};
+  const excluded=await s.capture(request,'trusted-native-actual-body',s.ownerToken);assert.equal(excluded.ok,true);assert.equal(excluded.classification.outcome,'excluded');
+  const saved=await env.DB.prepare('SELECT * FROM vehicle_trusted_assessments WHERE id=?1').bind(excluded.assessmentId).first();
+  const row={...saved,id:'assessment_native_forged_li',sequence:3,outcome:'candidate',class:'business',reason_codes_json:'[]',audit_event_id:'audit_native_li_forged'};
+  await env.DB.prepare("INSERT INTO audit_events VALUES('audit_native_li_forged',?1,'admin.vehicle_assessment_recorded','vehicle',?2,'success',NULL,1)").bind(ownerId,s.vehicle.id).run();
+  await assert.rejects(env.DB.prepare('INSERT INTO vehicle_trusted_assessments('+Object.keys(row).join(',')+') VALUES('+Object.keys(row).map((_,i)=>'?'+(i+1)).join(',')+')').bind(...Object.values(row)).run());
   return {trustedStorage:'PASS',ownerAndDispatcherAuthority:true,idempotentReplay:true,noAdmissionProjection:true,
-    unrelatedEditPreservesTrust:true,evidenceChangeAndRestoreRemainsInvalid:true,historyImmutable:true,auditRollback:true};
+    unrelatedEditPreservesTrust:true,evidenceChangeAndRestoreRemainsInvalid:true,historyImmutable:true,auditRollback:true,actualVehicleBodyGuard:true};
 }

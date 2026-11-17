@@ -77,7 +77,7 @@ OR (NEW.outcome='candidate' AND NOT EXISTS(
  WHERE r.version=NEW.rule_version AND r.class=NEW.class
  AND (r.min_year<=NEW.model_year OR (NEW.mode='exception' AND json_extract(NEW.exception_json,'$.yearBelowMinimum')=1))
  AND (r.class<>'comfort' OR NEW.body_type IN ('sedan','crossover'))
- AND (r.class<>'business' OR NEW.body_type=CASE WHEN r.make='Li Auto' AND r.model IN ('L7','L9') THEN 'crossover' ELSE 'sedan' END)
+ AND (r.class<>'business' OR NEW.body_type=CASE WHEN NEW.make='Li Auto' AND NEW.model IN ('L7','L9') THEN 'crossover' ELSE 'sedan' END)
  AND (d.allowed_body_types IS NULL OR EXISTS(SELECT 1 FROM json_each(d.allowed_body_types) WHERE value=NEW.body_type))
  AND NOT EXISTS(SELECT 1 FROM json_each(COALESCE(d.conditions_json,CASE WHEN r.notes='' THEN '[]' ELSE json_array(r.notes) END)) c
    WHERE NOT EXISTS(SELECT 1 FROM json_each(NEW.conditions_json) checked WHERE json_extract(checked.value,'$.conditionId')=r.version||':'||(c.key+1)

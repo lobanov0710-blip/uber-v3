@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import router from '../src/router.js';
 import { sqliteD1 } from './helpers/sqliteD1.mjs';
-import { seedRuleActors,ruleSecrets,ruleBody,moderator } from './helpers/adminVehicleRuleScenario.mjs';
+import { seedRuleActors,ruleSecrets,ruleBody,moderator,ownerId } from './helpers/adminVehicleRuleScenario.mjs';
 import { trustedScenario,trustedStorageWorkflow } from './helpers/trustedAssessmentScenario.mjs';
 import { decideTrustedVehicle } from '../src/core/trustedVehicleDecision.js';
 import { recordTrustedVehicleAssessment } from '../src/core/trustedVehicleAssessmentRepository.js';
@@ -153,4 +153,19 @@ test('replay rechecks live permission/MFA and does not expose the protected reas
   DB.sqlite.exec("DELETE FROM staff_permissions WHERE permission='vehicles.verify'");assert.equal((await s.capture()).status,403);
   const ownerBody={...s.body,expectedRevision:2};assert.equal((await s.capture(ownerBody,'trusted-owner-replay',s.ownerToken)).ok,true);
   DB.sqlite.exec('DELETE FROM admin_mfa_session_families');assert.equal((await s.capture(ownerBody,'trusted-owner-replay',s.ownerToken)).status,401);
+});
+test('L7/L9 crossover privilege follows the actual vehicle and cannot be borrowed through a basis model',async t=>{
+  const {DB,env,send}=await setup(t),s=await trustedScenario(env,send);
+  const made=await send('POST','/v1/admin/vehicle-rules',{...ruleBody,make:'Li Auto',model:'L7',vehicleClass:'business',allowedBodyTypes:['crossover']},s.ownerToken,'trusted-li-rule');assert.equal(made.status,201);
+  DB.sqlite.prepare("UPDATE vehicles SET make='Li Auto',model='L8',revision=2 WHERE id=?").run(s.vehicle.id);
+  const body={...s.body,expectedRevision:2,expectedInputRevision:2,expectedRuleVersion:null,mode:'exception',
+    parameters:{...s.body.parameters,make:'Li Auto',model:'L8',bodyType:'crossover'},
+    conditions:made.body.rule.conditions.map(c=>({conditionId:c.id,result:'satisfied'})),
+    exception:{basisRuleVersion:made.body.rule.version,yearBelowMinimum:false,waivedConditionIds:[]}};
+  const result=await s.capture(body,'trusted-no-borrowed-crossover',s.ownerToken);assert.equal(result.ok,true);
+  assert.equal(result.classification.outcome,'excluded');assert.deepEqual(result.classification.reasonCodes,['body_type_not_allowed']);
+  const row={...DB.sqlite.prepare('SELECT * FROM vehicle_trusted_assessments').get(),id:'assessment_forged_li',sequence:2,
+    outcome:'candidate',class:'business',reason_codes_json:'[]',audit_event_id:'audit_li_forged'};
+  DB.sqlite.prepare("INSERT INTO audit_events VALUES('audit_li_forged',?,'admin.vehicle_assessment_recorded','vehicle',?,'success',NULL,1)").run(ownerId,s.vehicle.id);
+  assert.throws(()=>DB.sqlite.prepare('INSERT INTO vehicle_trusted_assessments('+Object.keys(row).join(',')+') VALUES('+Object.keys(row).map(()=>'?').join(',')+')').run(...Object.values(row)));
 });
