@@ -215,9 +215,23 @@ readonly class, foreground privacy, смена аккаунта, stale data, п�
 actual PNG light/dark/font1.3 и artifact provenance. Existing live/phone/merge/
 deploy не считать принятыми по synthetic CI.
 
-## Выполнено сейчас
+## Исходный срез до реализации
 
-Только сверка утверждённых источников/кода, проект API/прав/версий и проверки
-существующего baseline. Новые handlers, permissions grants, DDL, APK или
-runtime seed не создавались. G1paused,D4–D7pending. Точные проверки и hashes
+На момент подготовки контракта были выполнены сверка утверждённых источников/кода,
+проект API/прав/версий и проверки существующего baseline. Новые handlers,
+permissions grants, DDL, APK или runtime seed тогда не создавались. G1paused,D4–D7pending. Точные проверки и hashes
 проверенных источников — в audit JSON; это не PASS будущей реализации.
+
+
+## Поэтапная реализация — 2026-11-17
+
+После принятия контракта подготовлены binding/OWNER-only prerequisite (PR37),
+обязательный цвет (PR38) и административные rule API (PR39). В последнем:
+list/version GET, OWNER-only POST новой версии и classification metadata GET;
+точные границы описаны в [этапе API](ADMIN_VEHICLE_RULE_API_IMPLEMENTATION_2026-11-17.md).
+POST classification/review, trusted assessment/evidence, admission guards и
+Admin UI остаются следующими частями. Пустые verifiedParameters/history в
+текущем metadata GET не являются выполненной доверенной проверкой.
+Правила не активированы seed, OWNER-only phone allowlist не расширен.
+Итог проверки source/CI — ADMIN_VEHICLE_RULE_API_VERIFICATION_2026-11-17.json;
+результат проверки этой части не означает полное внедрение классификатора.

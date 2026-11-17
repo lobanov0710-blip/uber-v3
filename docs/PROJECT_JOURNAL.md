@@ -3483,3 +3483,39 @@ REQUIRED_VEHICLE_COLOR_API_VERIFICATION_2026-11-17.json. Следующий comm
 только docs; code tree уже сверен локально и удалённо.
 Нет новой миграции/backfill/массового снятия допуска/палитры/новых прав/
 изменения pinned classification. G1paused, remote migration/merge/deploy нет.
+
+
+## G2: Admin rule API и полные определения — 2026-11-17
+
+По утверждённому контракту/поправке OWNER продолжен prerequisite для trusted параметров. Добавлены три Admin rule operations и classification metadata GET; POST review/assessment и допуск ещё не реализованы. Migration0022 immutable definitions без seed/backfill. OWNER-only authoring с фактическим MFA/session SQL guard, CAS, idempotency и audit одной batch; dispatcher новые права не получает. Неизвестные поля/марки/economy/неверный кузов отвергаются. Утверждённые142 labels и два исторических CSV spellings сохранены без выдуманных aliases. Новая версия не меняет ранее закреплённую у автомобиля. Metadata не выдаёт legacy candidate за доверенную проверку.
+
+При анализе исправлены два края: audit target_id120 не вмещал допустимый legacy version128 (для длинных ссылок применяется детерминированный SHA256 ref); чтение теперь проверяет actual access после audit и его top-level SQL changes(), иначе не выдаёт данные. Tests охватывают подавленный audit, поздний отзыв прав/MFA/session/tokenVersion/OWNER binding, CAS competition, same-key replay, rollback, immutable history и лимиты16KiB против прежних4KiB auth. Цвет обязателен в public save, legacy null на чтении сохраняется.
+
+Ошибки тестов до проверки: synthetic HTTP transport не передавал CF-Connecting-IP для MFA; исправлен транспорт, вход не ослаблен. Затем revocation fixture записывал revoked_at=1 раньше created_at и нарушал CHECK, а scope test вызывал router вместо Worker entrypoint; исправлены fixture/точка входа. Первый focused run16 имел14 PASS/2 FAIL, повтор16 PASS, затем расширен до20. Служебные ошибки чтения: два устаревших имени workflow/harness и ownerPhoneScope найдены через rg; node --test с фильтром в ограниченной среде не стартовал штатно, полный direct test выполнен. Один общий tool вывод превысил контекст, состояние перепроверено по файлам и тесты повторены. Секретов/реальных данных в выводе не было.
+
+Вопрос владельца о всех проверках: локально допустим риск-ориентированный выбор нужных проверок, существующие обязательные CI/приёмочные gates не отменены. Здесь изменения auth/БД требуют полного server CI и native D1. Android код не менялся, сборка нового APK не заявляется. Локальные20 новых/17 binding/10 Driver/4 MFA,22 migrations,12 preflight,6 reference PASS; полный GitHub CI ещё предстоит. Scope/границы: ADMIN_VEHICLE_RULE_API_IMPLEMENTATION_2026-11-17.md. G1paused,D4–D7pending; allowlist phone unchanged, нет remote migration/seed/merge/deploy.
+
+
+## Admin rule API: первый CI и исправление native harness — 2026-11-17
+
+Первый source60cbdcf72236c692cf0cb0ebc60eadd24c9a8331, tree914ee53dfd7175f60fab8374e33b5c6409cd0a37, CI44108752691/job134128241688 FAILURE. До нового harness прошли75 npm scripts (включая20 новых cases),22 migrations,12 preflight,6 reference,dependency audit и10 прежних native D1 workflows. Новый harness ошибочно перечислял все таблицы через native sqlite_master и включил provider _cf_METADATA, доступ к которой D1 правильно запрещает SQLITE_AUTH. Protected CLI/Worker dry-run после этого шага ещё не исполнялись; полную проверку успешной не объявлять.
+
+Исправлено только перечисление: имена всех таблиц берутся из точной application schema21, скопированной в native D1 перед тестом. Все таблицы проекта остаются в populated before/after сравнении и rollback, закрытая таблица провайдера не читается. Не менялись D1 permissions/runtime guards или assertions сохранности. Source tree до публикации сверен локально/удалённо, draft PR39 от PR38; create_tree ответ сначала требовал object-aware parser, повтор дал то же дерево без изменения веток. Медленный посимвольный export заменён на построчный, его собственный процесс остановлен. Полный CI повторяется на исправлении; сбой не скрывается и шаг не пропускается.
+
+
+## Admin rule API: совместимые PRAGMA D1 — 2026-11-17
+
+Повторный source100b8cd7640c0b9d812d269e04e1f92b41367f52, treeec84323ed7407aca6df1eb23205584b5d57b2cfc, CI44109157270/job134129707568 FAILURE. Исправленный populated snapshot/rollback, actual OWNER MFA HTTP CRUD/replay/audit rollback, immutable definitions/body/FK уже прошли; последняя добавленная PRAGMA integrity_check получила SQLITE_AUTH. Это неподдерживаемая D1 команда, не обнаруженная порча БД; полный CI всё ещё не PASS, поздние CLI/bundle шаги skipped не считаются выполненными.
+
+Поддержка проверена по официальной Cloudflare docs, commit8add1831851c52f3580c56b3612d35a225526f97, src/content/partials/d1/use-pragma-statements.mdx: разрешены quick_check и foreign_key_check, integrity_check отсутствует. Native test теперь требует quick_check='ok' плюс FK и полный before/after application tables; полный SQLite integrity_check='ok' явно добавлен в populated21→22 test. Проверка целостности не отменена, используется документированный интерфейс каждой среды, никаких новых provider permissions. Полный CI повторяется. Read-only source hash сначала запрошен ошибочно в Android cwd и затем получен в правильном backend cwd; код этим не менялся.
+
+
+## Admin rule API: итоговый CI PASS — 2026-11-17
+
+Проверенный source2a5e7b487e9b2a06923586de8230b6b7e63f5f17, tree0aca51165beb7557721a5988aa97132fa8834539; CI44109843561/job134132126272 SUCCESS, все26 steps success.75 npm scripts (20 новых HTTP/SQLite),22 migrations,12 preflight,6 reference,11 native Worker/D1 workflows,6 protected CLI scenarios,dependency audit0,Worker dry-run PASS. Native новый workflow подтвердил populated21→22/rollback без seed, actual OWNER MFA/create/version/read/replay, запрет dispatcher write, audit rollback без SQL leakage, неизменяемость definitions, body constraints,FK и документированный quick_check. Полный integrity_check='ok' выполняется в populated SQLite test. Два прежних failed runs44108752691/44109157270 сохранены с причинами; это исправления compatibility harness, не обход запретов провайдера и не замена assertions на skip.
+
+Source/tree parity с локальным65486668b4b0c0994f9c10f172c3f432b3cbb0de проверена. Receipt ADMIN_VEHICLE_RULE_API_VERIFICATION_2026-11-17.json содержит SHA256 проверенных файлов и раздельные границы. Draft PR39 https://github.com/lobanov0710-blip/uber-v3/pull/39 от fix/vehicle-color-required(PR38); не merge. Следующий checkpoint только docs, проверенный code SHA не подменяет. Исходный docs-only срез контракта помечен историческим и дополнен фактическим текущим этапом.
+
+Вопрос о проверках не изменяет gates: при разработке — относящиеся к изменению и рискам, в текущем auth/DB этапе — весь server CI. Android runtime не менялся, нового APK/Android CI здесь нет; последний собственный проверенный Android color source e5712c969049fb6670fd64863db189f3d32eb038 и CI44089001617 остаются самостоятельным baseline, не результатом этой ветки. Канонические журналы обоих repo синхронизируются append-only.
+
+Четыре API операции — prerequisite; trusted assessment/review/evidence/history, admission/assignment guards и Admin UI ещё предстоят. Полный powertrain обзор121 строк и legacy/activation также не закрыты. Нет runtime seed/remote migration/реальных чувствительных материалов/merge/deploy/расширения OWNER-phone allowlist. G1paused,D4–D7pending. Следующий шаг по утверждённому контракту — trusted classification/review и атомарные допуски, без ручного выбора класса.

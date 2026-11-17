@@ -1,0 +1,332 @@
+{
+  "date": "2026-11-17",
+  "status": "PASS for scoped backend rule APIs; full classifier pending",
+  "repository": "lobanov0710-blip/uber-v3",
+  "branch": "arch/g2-admin-vehicle-rules",
+  "pullRequest": "https://github.com/lobanov0710-blip/uber-v3/pull/39",
+  "baseBranch": "fix/vehicle-color-required",
+  "sourceCommit": "2a5e7b487e9b2a06923586de8230b6b7e63f5f17",
+  "localSourceCommit": "65486668b4b0c0994f9c10f172c3f432b3cbb0de",
+  "sourceTree": "0aca51165beb7557721a5988aa97132fa8834539",
+  "sha256": {
+    ".github/workflows/backend-tests.yml": "76ddd5c65f5354ac275c626b27b7b8b68f415e6da8bdba5c606ff3cc72b5cd4a",
+    "docs/ADMIN_VEHICLE_RULE_API_IMPLEMENTATION_2026-11-17.md": "44fec524b2de7a8238b6043ce54d670e5832929f1ba98dbadb902b1ce08f6c9f",
+    "migrations/0022_vehicle_rule_definitions.sql": "89dcdb0e696116a11bf5b5bb8a41aeccef52e3998d62cb2ba6ef077f122d39e8",
+    "package.json": "3d432d9138e86b346b51d204818db4f1d3917d9feeffcabeabb8b909ccdff6dd",
+    "src/core/adminVehicleRuleService.js": "6d6ca817b715380f3e6b89ba00069f93cacf6361e1f005aff3f4c63c153d197f",
+    "src/core/approvedVehicleMakes.js": "36c98b05624ded92b64a02db8362b6d4cdb2b86c115ac9f04f5594825d49ab3d",
+    "src/core/ownerMfaTransport.js": "3ca82cd35f1905ca7e91793e70a82dde6256486cda0d7c588e38d53aa6f312b5",
+    "src/router.js": "8fbf0bea5dac1e3c963194a3ef44c0b4b484e87ecd18f7b6ed09aa7379f0168f",
+    "tests/adminVehicleRuleApi.test.mjs": "c8a885b7e7e7c09f787984c1607e9f9e36daa487c81f014b1373627db41c74f8",
+    "tests/helpers/adminVehicleRuleScenario.mjs": "53c431e3179df7a0654d5b70ca124aec98f2bcc8537943ed02c284bb395c1c07",
+    "tools/check_admin_vehicle_rules_d1.mjs": "86551bdbdfbb5ad44d803f38067f185ff06ab49ee34f1ba035a391fb0cf2e221"
+  },
+  "ci": {
+    "runId": 44109843561,
+    "jobId": 134132126272,
+    "url": "https://github.com/lobanov0710-blip/uber-v3/actions/runs/44109843561",
+    "conclusion": "success",
+    "requiredSteps": [
+      {
+        "name": "Set up job",
+        "conclusion": "success"
+      },
+      {
+        "name": "Checkout",
+        "conclusion": "success"
+      },
+      {
+        "name": "Set up Node",
+        "conclusion": "success"
+      },
+      {
+        "name": "Use the verified npm version for scoped overrides",
+        "conclusion": "success"
+      },
+      {
+        "name": "Install locked development dependencies without lifecycle scripts",
+        "conclusion": "success"
+      },
+      {
+        "name": "Check dependency advisories",
+        "conclusion": "success"
+      },
+      {
+        "name": "Validate D1 migrations offline",
+        "conclusion": "success"
+      },
+      {
+        "name": "Validate fail-closed D3 staging preflight",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify approved vehicle reference invariants",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run backend unit and router tests",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify audit transaction with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify OWNER MFA transactions with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify Admin moderation workflow with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify approved assignment read APIs with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify approved vehicle/photo-check read with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify OWNER-only phone scope with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify classification version storage with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify populated registration schema upgrade with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify Driver system-class registration contract with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify pinned rule history and OWNER-only powers with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify OWNER rule APIs and populated upgrade with local workerd and D1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify protected OWNER CLI with actual Wrangler import output",
+        "conclusion": "success"
+      },
+      {
+        "name": "Bundle Worker without deploying",
+        "conclusion": "success"
+      },
+      {
+        "name": "Post Set up Node",
+        "conclusion": "success"
+      },
+      {
+        "name": "Post Checkout",
+        "conclusion": "success"
+      },
+      {
+        "name": "Complete job",
+        "conclusion": "success"
+      }
+    ],
+    "npmScriptCount": 75,
+    "newHttpSqliteCases": 20,
+    "migrations": 22,
+    "preflightCases": 12,
+    "referenceCases": 6,
+    "nativeD1Workflows": 11,
+    "protectedCliScenarios": 6,
+    "dependencyVulnerabilities": 0,
+    "workerDryRun": "PASS"
+  },
+  "nativeEvidence": [
+    {
+      "engine": "local workerd/D1",
+      "first": "success",
+      "loser": "existing_idempotency",
+      "stale": "conflict",
+      "auditRows": 1,
+      "result": "PASS"
+    },
+    {
+      "engine": "local workerd HTTP/D1",
+      "httpEnrollmentLoginProfileVerified": true,
+      "totpWinners": 1,
+      "recoveryWinners": 1,
+      "refreshMfaExpiryPreserved": true,
+      "resetRevoked": true,
+      "result": "PASS"
+    },
+    {
+      "engine": "local workerd HTTP/D1",
+      "partialReturnPreservesVerified": true,
+      "replayAndRevocation": true,
+      "identityApprovalDenied": true,
+      "auditRows": 3,
+      "result": "PASS"
+    },
+    {
+      "engine": "local workerd HTTP/D1",
+      "minimalProjection": true,
+      "keysetPagination": true,
+      "offlineNotExcluded": true,
+      "disabledDriverBlocked": true,
+      "grantRevocation": true,
+      "ownerMfaEnforced": true,
+      "auditRows": 4,
+      "result": "PASS"
+    },
+    {
+      "engine": "local workerd HTTP/D1",
+      "vehicleReadWorkflow": "PASS",
+      "auditRows": 7,
+      "privateProjectionAbsent": true,
+      "scopedPagination": true,
+      "currentPermissionRevocation": true
+    },
+    {
+      "engine": "local workerd HTTP/D1",
+      "ownerMfa": true,
+      "dispatcherDenied": true,
+      "driverDenied": true,
+      "privateFilesDenied": true,
+      "realRegistrationsHidden": true,
+      "refreshLogout": true,
+      "target": "uber-v3-staging.lobanov0710.workers.dev",
+      "result": "PASS"
+    },
+    {
+      "engine": "native local workerd/D1",
+      "classificationStore": "PASS",
+      "historyImmutable": true,
+      "explicitEditUsesCurrentRule": true,
+      "batteryElectricExcluded": true,
+      "staleRevisionBlocked": true
+    },
+    {
+      "engine": "native local workerd/D1",
+      "registrationSchemaUpgrade": "PASS",
+      "populatedUpgradePreserved": true,
+      "failedUpgradeRolledBack": true,
+      "unclassifiedDraftSupported": true,
+      "ownerBoundRead": true,
+      "approvalWithoutClassBlocked": true
+    },
+    {
+      "engine": "native local workerd HTTP/D1",
+      "driverSystemClassContract": "PASS",
+      "driverClassRejected": true,
+      "requiredColor": true,
+      "yearPersisted": true,
+      "activeVehicleInvalidated": true,
+      "lineDisabled": true,
+      "manualDispatcherFlag": true,
+      "auditRollback": true
+    },
+    {
+      "engine": "native local workerd HTTP/D1",
+      "ruleBinding": "PASS",
+      "populatedUpgradePreserved": true,
+      "failedUpgradeRolledBack": true,
+      "pinAtFirstSave": true,
+      "unrelatedEditKeepsVersion": true,
+      "explicitYearUsesCurrent": true,
+      "bindingAuditRollback": true,
+      "dispatcherPowersDenied": true,
+      "legacyErroneousGrantsIgnored": true
+    },
+    {
+      "engine": "native local workerd HTTP/D1",
+      "ruleApi": "PASS",
+      "ownerMfa": true,
+      "dispatcherWriteDenied": true,
+      "immutableVersionRead": true,
+      "idempotentReplay": true,
+      "atomicAuditRollback": true,
+      "untrustedVehicleProjection": true,
+      "populatedUpgradePreserved": true,
+      "failedUpgradeRolledBack": true,
+      "noSeed": true,
+      "definitionImmutable": true,
+      "bodyConstraint": true,
+      "foreignKeys": true,
+      "quickCheck": true
+    },
+    {
+      "engine": "actual protected CLI + Wrangler 4.125.0 + synthetic loopback SQLite/D1 API",
+      "scenarios": [
+        {
+          "scenario": "legacy_committed_failure",
+          "result": "PASS"
+        },
+        {
+          "scenario": "new_success",
+          "result": "PASS"
+        },
+        {
+          "scenario": "existing_success",
+          "result": "PASS"
+        },
+        {
+          "scenario": "wrong_postcondition",
+          "result": "PASS"
+        },
+        {
+          "scenario": "import_failure",
+          "result": "PASS"
+        },
+        {
+          "scenario": "newer_migration_chain_rejected",
+          "result": "PASS"
+        }
+      ],
+      "realCloudflareRequests": 0,
+      "rawTerminalOutputDisclosed": false
+    }
+  ],
+  "priorFailures": [
+    {
+      "runId": 44108752691,
+      "sourceCommit": "60cbdcf72236c692cf0cb0ebc60eadd24c9a8331",
+      "reason": "Test snapshot enumerated private provider metadata; application schema enumeration corrected."
+    },
+    {
+      "runId": 44109157270,
+      "sourceCommit": "100b8cd7640c0b9d812d269e04e1f92b41367f52",
+      "reason": "Unsupported native D1 integrity_check; documented quick_check plus FK checks required in D1, full integrity_check retained in populated SQLite test."
+    }
+  ],
+  "implementation": [
+    "rule list GET",
+    "immutable rule version GET",
+    "OWNER-only rule publication POST",
+    "partial vehicle classification metadata GET"
+  ],
+  "preserved": [
+    "OWNER MFA and authoritative session SQL rechecks",
+    "DISPATCHER authoring and exception powers denied",
+    "first-save and explicit make/model/year binding semantics",
+    "required color and nullable legacy reads",
+    "existing OWNER-phone STAGING allowlist",
+    "auth body default4096; new rule POST16384"
+  ],
+  "notCompleted": [
+    "trusted assessment/review POST and evidence/history",
+    "admission and assignment assessment guards",
+    "Admin runtime UI/DTO integration",
+    "complete powertrain review of121 vehicle reference rows",
+    "legacy inventory and activation",
+    "G1 and D4-D7"
+  ],
+  "noRemoteMigration": true,
+  "noSeed": true,
+  "noMerge": true,
+  "noDeployment": true,
+  "noRealSensitiveData": true,
+  "androidRuntimeChanged": false,
+  "newApkBuilt": false,
+  "testingPolicy": "Risk-based focused checks during development; existing required CI/acceptance gates preserved."
+}
