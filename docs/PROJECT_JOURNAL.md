@@ -3483,3 +3483,14 @@ REQUIRED_VEHICLE_COLOR_API_VERIFICATION_2026-11-17.json. Следующий comm
 только docs; code tree уже сверен локально и удалённо.
 Нет новой миграции/backfill/массового снятия допуска/палитры/новых прав/
 изменения pinned classification. G1paused, remote migration/merge/deploy нет.
+
+
+## G2: Admin rule API и полные определения — 2026-11-17
+
+По утверждённому контракту/поправке OWNER продолжен prerequisite для trusted параметров. Добавлены три Admin rule operations и classification metadata GET; POST review/assessment и допуск ещё не реализованы. Migration0022 immutable definitions без seed/backfill. OWNER-only authoring с фактическим MFA/session SQL guard, CAS, idempotency и audit одной batch; dispatcher новые права не получает. Неизвестные поля/марки/economy/неверный кузов отвергаются. Утверждённые142 labels и два исторических CSV spellings сохранены без выдуманных aliases. Новая версия не меняет ранее закреплённую у автомобиля. Metadata не выдаёт legacy candidate за доверенную проверку.
+
+При анализе исправлены два края: audit target_id120 не вмещал допустимый legacy version128 (для длинных ссылок применяется детерминированный SHA256 ref); чтение теперь проверяет actual access после audit и его top-level SQL changes(), иначе не выдаёт данные. Tests охватывают подавленный audit, поздний отзыв прав/MFA/session/tokenVersion/OWNER binding, CAS competition, same-key replay, rollback, immutable history и лимиты16KiB против прежних4KiB auth. Цвет обязателен в public save, legacy null на чтении сохраняется.
+
+Ошибки тестов до проверки: synthetic HTTP transport не передавал CF-Connecting-IP для MFA; исправлен транспорт, вход не ослаблен. Затем revocation fixture записывал revoked_at=1 раньше created_at и нарушал CHECK, а scope test вызывал router вместо Worker entrypoint; исправлены fixture/точка входа. Первый focused run16 имел14 PASS/2 FAIL, повтор16 PASS, затем расширен до20. Служебные ошибки чтения: два устаревших имени workflow/harness и ownerPhoneScope найдены через rg; node --test с фильтром в ограниченной среде не стартовал штатно, полный direct test выполнен. Один общий tool вывод превысил контекст, состояние перепроверено по файлам и тесты повторены. Секретов/реальных данных в выводе не было.
+
+Вопрос владельца о всех проверках: локально допустим риск-ориентированный выбор нужных проверок, существующие обязательные CI/приёмочные gates не отменены. Здесь изменения auth/БД требуют полного server CI и native D1. Android код не менялся, сборка нового APK не заявляется. Локальные20 новых/17 binding/10 Driver/4 MFA,22 migrations,12 preflight,6 reference PASS; полный GitHub CI ещё предстоит. Scope/границы: ADMIN_VEHICLE_RULE_API_IMPLEMENTATION_2026-11-17.md. G1paused,D4–D7pending; allowlist phone unchanged, нет remote migration/seed/merge/deploy.
