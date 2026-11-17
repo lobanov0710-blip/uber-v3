@@ -2672,3 +2672,42 @@ service должен обеспечить session/ownership/MFA/permissions/audi
 данные установки; candidate не является approved/допуском. Это проверенная
 основа, не полная реализация классификатора. Нет merge/deploy/remote migrations/
 настоящих документов, G1paused/D4–D7pending. Работу продолжать в этих границах.
+
+
+## Подготовка регистрации к системному классу — проверенный срез 2026-11-17
+
+По поручению «Далее» backend Draft PR34 добавляет миграцию0020: nullable
+vehicles.class без фиктивного значения, model_year/powertrain, guards запрета
+approved без класса. Старые классы сохранены, DROP TABLE vehicles нет;
+связанные данные и immutable history сохраняются. Внутренний repository
+поддерживает null draft и декларации, authenticated GET Driver me отдаёт новые
+поля. Отдельное metadata read связано с driver_id/vehicle_id.
+
+Проверенный code0de3ffd83e9adebc1c2409bce9f0a2082733c3bd /
+tree1759e9b423af9e7693e0a2d7a6c61f4e668bb345, CI44055860164 /
+job133944966595 SUCCESS:72 npm test scripts,8 новых actual SQLite/HTTP cases,
+20 migrations,12 preflight,6 reference,8 native D1 workflows,6 protected CLI
+scenarios,audit0 и Worker dry-run PASS. Native D1 проверил populated upgrade19→20
+и rollback намеренной ошибки, сохранность документов/истории, null draft,
+owner-bound read и запрет approved без класса. Предыдущий run44055638704 отменён
+после добавления rollback проверки; финальный CI привязан к точному source.
+
+Первый расширенный SQLite-тест вызвал новую read-функцию до миграции на19;
+исправлена проверка полных старых строк до/после, новый код читается после0020.
+Полный npm test локально остановился на известном CLI spawnSync EPERM;
+проверки не ослаблены, полный CLI выполнен в CI. Detailed journal/receipt:
+https://github.com/lobanov0710-blip/uber-v3/pull/34
+VEHICLE_REGISTRATION_SCHEMA_VERIFICATION_2026-11-17.json
+
+Финальные docs-only [skip ci] heads: backend 4e83220ae286428d42ae6f6cb359a2f5ff44c7fd; Android docs 10f37732830a4d42b18fe75d51297790b79f2524.
+Local/remote source tree parity проверена. Полный plan/journal обновлён в
+Android Draft PR13. Эти docs commits не заменяют проверенный code SHA.
+
+Публичные POST/PATCH пока сохраняют driver-supplied vehicleClass и не принимают
+modelYear; Android DTO не готов к null. Это подготовка storage/read, не полная
+реализация системной регистрации и не исправление выбора класса в UI.
+Не реализованы новые guards линии, проверка документов или остановка/замена
+поездки, новых drafts через старый клиент не включать. Seed121 не активирован,
+полный обзор электрических исполнений ещё не завершён. Нет remote migration,
+merge/deploy/реальных документов; G1paused/D4–D7pending. Следующий этап —
+согласованно обновить публичный контракт записи, клиент и trusted moderation.
