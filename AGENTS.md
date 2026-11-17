@@ -29,3 +29,14 @@
 - [Технические решения](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/TECHNICAL_DECISIONS_V1_0_PROPOSED.md)
 - [Журнал backend](docs/PROJECT_JOURNAL.md)
 - [Канонический журнал проекта](https://github.com/lobanov0710-blip/TransferDriver/blob/arch/spec-v1-security-baseline/docs/PROJECT_JOURNAL.md)
+
+
+## Утверждённая поправка OWNER к классификатору — 2026-11-17
+
+Владелец утвердил контракт Admin classification: «Утверждают, но права
+диспетчерам не давать». Новые vehicle_rules.manage/vehicles.approve_exception
+диспетчерам запрещены, включая ошибочные записи грантов; доступны только
+действующему OWNER с существующим серверным MFA. Существующие операционные
+права не отзываются. Версия правила фиксируется при первом сохранении авто;
+смена марки/модели/года использует текущую, unrelated revisions — прежнюю.
+Не запрашивать повторного утверждения этих принятых решений.

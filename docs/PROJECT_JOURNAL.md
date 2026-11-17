@@ -2830,3 +2830,62 @@ BEV inventory/legacy transfer/full in_progress handoff остаются неза
 OWNER-only STAGING allowlist не расширен. G1paused,D4–D7pending; нет real
 documents, remote migration, merge/deploy. Каноническая синхронизация — только
 append журналов, без изменения кода/прав/ТЗ.
+
+
+## Контракт утверждён; новые права диспетчерам запрещены — 2026-11-17
+
+Точный ответ владельца: «Утверждают, но права диспетчерам не давать».
+Принятый контракт PR36 дополнен: новые vehicle_rules.manage и
+vehicles.approve_exception не выдаются DISPATCHER и не признаются даже при
+ошибочной записи. Эти полномочия — только OWNER с действующим серверным MFA;
+ранее существующие операционные права не отзываются. Момент фиксации версии
+при первом сохранении также утверждён. Повторного согласования не требуется.
+Поправка сохранена в AGENTS обоих repo и approved контракте/OpenAPI/плане/
+PRODUCT/feature журналах. Pending записи исходного аудита теперь исторические.
+
+Первый implementation prerequisite — backend Draft PR37
+https://github.com/lobanov0710-blip/uber-v3/pull/37, arch/g2-classifier-binding,
+baseapproved PR36. Миграция0021 создаёт immutable binding/input history:
+first INSERT фиксирует текущую версию либо null при неизвестной модели,
+make/model/year change — новую привязку к текущей версии. Цвет/фото/status/
+служебная revision не меняют привязку. Старым записям история/годы/классы
+не выдумываются. Internal metadata owner-bound. Resolver/adminCan фильтруют
+запрещённые dispatcher grants, SQL INSERT/UPDATE не позволяют их выдавать,
+включая case и ECMAScript edge whitespace; старые ошибочные строки сохраняются
+без разрешения. OWNER binding removal лишает старого владельца новых прав.
+
+Первый CI44077774303/job134020146192 FAILED на existing native Driver POST:
+D1 meta.changes включает trigger writes, прежний helper мог ошибочно вернуть409
+после committed insert. Исправлено чтением SQL changes() top-level mutation
+в той же batch, допустимы строго0/1; audit/binding rollback сохранён. Добавлен
+отдельный regression с trigger-inclusive metadata. Ошибка исправлена, failed
+run сохранён, assertions не ослаблены. Реальных данных/remote deploy не было.
+
+Финальный verified sourcea52b83ba1da0e8024946f2d92288e6f6e52cc383,
+treedad21bcb855f8d49bc2446f6bbfc5a0eb9745c55,
+CI44078545851/job134022783461 SUCCESS:74 npm scripts,17 новых actual
+SQLite/HTTP cases,21 migrations,12 preflight,6 reference,10 native D1 workflows,
+6 protected OWNER CLI scenarios,audit0 и Worker dry-run PASS. Native populated
+upgrade20→21/rollback, first-save pin, no retroactive rebind, key-data edit,
+history/audit rollback и dispatcher deny подтверждены. Local CLI sandbox
+ограничение не обходилось: полный набор исполнился в CI. Начальные fixture
+ошибки VIN/не-UUID ID и bound_at исправлены без ослабления публичной валидации.
+Поиск отсутствующего adminProfileService исправлен чтением реальных источников.
+
+Receipt и source hashes: backend docs/VEHICLE_RULE_BINDING_VERIFICATION_2026-11-17.json.
+Scope: VEHICLE_RULE_BINDING_SCOPE_2026-11-17.md. Final docs backend
+4ca9bf5a7e8b0752cae4c8629a89d9a326c42549,
+Android contract/docs PR15 f5b13b20c53dd45f176dfa0c4abc97acbc910954.
+Verified code SHA отделён от docs-only commit; все published/local trees
+проверены. Backend approved contract PR36 head2a7e5adca87d7a326a8d7187984a65155385f2e5.
+Android runtime код не менялся; security guards8/5 PASS, новой сборки/APK/
+Android native CI в этом шаге не было.
+
+Binding не является trusted assessment/подтверждением года/классом/допуском.
+Legacy current-head candidate helper не читает binding; не подключать его к
+trusted review/approval. Далее: trusted параметры/evidence/условия/исключения,
+Admin API правил/assessment и admission guards, затем Admin DTO/форма/UI.
+Полный BEV обзор121/legacy plan/in_progress dispatcher handoff также впереди.
+Нет seed/реальных материалов/remote migration/merge/deploy/расширения
+OWNER-only STAGING; G1paused,D4–D7pending. Каноническая запись меняет только
+AGENTS (принятое правило владельца) и append журнала; runtime код не переносит.
