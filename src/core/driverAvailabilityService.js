@@ -486,6 +486,9 @@ export async function putDriverAvailability(
     }
 
 
+    if(parsed.requestedState === 'on_line' && vehicle.vehicleReverificationBlocked){
+      return unprocessable('vehicle_reverification_required');
+    }
     if (
       parsed.requestedState === "on_line" &&
       vehicle.photoControlBlocked

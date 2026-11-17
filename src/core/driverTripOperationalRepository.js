@@ -845,6 +845,7 @@ export async function advanceDriverAssignmentPhase(
 
           -- A registration-data change clears the system class and requires
           -- review. The old assignment must wait for manual dispatcher action.
+          AND NOT EXISTS(SELECT 1 FROM vehicle_reverification_assignment_holds h WHERE h.assignment_id=a.id)
           AND EXISTS (
             SELECT 1 FROM vehicles v WHERE v.id = a.vehicle_id
               AND v.class IS NOT NULL AND v.status IN ('approved','photo_check_required')

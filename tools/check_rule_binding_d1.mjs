@@ -15,7 +15,7 @@ const mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'rule-binding',
   d1Databases:['DB'],compatibilityDate:'2026-08-20'}]}));
 try {
   const DB=await mf.getD1Database('DB','rule-binding');
-  for(const type of ['table','index','trigger'])for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type=? AND sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all(type))await DB.prepare(row.sql).run();
+  for(const type of ['table','index','view','trigger'])for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type=? AND sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all(type))await DB.prepare(row.sql).run();
   await seedModeration(DB);
   await DB.prepare("INSERT INTO staff_permissions VALUES(?1,' VEHICLES.APPROVE_EXCEPTION ',?1,1)").bind(moderator).run();
   const send=async(method,path,body,token)=>{

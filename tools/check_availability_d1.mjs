@@ -9,6 +9,7 @@ try {
  const tables = local.sqlite.prepare("SELECT name,sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all();
  for (const table of tables) await DB.prepare(table.sql).run();
  for (const index of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL").all()) await DB.prepare(index.sql).run();
+ for (const type of ['view','trigger']) for (const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type=? AND sql IS NOT NULL ORDER BY rowid").all(type)) await DB.prepare(row.sql).run();
  for (const table of tables) {
   for (const row of local.sqlite.prepare('SELECT * FROM '+table.name).all()) {
    const columns=Object.keys(row);

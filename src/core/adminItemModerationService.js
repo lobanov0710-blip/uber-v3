@@ -960,6 +960,7 @@ export async function reviewAdminRegistrationItem(
         env,
         {
           ...common,
+          authorizationPrincipal:user,
           vehicleId:
             clean(targetId),
           nextPhotoCheckDueAt:
@@ -1181,6 +1182,7 @@ export async function completeAdminRegistrationReview(
       {
         actorAccountId:
           resolved.access.accountId,
+        authorizationPrincipal:user,
         driverId:
           clean(driverId),
         expectedRevision:
