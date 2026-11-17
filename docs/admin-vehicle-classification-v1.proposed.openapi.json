@@ -2,11 +2,11 @@
   "openapi": "3.1.0",
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
-    "title": "Transfer Driver Admin vehicle classification — PROPOSED ONLY",
-    "version": "1.0.0-proposed",
-    "description": "Not owner-approved, implemented, seeded or deployed. Exact semantics and limitations in ADMIN_VEHICLE_CLASSIFICATION_CONTRACT_PROPOSAL_2026-11-17.md."
+    "title": "Transfer Driver Admin vehicle classification — APPROVED CONTRACT; implementation pending",
+    "version": "1.0.0-approved",
+    "description": "Approved 2026-11-17 with OWNER-only rule management and exceptions; dispatcher grants forbidden. Historical proposed filename retained. Implementation staged; no deployment authorized."
   },
-  "x-approval-status": "pending-owner-approval",
+  "x-approval-status": "approved-with-owner-only-correction",
   "x-rule-binding-proposal": "Pin at first vehicle save; retain on unrelated revision; make/model/year changes use current rule.",
   "paths": {
     "/v1/admin/vehicle-rules": {
@@ -184,7 +184,7 @@
             }
           }
         },
-        "description": "PROPOSED ONLY. Active server staff session; OWNER current MFA. No activation or OWNER-only STAGING allowlist change.",
+        "description": "Approved contract. Active server staff session; OWNER current MFA. New rule-management/exception rights unavailable to DISPATCHER. Implementation/activation tracked separately; no OWNER-only STAGING allowlist change.",
         "parameters": [
           {
             "in": "query",
@@ -406,7 +406,7 @@
             }
           }
         },
-        "description": "PROPOSED ONLY. Active server staff session; OWNER current MFA. No activation or OWNER-only STAGING allowlist change.",
+        "description": "Approved contract. Active server staff session; OWNER current MFA. New rule-management/exception rights unavailable to DISPATCHER. Implementation/activation tracked separately; no OWNER-only STAGING allowlist change.",
         "parameters": [
           {
             "in": "header",
@@ -430,7 +430,8 @@
             }
           }
         },
-        "x-max-body-bytes": 16384
+        "x-max-body-bytes": 16384,
+        "x-owner-only": true
       }
     },
     "/v1/admin/vehicle-rules/versions/{version}": {
@@ -608,7 +609,7 @@
             }
           }
         },
-        "description": "PROPOSED ONLY. Active server staff session; OWNER current MFA. No activation or OWNER-only STAGING allowlist change.",
+        "description": "Approved contract. Active server staff session; OWNER current MFA. New rule-management/exception rights unavailable to DISPATCHER. Implementation/activation tracked separately; no OWNER-only STAGING allowlist change.",
         "parameters": [
           {
             "in": "path",
@@ -799,7 +800,7 @@
             }
           }
         },
-        "description": "PROPOSED ONLY. Active server staff session; OWNER current MFA. No activation or OWNER-only STAGING allowlist change.",
+        "description": "Approved contract. Active server staff session; OWNER current MFA. New rule-management/exception rights unavailable to DISPATCHER. Implementation/activation tracked separately; no OWNER-only STAGING allowlist change.",
         "parameters": [
           {
             "in": "path",
@@ -1001,7 +1002,7 @@
             }
           }
         },
-        "description": "PROPOSED ONLY. Active server staff session; OWNER current MFA. No activation or OWNER-only STAGING allowlist change.",
+        "description": "Approved contract. Active server staff session; OWNER current MFA. New rule-management/exception rights unavailable to DISPATCHER. Implementation/activation tracked separately; no OWNER-only STAGING allowlist change.",
         "parameters": [
           {
             "in": "path",
@@ -1037,7 +1038,8 @@
           }
         },
         "x-max-body-bytes": 16384,
-        "x-additional-permission-for-exception": "vehicles.approve_exception"
+        "x-additional-permission-for-exception": "vehicles.approve_exception",
+        "x-owner-only-for-exception": true
       }
     }
   },
@@ -1978,5 +1980,9 @@
         ]
       }
     }
-  }
+  },
+  "x-forbidden-dispatcher-permissions": [
+    "vehicle_rules.manage",
+    "vehicles.approve_exception"
+  ]
 }
