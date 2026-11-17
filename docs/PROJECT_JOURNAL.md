@@ -3557,3 +3557,10 @@ Migration0024 immutable assignment holds без backfill. Потеря дове�
 Native harness теперь копируют view/trigger вместе с таблицами/index, чтобы проверять полную реальную схему23/24. Исторические upgrade20→21/21→22/22→23 assertions сохранены; storage native workflow после23 явно применяет24 для новой runtime зависимости. Новый native workflow23→24 проверяет legacy HTTP approved, correction, rollback, hold/reapproval и оба done paths. Scope/границы ATOMIC_VEHICLE_REVIEW_2026-11-17.md. Полный77-script/13-native CI пока предстоит. Общий assessment guard для всех admission paths/legacy/evidence expiry ещё pending; не выдавать hold guard за всю готовность.
 
 Android runtime не менялся, APK/новый Android CI не создавался. G1paused,D4–D7pending. Нет seed/backfill/remote migration/real data/merge/deploy/нового OWNER-phone доступа. Действуем только по утверждённым решениям; новых грантов/тарифов/ручного выбора класса/автовыбора driver нет.
+
+
+## Atomic review: первый CI и аутентифицированная replay fixture — 2026-11-17
+
+Первый sourcefe79c7fcf26902806b14343ba715698f6c1b8965/tree1a23b54efbf9f9c95f714b69f90aa98cdebdf0bf, CI44127749679/job134196078083 FAILURE в mutationReplay.sqlite:12 PASS/2 FAIL. Vehicle rejection и final registration rejection теперь проверяют actual session/tokenVersion/OWNER MFA в SQL; прежняя fixture передавала только id/role и OWNER binding. Добавлено явное synthetic staff session/MFA factor/family DB state и sessionId/tokenVersion principal именно в replay test, без настоящих credentials. Статусы/транзакционные/replay assertions сохранены, SQL guards не ослаблены. Повтор14 PASS локально. Этот тест не выдаётся за настоящее MFA enrollment: реальные synthetic HTTP/MFA flows отдельно проверяются новым10-suite и native workflow.
+
+До первого сбоя прошли migration24/preflight12/reference6/dependency audit и более ранние npm suites; последующие native/CLI/bundle steps ещё не выполнялись, весь CI не PASS. Draft PR41 https://github.com/lobanov0710-blip/uber-v3/pull/41 от PR40. Tree parity проверена, полный CI повторяется на исправлении. Provider/credentials/remote D1 не использовались.

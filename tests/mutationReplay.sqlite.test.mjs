@@ -6,7 +6,7 @@ import { assignOrderByAdmin, reassignOrderByAdmin } from '../src/core/orderAssig
 import { changeDriverAssignmentPhase, createDriverTripVerificationChallenge } from '../src/core/driverTripOperationalService.js';
 import { advanceDriverAssignmentPhase } from '../src/core/driverTripOperationalRepository.js';
 
-const admin = { id: 'staff_admin123', role: 'admin' };
+const admin = { id: 'staff_admin123', role: 'admin', sessionId:'session_replay_fixture',tokenVersion:1 };
 const order = 'order_12345678';
 function setup(t) {
   const DB = fixture(t);
@@ -17,6 +17,13 @@ function setup(t) {
     .run(admin.id, 'A'.repeat(32), 'B'.repeat(43));
   DB.sqlite.prepare('INSERT INTO staff_owner_binding(singleton,account_id,created_at) VALUES (1,?,1)')
     .run(admin.id);
+  // Explicit synthetic authenticated state; production creates this only after
+  // the real MFA flow. A bare role object is not SQL mutation authorization.
+  DB.sqlite.prepare('INSERT INTO staff_sessions(id,account_id,family_id,refresh_token_hash,created_at,expires_at) VALUES(?,?,?,?,1,?)')
+    .run(admin.sessionId,admin.id,'family_replay_fixture','R'.repeat(43),time+3600000);
+  DB.sqlite.prepare('INSERT INTO admin_mfa_factors VALUES(?,?,?,0,1)').run(admin.id,'S'.repeat(64),'factor_replay_fixture');
+  DB.sqlite.prepare("INSERT INTO admin_mfa_session_families VALUES(?,?,?,1,?,?,'totp')")
+    .run('family_replay_fixture',admin.id,'factor_replay_fixture',time-1,time+3600000);
   DB.sqlite.prepare(`INSERT INTO orders
     (id,name,phone,route,trip_date,status,created_at,updated_at)
     VALUES (?,'Test','+79990000000','Test route','2030-01-01','new',1,1)`).run(order);
