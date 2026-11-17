@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-17",
+  "scope": "admin-trusted-vehicle-classification-contract-readiness",
+  "status": "proposal-prepared-owner-approval-required",
+  "backendBaseline": {
+    "reviewedCommit": "5adfd2a6fba68cffa9fe98f42129863ded417a78",
+    "reviewedTree": "56693ae2f5ea0eb9dea8ff63db294aaabc6e342e",
+    "previousVerifiedCode": "57c17bbc67b5c8aef3f137d9c13341f619dbd8a2",
+    "previousCi": 44062029259
+  },
+  "androidBaseline": {
+    "reviewedCommit": "57f69b306bbf1df72ad8c58ea105dce4450a64f3",
+    "reviewedTree": "2cebbc55b927430972be641295562395786bc246",
+    "previousVerifiedCode": "58102355b24201f6eba06f2d5190341c7541be06",
+    "previousCi": 44060885312
+  },
+  "findings": [
+    {
+      "id": "A1",
+      "kind": "integration-blocker",
+      "status": "open-awaiting-contract",
+      "evidence": [
+        "src/core/adminItemModerationRepository.js:589",
+        "src/core/adminItemModerationRepository.js:796",
+        "TransferDriver/admin/src/main/java/ru/transferservis/admin/data/RegistrationReview.java:26"
+      ],
+      "finding": "Admin bundle does not read year/powertrain, converts null class to empty string; Item omits year/class."
+    },
+    {
+      "id": "A2",
+      "kind": "admission-blocker",
+      "status": "open-awaiting-trusted-model",
+      "evidence": [
+        "src/core/adminItemModerationRepository.js:1385"
+      ],
+      "finding": "Vehicle approval lacks trusted verified-year/classification assessment guard."
+    },
+    {
+      "id": "A3",
+      "kind": "admission-blocker",
+      "status": "open-awaiting-trusted-model",
+      "evidence": [
+        "src/core/driverAvailabilityRepository.js:451",
+        "src/core/orderAssignmentRepository.js:1034",
+        "src/core/orderAssignmentRepository.js:1344"
+      ],
+      "finding": "Availability/assign/reassign SQL lacks new trusted year/assessment requirements."
+    },
+    {
+      "id": "A4",
+      "kind": "storage-design-blocker",
+      "status": "open-proposal-ready",
+      "evidence": [
+        "migrations/0019_vehicle_classification_versions.sql",
+        "src/core/vehicleClassificationRepository.js:47"
+      ],
+      "finding": "Existing snapshot FK disallows different basis model; candidate trigger enforces minYear. Exceptions must not silently weaken these checks."
+    },
+    {
+      "id": "A5",
+      "kind": "version-integrity-risk",
+      "status": "open-proposal-ready",
+      "evidence": [
+        "src/core/driverRegistrationRepository.js",
+        "src/core/adminItemModerationRepository.js:1445"
+      ],
+      "finding": "General vehicle revision also changes on unrelated fields/review. Reclassifying every new revision by current rule would violate non-retroactivity."
+    },
+    {
+      "id": "A6",
+      "kind": "integration-blocker",
+      "status": "open-proposal-ready",
+      "evidence": [
+        "src/core/vehicleClassification.js:15"
+      ],
+      "finding": "Pure evaluator candidate does not verify body/notes/documents; it must not become approval without trusted moderation."
+    },
+    {
+      "id": "A7",
+      "kind": "owner-decision-required",
+      "status": "pending-owner-approval",
+      "evidence": [
+        "src/core/adminAuthorization.js",
+        "TransferDriver/docs/VEHICLE_RULES_OWNER_DECISIONS_2026-11-17.md"
+      ],
+      "finding": "New rule-authoring/exception permissions and exact contract not approved; no handlers/grants introduced."
+    },
+    {
+      "id": "A8",
+      "kind": "reference-data-blocker",
+      "status": "open",
+      "evidence": [
+        "docs/ELECTRIC_VEHICLE_REVIEW_2026-11-17.md",
+        "docs/vehicle-classifier-v2-proposed.csv"
+      ],
+      "finding": "All remaining powertrain variants not fully reviewed; no runtime seed activated."
+    }
+  ],
+  "checksExecutedNow": {
+    "nodeTestEntryPointsPassed": [
+      "tests/vehicleClassification.test.mjs",
+      "tests/vehicleClassificationRepository.test.mjs",
+      "tests/driverSystemClassContract.test.mjs",
+      "tests/adminAuthorization.test.mjs",
+      "tests/adminModerationFlow.test.mjs"
+    ],
+    "command": "node --test tests/vehicleClassification.test.mjs tests/vehicleClassificationRepository.test.mjs tests/driverSystemClassContract.test.mjs tests/adminAuthorization.test.mjs tests/adminModerationFlow.test.mjs",
+    "entryPointCount": 5,
+    "classifierReferencePythonCases": 6,
+    "driverSecurityGuards": 8,
+    "adminSecurityGuards": 5,
+    "proposalJsonSchemaSyntaxAndLocalRefs": "PASS",
+    "proposedApiOperationCount": 5,
+    "validSyntheticRequestExamples": 4,
+    "invalidRequestExamplesRejectedBySchema": 8,
+    "newApiRuntimeExecuted": false,
+    "fullBackendRerun": false,
+    "androidBuildRerun": false,
+    "newApkProduced": false
+  },
+  "sourceSha256": {
+    "src/core/adminItemModerationRepository.js": "17e5f801abb10dbece4faa9fc5c59fbf5128d20e12a0f94ed2b2fef62c780d62",
+    "src/core/vehicleClassificationRepository.js": "c16bc0c665c1a59abe78dbe7a9b697e822dd36edeff39f2f74affe88beaf9f8f",
+    "src/core/vehicleClassification.js": "f817e0727b3a310017a43896fff9cbb29916e17ee1c09ab812d3cb33fb5855de",
+    "src/core/driverAvailabilityRepository.js": "8f016491f4e08d8cd515883179291367462b349400ca4eb31b53ba09282f2c66",
+    "src/core/orderAssignmentRepository.js": "89367cae1bb40223819f8f1c226408deac09251900ced3bf0c90b072304b52b6",
+    "src/core/driverRegistrationService.js": "8b2c1bd816822d447b8b6177a2ef0d55b8ff6ef6cc91b8458819a1357d2fb982",
+    "src/core/adminAuthorization.js": "4a5a01bb68d89241abcdb914d2ff05dbe5fc26f916e66b0589257cb38b075686",
+    "src/core/adminPhoneTestScope.js": "80e4027f2d2905ef54e5e31132304e780001c80f37b63d9033662fbab515f1c1",
+    "migrations/0019_vehicle_classification_versions.sql": "38a1917325f81eb33daa7b3eb5e00943aeb5cd92aa3477e686434d3332c50c1a",
+    "migrations/0020_vehicle_registration_classification_fields.sql": "7708e4614e603c2342a449a09f609ab6b458160963118c32bd8f1ee8a97e3a69",
+    "docs/vehicle-classifier-v2-proposed.csv": "553384af5b49252d3b3acbc3973ef6dae7fc40d348156debf4f0fab24c5ae880"
+  },
+  "androidSourceSha256": {
+    "AGENTS.md": "a5d02173e3bcd3f97c40c8c671122f06e4bdfed639d94b2e8813581cfd978be7",
+    "docs/VEHICLE_RULES_OWNER_DECISIONS_2026-11-17.md": "296355f1e0fd563e4b8843c4505116d905e66d2a39f3ab42bba01c723c3b0901",
+    "docs/VEHICLE_CLASSIFICATION_IMPLEMENTATION_DESIGN_2026-11-17.md": "fbf4a7429d7729c4751c8cb94c232c35795b45c1d108575b5776d0e13709c5c0",
+    "docs/TRANSFER_DRIVER_TECHNICAL_SPEC_V1_0.md": "1b949f80d69f9933e5665d3931131329a615a809d4ca24b847e1a1993bec1a08",
+    "docs/TECHNICAL_DECISIONS_V1_0_PROPOSED.md": "edb3cf9a26b40cea20e4afff8865a6f5c7dc7bfbd3cbdd8f0a73e3965d828f09",
+    "admin/src/main/java/ru/transferservis/admin/data/RegistrationReview.java": "94f73b6adb94056b31d271b227f59848f34f1806c518f033c3e7211ea92ac22a",
+    "admin/src/main/java/ru/transferservis/admin/ui/ReviewPanel.java": "f4eb47fabffe1101eb4ac21bd2220d97eccbe9aeb94e3361a080996094cd72af"
+  },
+  "approvalRequiredFor": [
+    "vehicle_rules.manage and vehicles.approve_exception split; no automatic dispatcher grants",
+    "pin rule at first vehicle save, preserve across unrelated revisions",
+    "exact proposed API/parameters, trusted assessment and exception flow"
+  ],
+  "boundaries": {
+    "applicationCodeChanged": false,
+    "newApiImplemented": false,
+    "newRightsGranted": false,
+    "newMigrationsCreated": false,
+    "runtimeRulesSeeded": false,
+    "remoteStateAudited": false,
+    "remoteMigrationPerformed": false,
+    "mergePerformed": false,
+    "deployPerformed": false,
+    "g1Paused": true,
+    "d4ThroughD7Approved": false
+  },
+  "toolNotes": [
+    "Execution environment restored through wait_for_environment; worktree and approved sources checked.",
+    "Initial aggregated reads exceeded output limit; relevant sources re-read in smaller sections.",
+    "Search included nonexistent driverEligibilityService.js; verified actual availability/assignment paths from repository instead.",
+    "Current checks are baseline regression/schema-document validation, not tests of future API."
+  ]
+}

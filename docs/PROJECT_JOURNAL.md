@@ -3283,3 +3283,52 @@ in_progress handoff остаются незавершёнными; нового 
 Android принимает отдельный receipt в Driver PR14. Исторический schema scope
 дополнен ссылкой на текущий write API. Первая попытка такого docs patch не
 нашла заголовок и не изменила файл; после чтения точного заголовка применена.
+
+
+## Следующий Admin/system-class этап: аудит и проект контракта — 2026-11-17
+
+По поручению «Продолжаем» среда восстановлена wait_for_environment, сверены
+AGENTS, ТЗ/D1–D3, owner decisions, план и финальные записи предыдущего этапа.
+Отдельные ветки arch/g2-admin-classification-contract обоих repo созданы от
+проверенных feature trees backend56693ae2/Driver2cebbc55; remote parents
+5adfd2a6 и57f69b30 совпадают с локальными деревьями.
+
+Сверка выявила8 открытых blockers следующего внедрения: Admin metadata/DTO
+без года/trusted результата и null→empty class; approval и line/assignment SQL
+без новых trusted guards;0019 FK/minYear не представляют модель-основание
+исключения; общая revision не должна автоматически выбирать новое правило;
+evaluator не подтверждает кузов/notes; права/API авторства не выбраны; BEV
+обзор121 строк не завершён. Это не объявление исправления или production
+эксплуатации найденного. Runtime код в этом шаге не меняется.
+
+Подготовлены подробный ADMIN_VEHICLE_CLASSIFICATION_CONTRACT_PROPOSAL_2026-11-17.md,
+машиночитаемый OpenAPI и audit JSON в backend; Android next-step документ
+связывает их с формой/допуском и критериями приёмки. Предложены новые права
+vehicle_rules.manage/vehicles.approve_exception без auto-grant; текущий
+vehicles.verify для проверки параметров; правило закрепляется при первом
+сохранении автомобиля, сохраняется при unrelated revisions, смена make/model/
+year использует текущую версию. Сопоставление той же марки, immutable assessment,
+условия/документы и hard BEV/business-body guards; класс только от сервера.
+Старый approved route тоже обязан проверять trusted результат в будущей SQL.
+
+Новые права и момент фиксации версии ожидают явного решения владельца. Это
+не повтор бизнес-вопросов, уже решённых им. AGENTS п.3 запрещает заменять
+отсутствующее решение предположением; owner decisions требуют согласованный
+контракт правил до реализации. Независимая подготовка завершена до запроса;
+handlers/grants/DDL/seed не вводились. Предлагаемый контракт не является
+разрешением выпуска или скрытым расширением OWNER-only STAGING.
+
+Проверки baseline сейчас:5 Node test entry points PASS (classifier,store,
+Driver write contract,admin authorization,moderation flow),6 Python reference
+cases PASS,8 Driver/5 Admin security guards PASS. OpenAPI3.1 JSON schemas и
+local refs корректны,5 операций,4 valid/8 rejected synthetic request examples.
+Это проверки документа/прежнего кода, не выполнение будущих API. Новых APK,
+полного backend или Android CI в docs-only шаге нет. Предыдущие CI44062029259/
+44060885312 остаются evidence своих точных code SHA, не новой реализации.
+
+Первое агрегированное чтение превысило output limit; нужные источники
+перечитаны малыми частями. Поиск включил отсутствующий driverEligibilityService
+путь; проверены реальные availability/assignment источники. Секреты/приватные
+материалы не читались. Все будущие runtime checks перечислены отдельно.
+G1paused,D4–D7pending; нет remote state audit/migration/real documents/merge/
+deploy. Полный dispatcher in_progress handoff/BEV обзор не завершены.
