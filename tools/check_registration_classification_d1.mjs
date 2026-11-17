@@ -34,7 +34,13 @@ try {
   const triggers = [...sql.matchAll(/^CREATE TRIGGER[\s\S]*?END;/gm)].map(m => m[0]);
   assert.equal(triggers.length, 2);
   const ordinary = sql.replace(/^CREATE TRIGGER[\s\S]*?END;/gm, '').replace(/--[^\n]*/g, '').split(';').map(s => s.trim()).filter(Boolean);
-  await DB.batch([...ordinary, ...triggers].map(statement => DB.prepare(statement)));
+  const statements = [...ordinary, ...triggers];
+  await assert.rejects(DB.batch([...statements.map(statement => DB.prepare(statement)),
+    DB.prepare('SELECT * FROM intentionally_missing_schema_fixture')]));
+  assert.equal((await DB.prepare('PRAGMA table_info(vehicles)').all()).results.some(row => row.name === 'model_year'), false);
+  assert.deepEqual((await DB.prepare('SELECT * FROM document_resources ORDER BY id').all()).results, documents);
+  assert.deepEqual(await getVehicleClassificationSnapshot({ DB }, 'vehicle_fixture001', 1), history);
+  await DB.batch(statements.map(statement => DB.prepare(statement)));
   assert.deepEqual(await DB.prepare("SELECT id,driver_id,vin,plate,make,model,class,capacity,status,revision FROM vehicles WHERE id='vehicle_fixture001'").first(), original);
   assert.deepEqual((await DB.prepare('SELECT * FROM document_resources ORDER BY id').all()).results, documents);
   assert.deepEqual(await getVehicleClassificationSnapshot({ DB }, 'vehicle_fixture001', 1), history);
@@ -47,5 +53,6 @@ try {
   await assert.rejects(DB.prepare("UPDATE vehicles SET status='approved' WHERE id=?1").bind(draft.id).run());
   await assert.rejects(DB.prepare('UPDATE vehicle_classification_snapshots SET class=class').run());
   console.log(JSON.stringify({ engine: 'native local workerd/D1', registrationSchemaUpgrade: 'PASS',
-    populatedUpgradePreserved: true, unclassifiedDraftSupported: true, ownerBoundRead: true, approvalWithoutClassBlocked: true }));
+    populatedUpgradePreserved: true, failedUpgradeRolledBack: true, unclassifiedDraftSupported: true,
+    ownerBoundRead: true, approvalWithoutClassBlocked: true }));
 } finally { local.sqlite.close(); await mf.dispose(); }
