@@ -2,11 +2,12 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readdirSync, readFileSync } from 'node:fs';
 
-export function sqliteD1() {
+export function sqliteD1({ throughMigration = Infinity } = {}) {
   const sqlite = new DatabaseSync(':memory:');
   sqlite.exec('PRAGMA foreign_keys = ON');
   const directory = new URL('../../migrations/', import.meta.url);
   for (const file of readdirSync(directory).filter(x => x.endsWith('.sql')).sort()) {
+    if (Number(file.slice(0, 4)) > throughMigration) continue;
     sqlite.exec(readFileSync(new URL(file, directory), 'utf8'));
   }
   function execute(statement, method) {

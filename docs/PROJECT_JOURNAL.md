@@ -3165,3 +3165,57 @@ VEHICLE_CLASSIFICATION_VERSION_VERIFICATION_2026-11-17.json. Последующ�
 линии/поездки/Android. Ни snapshot candidate, ни CSV не дают допуска на линию.
 Не выполнялись seed, remote migration, реальные документы, merge/deploy.
 Полный обзор электрических исполнений и интеграция остаются дальнейшей работой.
+
+
+## Подготовка schema/чтения регистрации к системному классу — 2026-11-17
+
+По поручению «Далее» создана отдельная ветка arch/g2-classifier-registration-schema
+от проверенного version store. Выявлена необходимая зависимость: исходный
+vehicles.class NOT NULL не позволяет draft неизвестной модели без фиктивного
+класса. Миграция0020 снимает NOT NULL через DROP COLUMN/ADD COLUMN с временным
+сохранением реальных классов, без DROP TABLE. Добавлены nullable model_year
+и powertrain, triggers запрета approved без класса. Старые значения не меняются.
+Репозиторий поддерживает draft без класса и внутренние декларации; GET Driver me
+отдаёт новые поля и null-класс. Внутренний metadata read ограничен владельцем.
+
+8 новых actual SQLite/HTTP cases PASS: заполненная база19 с документами, фото,
+проверками, назначением, immutable snapshot сохранила все связанные таблицы
+и старые значения после0020; integrity/FK PASS, rollback восстанавливает старую
+схему/данные; nulldraft и JSON read, owner-bound read, constraints проверены.
+Первый прогон после добавления новых полей дал2 ошибки теста: новая функция
+чтения была вызвана до миграции на старой19-схеме. Проверка исправлена на прямое
+сравнение полных старых строк до/после, а новый repository читается после0020.
+Это не поддержка нового кода на немигрированной базе. Был указан отсутствующий
+путь miniflare database.worker.js при поиске реализации; новый native fixture
+готовит SQL конкретной миграции и проверяет upgrade напрямую на D1.
+
+Миграции smoke20 PASS, существующие registration и12 version-store cases PASS.
+Локальный npm test вновь дошёл до OWNER CLI и остановился на sandbox EPERM;
+не ослабляется и должен пройти полный CI. Добавлены72-й npm script и native
+populated D1 upgrade step. Публичные POST/PATCH пока принимают прежний класс
+от водителя, Android DTO не готов к null, полноценная интеграция ещё не выполнена.
+Нет подтверждения документов, новых guards линии/поездки, seed/реальных данных,
+remote migration/merge/deploy. Данные BEV121 ещё не полностью проверены.
+
+
+## Schema/чтение регистрации: итоговый CI PASS — 2026-11-17
+
+Source0de3ffd83e9adebc1c2409bce9f0a2082733c3bd,
+tree1759e9b423af9e7693e0a2d7a6c61f4e668bb345,
+CI44055860164/job133944966595 SUCCESS.72 npm test scripts,8 новых actual
+SQLite/HTTP cases,20 migrations,12 D3 preflight,6 reference tests,8 native
+D1 workflows,6 protected CLI scenarios,audit0 и Worker dry-run PASS.
+Native D1 подтвердил сохранность populated upgrade19→20, rollback намеренной
+ошибки, null draft, owner-bound read и запрет approved без класса.
+Первый run44055638704 отменён после добавления rollback проверки, не считается
+финальным PASS. Локальный EPERM не обходился; полный CLI проверил CI.
+
+Backend Draft PR34, local/remote tree parity проверена. Точные hashes и
+границы в VEHICLE_REGISTRATION_SCHEMA_VERIFICATION_2026-11-17.json.
+Следующие изменения только docs [skip ci], проверенный code SHA не подменять.
+Публичные POST/PATCH сохраняют прежний driver-supplied vehicleClass и не
+принимают modelYear; Android DTO ещё не готов к null. Реализованы только
+storage/read prerequisite, не полная классификация, не проверка документов,
+не line/trip guards. Не включать null drafts через старые клиенты.
+Нет seed/полного BEV обзора/remote migration/merge/deploy/реальных данных,
+G1paused. Далее согласованно обновить API записи/клиент и trusted moderation.
