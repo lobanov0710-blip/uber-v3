@@ -464,6 +464,8 @@ export async function advanceDriverOrder(
                 AND a.state = 'active'
                 AND a.revoked_at IS NULL
                 AND a.phase = 'in_trip'
+                AND EXISTS (SELECT 1 FROM vehicles v WHERE v.id=a.vehicle_id
+                  AND v.class IS NOT NULL AND v.status IN ('approved','photo_check_required'))
             )
           )
       `)

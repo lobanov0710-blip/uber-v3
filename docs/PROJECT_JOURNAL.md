@@ -3219,3 +3219,67 @@ storage/read prerequisite, не полная классификация, не п
 не line/trip guards. Не включать null drafts через старые клиенты.
 Нет seed/полного BEV обзора/remote migration/merge/deploy/реальных данных,
 G1paused. Далее согласованно обновить API записи/клиент и trusted moderation.
+
+
+## Driver write API: класс системы и сброс допуска — 2026-11-17
+
+По поручению «Далее» продолжен утверждённый G2: отдельная ветка
+arch/g2-driver-system-class-contract от schema0020. POST/PATCH больше не
+принимают vehicleClass от водителя; POST требует numeric modelYear, draft
+имеет null-класс. Фактическая смена марки/модели/года атомарно очищает класс,
+отправляет approved/photo_check_required на pending_review, отключает линию
+активного автомобиля и пишет минимальный аудит. Audit failure откатывает batch.
+SQL записи повторно требует активного driver; revision/ownership сохранены.
+При активном назначении ACK требует ручного диспетчерского переназначения;
+phase и оба пути completion блокируются до восстановления допуска. Назначение
+не отменяется/не завершается автоматически. Это не законченный handoff уже
+идущего заказа и не проверка документов/классификация текущим справочником.
+
+Восемь новых real SQLite/HTTP cases PASS, existing registration PASS; phase
+repository/service, terminal SQLite7 и schema8 regression cases PASS. Первая
+проверка legacy completion вызвала функцию неверной сигнатурой; исправлен
+именно тест, затем8/8 PASS. Новый native Miniflare/D1 harness добавлен в CI,
+73-й npm script включён в полный набор. Локальный npm test достиг OWNER CLI,
+но protected child-process scenarios не прошли в sandbox (ограничение запуска
+дочернего Node); CI обязан выполнить полный набор без пропусков/ослаблений.
+Повторно8/8 и registration PASS после SQL active-account predicate; diff check
+PASS. При восстановлении контекста один агрегированный вывод инструмента
+превысил лимит: результат CI не предполагался, перечитан из API/локального лога.
+
+Android зависимая форма опубликована отдельно: Draft PR14, source
+58102355b24201f6eba06f2d5190341c7541be06, CI44060885312 ещё выполняется.
+Подробный контракт/границы: DRIVER_SYSTEM_CLASS_CONTRACT_2026-11-17.md.
+Trusted moderation/current-rule integration/legacy year guard, full in_progress
+handoff и оставшийся BEV обзор впереди; G1paused, D4–D7 не утверждены.
+Нет real data/seed/remote migration/merge/deploy. Финальный CI пока не объявлен.
+
+
+## Driver system-class API: полный CI PASS — 2026-11-17
+
+Source57c17bbc67b5c8aef3f137d9c13341f619dbd8a2,
+tree87b4af13798cb318bfcf4b9f8172eece63f88484,
+CI44062029259/job133966070138 SUCCESS.73 npm scripts (включая8 новых actual
+SQLite/HTTP cases),20 migrations,12 preflight,6 reference cases,9 native
+workerd/D1 workflows,6 protected OWNER CLI scenarios, audit0, Worker dry-run
+PASS. Native D1 подтвердил запрет клиентского класса, сохранение года,
+сброс класса/линии, manual-dispatcher flag и полный откат при ошибке аудита.
+Локальное ограничение CLI не обходилось; assertions прошли в штатном CI.
+
+Draft PR35 https://github.com/lobanov0710-blip/uber-v3/pull/35, basePR34.
+Публикация: первый JSON read не распарсился из-за prefix warning; повторный
+агрегированный read оказался неполным. Обязательная tree parity остановила
+публикацию, исходники перечитаны отдельно, финальное local/remote tree точное.
+Ошибочный промежуточный Git tree не привязан к ветке/PR; branch обновлён
+только точным source. Это техническая ошибка чтения, не ослабление проверки.
+
+Receipt: DRIVER_SYSTEM_CLASS_API_VERIFICATION_2026-11-17.json. Последующий
+docs-only commit не подменяет проверенный code SHA. Trusted moderation/year
+verification/current-rule integration, legacy year admission и полный
+in_progress handoff остаются незавершёнными; нового допуска по справочнику
+не выдавалось. Android CI44060885312 ещё проверяется отдельно. G1paused,
+нет реальных документов, seed, remote migration, merge или deploy.
+
+Уточнение записи: backend receipt подтверждает только серверные проверки;
+Android принимает отдельный receipt в Driver PR14. Исторический schema scope
+дополнен ссылкой на текущий write API. Первая попытка такого docs patch не
+нашла заголовок и не изменила файл; после чтения точного заголовка применена.

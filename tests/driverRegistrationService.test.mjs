@@ -267,7 +267,8 @@ function createFakeDb() {
               capacity,
               baggageCapacity,
               createdAt,
-              usageBasis
+              usageBasis,
+              modelYear
             ] =
               this.args;
 
@@ -283,6 +284,7 @@ function createFakeDb() {
               color,
               class:
                 vehicleClass,
+              model_year: modelYear,
               capacity,
               baggage_capacity:
                 baggageCapacity,
@@ -582,8 +584,8 @@ const vehicleInput = {
   color:
     "Черный",
 
-  vehicleClass:
-    "comfort",
+  modelYear:
+    2020,
 
   capacity:
     4,
@@ -653,6 +655,7 @@ assert.notEqual(
 
 DB.state.vehicles[0].status =
   "approved";
+DB.state.vehicles[0].class = "comfort";
 
 DB.state.profile.active_vehicle_id =
   firstVehicle.vehicle.id;

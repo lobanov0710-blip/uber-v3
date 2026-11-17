@@ -843,6 +843,13 @@ export async function advanceDriverAssignmentPhase(
 
           ${verificationGuard}
 
+          -- A registration-data change clears the system class and requires
+          -- review. The old assignment must wait for manual dispatcher action.
+          AND EXISTS (
+            SELECT 1 FROM vehicles v WHERE v.id = a.vehicle_id
+              AND v.class IS NOT NULL AND v.status IN ('approved','photo_check_required')
+          )
+
           -- Immediate photo-control blocks further operational movement, even if
           -- the check was created after the service precheck. Do not cancel the order.
           AND NOT EXISTS (

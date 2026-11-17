@@ -9,6 +9,7 @@ on:
       - 'arch/g2-admin-photo-control-read'
       - 'arch/g2-classifier-version-store'
       - 'arch/g2-classifier-registration-schema'
+      - 'arch/g2-driver-system-class-contract'
   pull_request:
     branches:
       - main
@@ -63,6 +64,8 @@ jobs:
         run: node tools/check_vehicle_classification_d1.mjs
       - name: Verify populated registration schema upgrade with local workerd and D1
         run: node tools/check_registration_classification_d1.mjs
+      - name: Verify Driver system-class registration contract with local workerd and D1
+        run: node tools/check_driver_class_contract_d1.mjs
       - name: Verify protected OWNER CLI with actual Wrangler import output
         run: python3 tools/check_owner_phone_provisioning.py
       - name: Bundle Worker without deploying
