@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-17",
+  "scope": "driver-system-class-write-api-and-change-invalidation",
+  "status": "ci-verified",
+  "sourceCommit": "57c17bbc67b5c8aef3f137d9c13341f619dbd8a2",
+  "sourceTree": "87b4af13798cb318bfcf4b9f8172eece63f88484",
+  "workflowRun": 44062029259,
+  "workflowJob": 133966070138,
+  "conclusion": "success",
+  "checks": {
+    "npmTestScripts": 73,
+    "newActualSqliteHttpCases": 8,
+    "migrationSmokeCount": 20,
+    "preflightCases": 12,
+    "referenceTests": 6,
+    "nativeD1Workflows": 9,
+    "protectedOwnerCliScenarios": 6,
+    "dependencyAuditVulnerabilities": 0,
+    "workerBundleDryRun": true
+  },
+  "sourceSha256": {
+    ".github/workflows/backend-tests.yml": "03f7367f4bd80de27ec776c235e4e114d266f46930150db2af7a7c810dc2c014",
+    "package.json": "b8fd93cbe5eee353ef5ff7cf08babbfdb23d4c8edde18a0fec9350dcc58ee3f9",
+    "src/core/driverRegistrationRepository.js": "201f64d85e1f6013195918a4cb659987b6d7e628b914a7e0ac835d91da37a7ab",
+    "src/core/driverRegistrationService.js": "8b2c1bd816822d447b8b6177a2ef0d55b8ff6ef6cc91b8458819a1357d2fb982",
+    "src/core/driverTripOperationalRepository.js": "eda721f44a174a4d32d3c7af26a0429e737f9a0f18ad3a91132142aa6ae0733d",
+    "src/core/orderRepository.js": "0ec9f4b4f75c2cc3c7ef4812c15cb16a32f30aaa16a920b575ad4bf40c2a3974",
+    "src/core/orderTerminalMutationRepository.js": "1a4394349d29b3ffdc785fbcfd78ff661781353b1991dfb1b713fdfa4b8dfab8",
+    "src/router.js": "8786e7ea337b6d3b81cfd2b716d9a168142d247d97a52344d3687dd990ad5542",
+    "tests/driverRegistrationService.test.mjs": "d789ee96158a07cf672b07fc063010f91a1725f90c20c2607c1a8cc0e7ddd7bb",
+    "tests/driverSystemClassContract.test.mjs": "72f85a67baa4c64e1ac186f3f2e64831acac950d7911ac74a328bb40802bf465",
+    "tools/check_driver_class_contract_d1.mjs": "5d7e22fba0eb8b4463705e23a5065748fc1367f151861aba88405cdedd1df85e"
+  },
+  "verifiedBehavior": [
+    "Driver-supplied class/verification flags rejected; required numeric year; null-class draft.",
+    "Atomic class invalidation, pending review, line off and minimal audit.",
+    "Stale/foreign/suspended driver cannot mutate; audit failure rolls back whole change.",
+    "Active assignment flag requires human dispatcher; phase and both completion paths blocked."
+  ],
+  "androidDependency": {
+    "pullRequest": "https://github.com/lobanov0710-blip/TransferDriver/pull/14",
+    "sourceCommit": "58102355b24201f6eba06f2d5190341c7541be06",
+    "workflowRun": 44060885312,
+    "verification": "Separate Android CI and receipt in Driver PR14; not certified by backend receipt."
+  },
+  "localLimits": [
+    "Full local npm test stopped on protected OWNER CLI child-process sandbox restriction; full CI passed without weakened assertions.",
+    "Initial legacy-completion fixture used a wrong function signature; corrected test and all eight pass.",
+    "Oversized publishing read omitted files and altered one file; tree parity prevented branch publication. Individually re-read sources and final local/remote tree match before branch/PR creation."
+  ],
+  "boundaries": {
+    "trustedDocumentVerificationAdded": false,
+    "currentRuleRuntimeClassificationAdded": false,
+    "legacyUnverifiedYearAdmissionGuardAdded": false,
+    "fullInProgressDispatcherHandoffAdded": false,
+    "allPowertrainVersionsReviewed": false,
+    "catalogSeedActivated": false,
+    "remoteMigrationPerformed": false,
+    "mergePerformed": false,
+    "deployPerformed": false,
+    "g1Paused": true
+  },
+  "limits": [
+    "Intermediate prerequisite, not production-ready full classification.",
+    "Old clients sending vehicleClass are incompatible; coordinated API/client activation required.",
+    "Existing assignment remains for dispatcher action; no automatic replacement, cancellation or fake completion."
+  ]
+}

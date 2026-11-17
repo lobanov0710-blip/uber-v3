@@ -3252,3 +3252,34 @@ Android зависимая форма опубликована отдельно:
 Trusted moderation/current-rule integration/legacy year guard, full in_progress
 handoff и оставшийся BEV обзор впереди; G1paused, D4–D7 не утверждены.
 Нет real data/seed/remote migration/merge/deploy. Финальный CI пока не объявлен.
+
+
+## Driver system-class API: полный CI PASS — 2026-11-17
+
+Source57c17bbc67b5c8aef3f137d9c13341f619dbd8a2,
+tree87b4af13798cb318bfcf4b9f8172eece63f88484,
+CI44062029259/job133966070138 SUCCESS.73 npm scripts (включая8 новых actual
+SQLite/HTTP cases),20 migrations,12 preflight,6 reference cases,9 native
+workerd/D1 workflows,6 protected OWNER CLI scenarios, audit0, Worker dry-run
+PASS. Native D1 подтвердил запрет клиентского класса, сохранение года,
+сброс класса/линии, manual-dispatcher flag и полный откат при ошибке аудита.
+Локальное ограничение CLI не обходилось; assertions прошли в штатном CI.
+
+Draft PR35 https://github.com/lobanov0710-blip/uber-v3/pull/35, basePR34.
+Публикация: первый JSON read не распарсился из-за prefix warning; повторный
+агрегированный read оказался неполным. Обязательная tree parity остановила
+публикацию, исходники перечитаны отдельно, финальное local/remote tree точное.
+Ошибочный промежуточный Git tree не привязан к ветке/PR; branch обновлён
+только точным source. Это техническая ошибка чтения, не ослабление проверки.
+
+Receipt: DRIVER_SYSTEM_CLASS_API_VERIFICATION_2026-11-17.json. Последующий
+docs-only commit не подменяет проверенный code SHA. Trusted moderation/year
+verification/current-rule integration, legacy year admission и полный
+in_progress handoff остаются незавершёнными; нового допуска по справочнику
+не выдавалось. Android CI44060885312 ещё проверяется отдельно. G1paused,
+нет реальных документов, seed, remote migration, merge или deploy.
+
+Уточнение записи: backend receipt подтверждает только серверные проверки;
+Android принимает отдельный receipt в Driver PR14. Исторический schema scope
+дополнен ссылкой на текущий write API. Первая попытка такого docs patch не
+нашла заголовок и не изменила файл; после чтения точного заголовка применена.
