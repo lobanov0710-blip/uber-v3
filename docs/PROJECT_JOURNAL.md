@@ -2769,3 +2769,64 @@ Admin правило/исключение, полный dispatcher handoff уж�
 Следующий этап — trusted Admin/system classification в рамках решений
 владельца. G1paused,D4–D7pending. Нет real documents/seed/remote migration/
 merge/deploy. Каноническая синхронизация меняет только append журнала.
+
+
+## Следующий Admin/system-class этап: контракт перед реализацией — 2026-11-17
+
+По «Продолжаем» восстановлена среда, сверены AGENTS/ТЗ/D1–D3/owner decisions/
+план/журнал и фактический код проверенных Driver PR14/backend PR35.
+Новые бизнес-ответы вместо владельца не выбирались. Конкретные новые права
+и момент фиксации версии отсутствуют среди утверждений: AGENTS п.3 требует
+явного решения, owner decisions требуют согласованный контракт перед кодом.
+Независимая подготовка завершена: проект API/прав/хранения/приёмки и аудит.
+
+Backend Draft PR36 https://github.com/lobanov0710-blip/uber-v3/pull/36,
+branch arch/g2-admin-classification-contract, source
+0833af7b87d6d6f4ad060cbce076cb8ec14d7ba6,
+tree2171eb54326beba2ec55a5b8116bec40357886fa, basePR35.
+Документы ADMIN_VEHICLE_CLASSIFICATION_CONTRACT_PROPOSAL_2026-11-17.md,
+admin-vehicle-classification-v1.proposed.openapi.json и audit JSON.
+Android Draft PR15 https://github.com/lobanov0710-blip/TransferDriver/pull/15,
+source575691bc1d0c755238ac38ad821f013b793d4b8c,
+tree70bd068f6459d4a3b721f4b8bfaa4760aebc713a, basePR14.
+ADMIN_VEHICLE_CLASSIFICATION_NEXT_STEP_2026-11-17.md, план/PRODUCT/журнал
+обновлены. Published trees точно совпали с local, branch leases/parents
+проверены; изменения только docs/PRODUCT.
+
+Предлагается: существующий vehicles.verify для подтверждения параметров;
+vehicle_rules.manage для общих правил; vehicles.approve_exception вместе с
+vehicles.verify для индивидуального исключения. Новые grants диспетчерам
+автоматически не выдаются; OWNER MFA сохраняется. Правило закрепляется при
+первом сохранении машины; служебная revision/цвет/фото не выбирают текущую
+версию. Смена make/model/year использует текущую версию по уже принятому
+бизнес-решению. Система определяет класс из правила, не из формы Admin;
+сопоставление хранит реальную модель и модель-основание той же марки.
+BEV/запрещённый бизнес-кузов исключением не обходятся, Li Auto L7/L9 сохранены.
+Эти параметры являются предложением; реализация ждёт явного утверждения.
+
+Аудит8 открытых blockers: metadata/DTO без trusted года/классификации;
+vehicle approval без нового trusted guard; availability/assign/reassign SQL
+без подтверждённого года/assessment;0019 FK/minYear не представляют исключение;
+общая revision не подходит для автоматического выбора новой версии;
+candidate evaluator не проверяет body/notes/documents; права/API не выбраны;
+полный BEV обзор121 строк не завершён. Это не исправленные в docs-only PR
+функции и не проведённый remote/production exploit audit.
+
+Проверки сейчас:5 baseline Node entry points PASS (classifier, version store,
+Driver write contract, admin authorization, moderation flow);6 reference
+Python cases PASS; Driver8/Admin5 security guards PASS. OpenAPI3.1/schema/
+local refs PASS:5 операций,4 valid/8 invalid synthetic examples. Local links,
+JSON и docs-only scope/diff checks PASS. Ошибки чтения (output truncation и
+один отсутствующий search path) исправлены перечитыванием реальных источников.
+Точные source hashes и команды/границы — в audit JSON. Это не runtime тесты
+новых API; handlers/grants/DDL/seed не добавлялись. Новых APK/полного CI в этом
+docs-only шаге нет; предыдущие CI44062029259/44060885312 принадлежат прежним
+exact code SHA и не объявлены результатом новой реализации.
+
+Следующий зависимый шаг после решения владельца: trusted assessment + добавочная
+проверенная D1 migration, guards approval/line/assignment/phase/done, затем
+Admin DTO/форма подтверждения/read-only class и обязательные native checks.
+BEV inventory/legacy transfer/full in_progress handoff остаются незавершёнными.
+OWNER-only STAGING allowlist не расширен. G1paused,D4–D7pending; нет real
+documents, remote migration, merge/deploy. Каноническая синхронизация — только
+append журналов, без изменения кода/прав/ТЗ.
