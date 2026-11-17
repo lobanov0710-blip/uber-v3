@@ -235,3 +235,13 @@ Admin UI остаются следующими частями. Пустые veri
 Правила не активированы seed, OWNER-only phone allowlist не расширен.
 Итог проверки source/CI — ADMIN_VEHICLE_RULE_API_VERIFICATION_2026-11-17.json;
 результат проверки этой части не означает полное внедрение классификатора.
+
+
+Следующий prerequisite PR40 реализует внутреннее immutable assessment storage,
+проверку matching STS evidence, actual OWNER MFA, CAS/idempotency/audit и
+permanent invalidation при изменении параметров/материала. Public review POST,
+GET trusted integration и итоговые admission guards пока не подключены.
+Подробности/следующие части: [этап storage](TRUSTED_VEHICLE_ASSESSMENT_STORAGE_2026-11-17.md).
+OpenAPI read schema дополнена обязательным color field с legacy null, согласно
+прямой поправке владельца и уже действующему GET. Новое поле в review write
+не добавлено; обязательность цвета на public vehicle save сохраняется.

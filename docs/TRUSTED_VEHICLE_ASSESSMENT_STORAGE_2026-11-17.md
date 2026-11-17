@@ -26,3 +26,8 @@ Server-internal recordTrustedVehicleAssessment проверяет actual staff/s
 
 
 Hard business body exception проверяется по фактической модели, не по basis: L8 не получает business crossover через правило L7. Это исправлено при ручном анализе; регрессия проверяет JS результат и SQL отказ, включена также в native workflow. Первоначальный source/CI до этого исправления не подменяет итоговую проверку.
+
+
+## Итоговый CI PASS
+
+Source4a6440d669ab6a2d18a5099adb4bd3363ba13280, tree35a0c03aa216878d42f387139a6229a7b0e75f94; CI44114884841/job134150145663 SUCCESS, все27 steps.76 npm scripts,16 новых cases,23 migrations,12 preflight,6 reference,12 native D1 workflows,6 protected CLI,audit0,Worker dry-run PASS. Native явно проверил actualVehicleBodyGuard. Первый run44114419676 также прошёл, но не заменяет итоговый: ручной анализ выявил basis/actual model ошибку, регрессия добавлена и весь CI повторён. Точные hashes/границы — TRUSTED_VEHICLE_ASSESSMENT_STORAGE_VERIFICATION_2026-11-17.json. Последующий docs-only checkpoint не меняет проверенный code source.

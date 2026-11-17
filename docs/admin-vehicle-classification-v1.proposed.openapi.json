@@ -1822,12 +1822,25 @@
                     "type": "null"
                   }
                 ]
+              },
+              "color": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Required response field; legacy null is retained for correction. Public vehicle saves require a nonempty color."
               }
             },
             "required": [
               "make",
               "model",
-              "modelYear"
+              "modelYear",
+              "color"
             ]
           },
           "verifiedParameters": {
