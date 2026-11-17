@@ -94,8 +94,10 @@ function mapVehicle(row) {
     plate: clean(row.plate),
     make: clean(row.make),
     model: clean(row.model),
+    modelYear: row.model_year ?? null,
+    powertrain: row.powertrain ?? null,
     color: row.color == null ? null : clean(row.color),
-    vehicleClass: clean(row.class).toLowerCase(),
+    vehicleClass: row.class == null ? null : clean(row.class).toLowerCase(),
     capacity: Number(row.capacity),
     baggageCapacity: clean(row.baggage_capacity).toLowerCase(),
     usageBasis:
@@ -159,6 +161,8 @@ export async function listDriverVehicles(env, driverId) {
           plate,
           make,
           model,
+          model_year,
+          powertrain,
           color,
           class,
           capacity,
@@ -202,6 +206,8 @@ export async function getDriverVehicle(env, driverId, vehicleId) {
           plate,
           make,
           model,
+          model_year,
+          powertrain,
           color,
           class,
           capacity,
@@ -223,6 +229,24 @@ export async function getDriverVehicle(env, driverId, vehicleId) {
       .first();
 
   return mapVehicle(row);
+}
+
+// Internal, owner-scoped metadata for the upcoming system-classified contract.
+// Values are declarations only; they do not constitute document verification.
+export async function getDriverVehicleClassificationDetails(env, driverId, vehicleId) {
+  const driver = requireText(driverId, "id");
+  const vehicle = requireText(vehicleId, "vehicleId");
+  const row = await requireDatabase(env).prepare(`
+    SELECT id, driver_id, make, model, model_year, powertrain, class, revision
+    FROM vehicles WHERE id = ?1 AND driver_id = ?2
+  `).bind(vehicle, driver).first();
+  if (!row) return null;
+  if (row.model_year !== null && (!Number.isSafeInteger(row.model_year) || row.model_year < 1 || row.model_year > 9999)) {
+    throw new Error("Invalid stored vehicle year");
+  }
+  if (!Number.isSafeInteger(row.revision) || row.revision < 1) throw new Error("Invalid stored vehicle revision");
+  return { vehicleId: row.id, make: row.make, model: row.model, modelYear: row.model_year,
+    powertrain: row.powertrain, vehicleClass: row.class, revision: row.revision };
 }
 
 export async function updateDriverRegistrationProfile(
@@ -330,7 +354,9 @@ export async function insertDriverVehicle(
           revision,
           created_at,
           updated_at,
-          usage_basis
+          usage_basis,
+          model_year,
+          powertrain
         )
         VALUES (
           ?1,
@@ -347,7 +373,9 @@ export async function insertDriverVehicle(
           1,
           ?11,
           ?11,
-          ?12
+          ?12,
+          ?13,
+          ?14
         )
       `)
       .bind(
@@ -358,11 +386,13 @@ export async function insertDriverVehicle(
         requireText(vehicle.make, "make"),
         requireText(vehicle.model, "model"),
         vehicle.color == null ? null : clean(vehicle.color),
-        requireText(vehicle.vehicleClass, "class"),
+        vehicle.vehicleClass == null ? null : requireText(vehicle.vehicleClass, "class"),
         Number(vehicle.capacity),
         requireText(vehicle.baggageCapacity, "baggageCapacity"),
         createdAt,
-        requireText(vehicle.usageBasis, "usageBasis")
+        requireText(vehicle.usageBasis, "usageBasis"),
+        vehicle.modelYear ?? null,
+        vehicle.powertrain ?? null
       )
       .run();
 
