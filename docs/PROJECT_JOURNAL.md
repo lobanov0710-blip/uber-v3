@@ -2889,3 +2889,61 @@ Admin API правил/assessment и admission guards, затем Admin DTO/фо
 Нет seed/реальных материалов/remote migration/merge/deploy/расширения
 OWNER-only STAGING; G1paused,D4–D7pending. Каноническая запись меняет только
 AGENTS (принятое правило владельца) и append журнала; runtime код не переносит.
+
+
+## Указание владельца выполнено: цвет кузова обязателен — 2026-11-17
+
+Прямое указание: «Исправить: цвет кузова на обязательно». Согласование
+повторно не требовалось. В отдельных fix/vehicle-color-required ветках Driver
+и backend поле стало обязательным: label «Цвет кузова», UI блокирует создание/
+редактирование без цвета и строку из пробелов. Backend POST/PATCH требует
+строковый color1..80 после trim без внутренних controls, не принимает missing/
+null/blank/whitespace/non-string. Частичный PATCH без color сохраняет валидный
+имеющийся цвет; legacy отсутствие читается для заполнения, перед сохранением
+его нужно исправить. Readiness возвращает missingColor и не считает такую
+машину завершённой. Неполная дополнительная машина не становится complete;
+прежняя multi-vehicle readiness семантика сохранена.
+
+Driver Draft PR16 https://github.com/lobanov0710-blip/TransferDriver/pull/16,
+verified sourcee5712c969049fb6670fd64863db189f3d32eb038,
+tree0dc4e4c6ebee281e9aba2709e24aa82860971b65,
+CI44089001617/job134058903623 SUCCESS:327 JVM executions (51×3+58×3),
+102 native (41+61),build/lint обеих apps debug/staging/release,security8/5,
+endpoint/signing/AppCheck gates PASS. Existing native create/edit case
+проверил blank/whitespace/очистку цвета без POST/PATCH, затем валидный color в body.
+Первый run успешен. Final docsdb338ea6558aca5bc2f0ab1b9e8fba30db6c3dc6;
+receipt REQUIRED_VEHICLE_COLOR_VERIFICATION_2026-11-17.json.
+
+Backend Draft PR38 https://github.com/lobanov0710-blip/uber-v3/pull/38,
+verified sourcea8a67fd9aaaf32359aa04370ebece424709d87df,
+treea560708c194fd1f9639f7d8d81751f94cfc89745,
+CI44088974938/job134058811280 SUCCESS:74 scripts,10 actual write HTTP cases
+(2 новых по цвету),17 binding regressions,21 migrations,12 preflight,
+6 reference,10 native D1 workflows с requiredColor,6 protected CLI scenarios,
+audit0,Worker dry-run PASS. Readiness проверил7 недопустимых вариантов.
+Final docs8a42c484e9d5eba198250bb049f99aee3d5724e6;
+receipt REQUIRED_VEHICLE_COLOR_API_VERIFICATION_2026-11-17.json.
+
+NativePNG artifact14331817179 скачан по file_id: GitHub ZIP digest
+6b8e47562d6c0d3ed1ed03ede9a5a1d0437748b1dbdc8576eb6a72af3593453e
+совпал, safe extraction/CRC и hashes всех30 PNG с CI PASS. Primary agent
+осмотрел2 vehicle-class light/dark font1.3 кадра: новая подпись читается,
+optional отсутствует, обрезки целевой подписи нет. Это собственный осмотр2,
+не независимый обзор30. DriverAPK14331382948 перечислен с source/digest,
+локально не скачивался; phone upgrade/live Driver не проверялись. Synthetic
+Firebase/debug identity не выдаются за релиз. Raw signed URLs не выводились/
+не включались в журнал. Source hashes, ограничения и provenance в receipts.
+
+План/PRODUCT/scope обновлены, исходный утверждённый ТЗ и старые receipts не
+переписывались. Новое указание уточняет прежний optional цвет. Published/local
+trees сверены, поздние docs-only commits не подменяют verified code SHA.
+Ошибки инструментов (Android worktree/read сначала в backend cwd, неверные
+имена readiness/submit paths) исправлены правильным repo/поиском фактических
+реализаций; неверное ожидание текста ошибки native test исправлено до CI.
+Runtime test assertions не ослаблялись.
+
+Не вводились палитра/цвет по умолчанию/новая миграция/backfill/массовое снятие
+допуска/новые права/изменение класса или pinned-rule логики. G1paused,D4–D7pending,
+нет remote migration/merge/deploy/реальных материалов. Это целевое исправление
+поля; дальнейший trusted Admin classification остаётся отдельной работой.
+Каноническая синхронизация меняет только append журнала.
