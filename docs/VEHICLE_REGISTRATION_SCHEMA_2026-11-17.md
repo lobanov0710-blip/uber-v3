@@ -41,4 +41,8 @@ G1 paused; merge/deploy отсутствуют.
 новый null-class draft, доверенные декларации, authenticated GET Driver me,
 запрет approved без класса, owner-bound metadata read, ограничения полей и
 rollback полной миграции. Добавлена проверка populated upgrade на native D1.
-Итог полного CI и точный code SHA фиксируются отдельно после выполнения.
+Финальный code0de3ffd83e9adebc1c2409bce9f0a2082733c3bd,
+CI44055860164/job133944966595 SUCCESS:72 npm test scripts,20 migrations,
+12 preflight,6 reference,8 native D1 workflows и6 protected CLI scenarios,
+audit0 и Worker dry-run PASS. Native D1 подтвердил populated upgrade и
+rollback ошибки. Receipt: VEHICLE_REGISTRATION_SCHEMA_VERIFICATION_2026-11-17.json.

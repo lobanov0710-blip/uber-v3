@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-17",
+  "scope": "registration-storage-and-read-preparation",
+  "status": "ci-verified",
+  "sourceCommit": "0de3ffd83e9adebc1c2409bce9f0a2082733c3bd",
+  "sourceTree": "1759e9b423af9e7693e0a2d7a6c61f4e668bb345",
+  "workflowRun": 44055860164,
+  "workflowJob": 133944966595,
+  "conclusion": "success",
+  "checks": {
+    "npmTestScripts": 72,
+    "newActualSqliteHttpCases": 8,
+    "migrationSmokeCount": 20,
+    "preflightCases": 12,
+    "referenceTests": 6,
+    "nativeD1Workflows": 8,
+    "protectedOwnerCliScenarios": 6,
+    "dependencyAuditVulnerabilities": 0,
+    "workerBundleDryRun": true,
+    "populatedD1Upgrade": true,
+    "failedD1UpgradeRolledBack": true
+  },
+  "sourceSha256": {
+    "migrations/0020_vehicle_registration_classification_fields.sql": "7708e4614e603c2342a449a09f609ab6b458160963118c32bd8f1ee8a97e3a69",
+    "src/core/driverRegistrationRepository.js": "056a7f3f6010864caf8c5b5737c1dbba30c334259b9cc89f1d7c431a3ffcfc46",
+    "tests/helpers/sqliteD1.mjs": "087e3a42703b7cf32274f6775db120930c4caee9ea088f4dd432782eb7a6f242",
+    "tests/vehicleRegistrationClassificationSchema.test.mjs": "e81a68edaa82b9850a62b30ebba514c46a08fe32a98e06e33631c394a8b221c2",
+    "tools/check_registration_classification_d1.mjs": "11c49e5d0b4f6bf5760473296ff1b846f818f8c9e94e51421ed2b2d6e7348dfc"
+  },
+  "priorRun": {
+    "id": 44055638704,
+    "conclusion": "cancelled",
+    "reason": "Added native failure/rollback test; final run verifies exact final source."
+  },
+  "localLimits": [
+    "Full npm test stopped at existing protected CLI spawnSync EPERM, not recorded as local PASS.",
+    "First expanded schema tests called the new read function against pre-migration schema; fixed to compare original SQL rows and use new reader only after migration."
+  ],
+  "boundaries": {
+    "publicPostPatchClassChoiceRemoved": false,
+    "publicPostPatchAcceptNewFields": false,
+    "androidNullClassSupport": false,
+    "documentVerificationAdded": false,
+    "lineGuardsAdded": false,
+    "tripInterruptionAdded": false,
+    "catalogSeedActivated": false,
+    "allPowertrainVersionsReviewed": false,
+    "remoteMigrationPerformed": false,
+    "mergePerformed": false,
+    "deployPerformed": false,
+    "g1Paused": true
+  },
+  "limits": [
+    "Internal repository can create null-class drafts; old public POST/PATCH contract still requires driver-supplied vehicleClass.",
+    "Existing Android DTO is not ready for null-class drafts. API/client writes must change together before activation.",
+    "Year/powertrain values are declarations, not trusted document verification.",
+    "The new migration preserves old classes and does not implement the required line restriction for unverified year.",
+    "This is a verified prerequisite, not completed registration classification."
+  ]
+}
