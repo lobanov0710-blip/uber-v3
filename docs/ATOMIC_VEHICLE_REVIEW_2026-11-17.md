@@ -28,3 +28,8 @@ Migration0024 создаёт immutable assignment holds, без backfill сущ�
 
 
 При ручном анализе scope invalidation ограничен последней assessment: изменение obsolete evidence из прежней истории не снимает новое одобрение, если current proof уже опирается на другие документы. Old invalidation остаётся в истории. Регрессия11 и native obsoleteEvidenceIsolation проверяют это явно; предшествующий CI не подменяет итоговую проверку исправления.
+
+
+## Итоговая проверка
+
+Source db77501734115d07b5ada4034e09ade6290a0ede, tree ffec930fba73dabfb736c42ba44ac5245d571566; CI44129315936/job134201671230 SUCCESS, все28 steps.77 npm commands,11 new cases,24 migrations,12 preflight,6 reference,13 native D1 workflows,6 protected CLI,audit0,Worker dry-run PASS. Native подтвердил correction/current-rule CAS/history/offline/reapproval hold/оба done paths, audit rollback и obsoleteEvidenceIsolation. Два failed run сохранены: replay fixture без actual authentication и порядок восстановления populated native snapshot. После исправления constraints/gates не ослаблены, весь CI повторён. Receipt ATOMIC_VEHICLE_REVIEW_VERIFICATION_2026-11-17.json содержит source hashes и границы; поздний docs-only checkpoint не подменяет tested code.
