@@ -14,11 +14,22 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def scenario(name, legacy=False):
+def scenario(name, legacy=False, newer_chain=False):
     with tempfile.TemporaryDirectory(prefix='owner-provision-fixture-') as temporary:
         folder = Path(temporary)
         for directory in ('src', 'scripts', 'migrations'):
             shutil.copytree(ROOT / directory, folder / directory)
+        # This protected setup is approved only for the original 18-migration
+        # OWNER phone target. Model that exact deployment in its positive cases;
+        # independently require the unmodified CLI to reject a newer chain.
+        migration_files = list((folder / 'migrations').glob('*.sql'))
+        if newer_chain:
+            assert any(int(p.name[:4]) > 18 for p in migration_files), 'newer-chain fixture absent'
+        else:
+            for migration in migration_files:
+                if int(migration.name[:4]) > 18:
+                    migration.unlink()
+            assert len(list((folder / 'migrations').glob('*.sql'))) == 18
         for filename in ('package.json', 'package-lock.json'):
             shutil.copy2(ROOT / filename, folder / filename)
         (folder / 'node_modules').symlink_to(ROOT / 'node_modules', target_is_directory=True)
@@ -79,6 +90,12 @@ def scenario(name, legacy=False):
         state_path = folder / 'fixture-result.json'
         assert state_path.exists(), name + ': fixture did not finalize; no terminal output disclosed'
         state = json.loads(state_path.read_text())
+        if newer_chain:
+            assert code == 1 and not confirmed and not sent, 'newer schema must stop before provisioning prompts'
+            assert state == {'accounts': 0, 'owners': 0, 'factors': 0, 'bootstrap': 0, 'audits': 0,
+                             'importRequests': 0, 'uploads': 0, 'verifyReads': 0}, 'newer chain performed a write'
+            assert b'FAILED at owner' in output and not re.search(rb'bootstrap_[A-Za-z0-9_-]{43}', output)
+            return {'scenario': 'newer_migration_chain_rejected', 'result': 'PASS'}
         assert confirmed and state['importRequests'] == 1, name + ': expected one confirmed import ' + json.dumps({'confirmed': confirmed, 'answeredPrompts': sorted(sent), 'state': state, 'failedAtOwner': b'FAILED at owner' in output, 'readingTarget': b'Reading the exact STAGING target' in output})
         assert b'Synthetic-Owner-Password-123!' not in output, name + ': hidden password was echoed'
         shown = bool(re.search(rb'bootstrap_[A-Za-z0-9_-]{43}', output))
@@ -95,4 +112,5 @@ def scenario(name, legacy=False):
 
 results = [scenario('new_success', legacy=True)]
 results += [scenario(name) for name in ('new_success', 'existing_success', 'wrong_postcondition', 'import_failure')]
+results += [scenario('new_success', newer_chain=True)]
 print(json.dumps({'engine': 'actual protected CLI + Wrangler 4.125.0 + synthetic loopback SQLite/D1 API', 'scenarios': results, 'realCloudflareRequests': 0, 'rawTerminalOutputDisclosed': False}))

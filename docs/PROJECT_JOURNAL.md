@@ -3122,3 +3122,22 @@ preflight PASS. Полный npm test прошёл предыдущие груп
 пустые, seed и live data не используются; регистрация/Android/автостоп/диспетчер
 не подключены. Подробные границы в VEHICLE_CLASSIFICATION_VERSION_STORE_2026-11-17.md.
 Срез требует итогового CI; merger/deploy/remote migration отсутствуют, G1paused.
+
+
+## Первый CI version store и исправление fixture — 2026-11-17
+
+Draft PR33, remote code3583ca6f9c341730d2a18cb3dcdc63fe6ac6dcf2,
+CI44051103873/job133928833867: новые unit/SQLite/reference/migrations и
+native classification D1 PASS, а protected OWNER provisioning fixture FAIL.
+Причина: защищённая setup-команда допускает ровно18 миграций; fixture начал
+копировать новую0019. Это существующая fail-closed граница, не повод расширять
+OWNER-only scope или разрешать удалённую миграцию0019.
+
+Исправлен только тестовый fixture: пять прежних сценариев моделируют исходный
+18-migration target; добавлен шестой сценарий, где настоящий неизменённый CLI
+на цепочке19 должен отказаться до prompts/import/upload и любых записей.
+Ни одного production/setup условия не ослаблено. Python syntax PASS; исполнение
+реального PTY/Wrangler fixture проверяется новым CI, не объявлено локальным PASS.
+При поиске теста один путь adminOwnerPhoneSetup.test.mjs отсутствовал, далее
+прочитан существующий helper и точное условие state(). Изменения только
+в feature-ветке; remote/production запуск и миграция не выполнялись.
