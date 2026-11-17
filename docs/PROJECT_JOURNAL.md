@@ -3352,3 +3352,83 @@ Admin vehicle classification утверждён с этой поправкой: 
 и фактической смены данных; защита новых OWNER-only прав на сервере и в БД.
 Trusted assessment/review API, итоговый admission guard и Admin UI ещё впереди.
 Это не автоматический допуск или объявление полной реализации контракта.
+
+
+## Binding/OWNER-only prerequisite реализован, CI предстоит — 2026-11-17
+
+От утверждённого contract correction создана ветка arch/g2-classifier-binding.
+Миграция0021 атомарно фиксирует версию при первом INSERT vehicles и создаёт
+immutable input history при фактической смене make/model/model_year. Нет
+backfill/фиктивных лет/версий/классов. Unrelated изменения не выбирают новую
+версию. Internal read owner-bound; binding failure не оставляет автомобиль,
+audit failure откатывает key edit/off_line/новый binding одной транзакцией.
+Server resolver фильтрует новые права у DISPATCHER; adminCan отказывает даже
+при ошибочном permission list. SQL INSERT/UPDATE protected grants не-владельцу
+запрещён; согласован trim/регистр, включая Unicode edge whitespace. Старые
+ошибочные grant rows сохранены без доступа. OWNER сохраняет существующий MFA.
+
+16 новых actual SQLite/HTTP cases PASS. Первые2 ошибки были в fixture: неверное
+имя колонки bound_at вместо created_at и legacy test с невалидным VIN/opaque
+ID вместо допустимого HTTP UUID. Исправление VIN отдельно не устранило ID
+ошибку; fixture заменён настоящим HTTP-created UUID на20-схеме и nullable
+legacy годом до21, assertions/публичная валидация не ослаблялись. Затем16/16
+PASS, including make/model/year отдельно и Unicode permission cases.
+21 migrations smoke,6 reference,12 preflight PASS. Existing admin authorization
+и8 Driver write-contract cases PASS; version-store/schema regressions идут
+отдельно. Полный local npm test дошёл до protected OWNER CLI и вновь не
+прошёл из-за sandbox child process restriction; не объявлен PASS и не ослаблен.
+74-й test script и десятый native D1 workflow добавлены для полного CI.
+
+Один поиск вызвал отсутствующий adminProfileService.js; реальные entrypoints
+найдены через rg, source не менялся по предположению. Новые документы
+VEHICLE_RULE_BINDING_SCOPE_2026-11-17.md отделяют binding от trusted assessment.
+Legacy captureCurrentVehicleClassification остаётся unintegrated current-head
+candidate helper и не представляет approved pinned review. Нельзя подключать
+его к допуску/маршруту; будущий trusted service читает новый binding.
+Trusted API/admission/Admin UI/BEV review/legacy transition/in_progress handoff
+ещё не готовы. Нет seed/real materials/remote migration/merge/deploy, G1paused.
+
+
+Первый CI44077774303/job134020146192, sourcec959ed587388d89b660578e5156fa5c18b20aa7f,
+FAILED на existing native Driver contract: POST вернул409 вместо201. Полный
+74-script npm набор прошёл, но первый run не является итоговым PASS. Найдено
+реальное отличие D1 meta.changes: он включает INSERT binding из триггера,
+прежний helper ожидал максимум1 и мог объявить ошибку уже committed vehicle
+write. Для insert/update теперь SQL changes() читается сразу после top-level
+mutation в той же atomic batch; допустимы только0/1. Audit condition сохраняет
+changes() semantics после SELECT. Нельзя заменять это проверкой meta>=1,
+которая не различает основную запись и trigger side effects.
+
+Добавлен17-й actual SQL/HTTP regression с увеличенным D1 wrapper metadata,
+legacy fake расширен для чтения top-level count в batch. New17, existing8
+Driver write и registration service PASS локально; полный native CI повторяется
+на исправленном source. Ошибка и первый failed run сохранены, проверка не
+пропущена/не ослаблена. Реальных данных/deploy в этом инциденте не было.
+
+
+## Binding/OWNER-only: итоговый CI PASS — 2026-11-17
+
+Проверенный sourcea52b83ba1da0e8024946f2d92288e6f6e52cc383,
+treedad21bcb855f8d49bc2446f6bbfc5a0eb9745c55, CI44078545851/
+job134022783461 SUCCESS.74 npm scripts,17 новых actual SQLite/HTTP cases,
+21 migrations,12 preflight,6 reference,10 native workerd/D1 workflows,6
+protected OWNER CLI scenarios,audit0 и Worker dry-run PASS. Native D1 реально
+подтвердил populated20→21/rollback, first-save binding, сохранение старой версии
+при unrelated edits, текущую при явной смене года, rollback history/audit и
+отказ новых dispatcher grants/игнорирование legacy ошибочных строк. Существующий
+native Driver contract после исправления meta.changes также PASS. Local CLI
+ограничение не обходилось: полный protected набор исполнился в штатном CI.
+
+Первый failed44077774303 не скрыт: trigger-inclusive D1 счётчик исправлен
+через top-level SQL changes() в той же транзакции,17-й regression добавлен.
+Docs-only checkpoint после CI не меняет verified code SHA. Scope и source
+hashes в VEHICLE_RULE_BINDING_VERIFICATION_2026-11-17.json. Draft PR37
+https://github.com/lobanov0710-blip/uber-v3/pull/37, baseapproved PR36.
+Tree parity локального/удалённого code проверена до публикации.
+
+Поправка владельца отражена в AGENTS и approved contracts обоих repo, не
+нуждается в повторном подтверждении. В Android изменены только документы,
+security guards8/5 PASS; новый APK/Android CI не создавались. Trusted assessment
+и его HTTP API/правила/evidence, admission guards, Admin UI и оставшийся BEV/
+legacy/in_progress handoff ещё не готовы. Нет seed/real materials/remote
+migration/merge/deploy/нового доступа OWNER-only STAGING; G1paused,D4–D7pending.

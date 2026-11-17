@@ -50,6 +50,18 @@ function changes(result) {
   return value;
 }
 
+// D1 meta.changes includes trigger writes. SQL changes() reports only the
+// immediately preceding top-level mutation; read it inside the same batch.
+function writtenVehicle(result) {
+  const rows = result?.results;
+  const count = rows?.[0]?.written;
+  if (result?.success !== true || !Array.isArray(rows) || rows.length !== 1 ||
+      !Number.isSafeInteger(count) || count < 0 || count > 1) {
+    throw new Error("invalid driver vehicle write count");
+  }
+  return count;
+}
+
 function mapProfile(row) {
   if (!row) {
     return null;
@@ -336,8 +348,8 @@ export async function insertDriverVehicle(
   const db = requireDatabase(env);
   const createdAt = requireTimestamp(vehicle.createdAt);
 
-  const result =
-    await db
+  const insert =
+    db
       .prepare(`
         INSERT INTO vehicles (
           id,
@@ -394,10 +406,11 @@ export async function insertDriverVehicle(
         requireText(vehicle.usageBasis, "usageBasis"),
         vehicle.modelYear ?? null,
         vehicle.powertrain ?? null
-      )
-      .run();
+      );
 
-  if (changes(result) !== 1) {
+  const results = await db.batch([insert, db.prepare('SELECT changes() AS written')]);
+
+  if (writtenVehicle(results[1]) !== 1) {
     throw new Error("driver vehicle insert failed");
   }
 
@@ -502,12 +515,13 @@ export async function updateDriverVehicle(
         modelYear ?? null
       );
 
-  let result;
+  let results;
   if (classificationChange) {
     const auditId = 'audit_' + crypto.randomUUID();
     const safeRequestId = requestId ?? ('req_' + crypto.randomUUID());
-    const results = await db.batch([
+    results = await db.batch([
       mutation,
+      db.prepare('SELECT changes() AS written'),
       db.prepare(`INSERT INTO audit_events
         (id,actor_account_id,action,target_type,target_id,outcome,request_id,created_at)
         SELECT ?1,?2,'driver.vehicle_reverification_required','vehicle',?3,'success',?4,?5
@@ -517,12 +531,11 @@ export async function updateDriverVehicle(
           AND EXISTS (SELECT 1 FROM audit_events WHERE id=?4)`)
         .bind(timestamp, driver, vehicle, auditId)
     ]);
-    result = results[0];
   } else {
-    result = await mutation.run();
+    results = await db.batch([mutation, db.prepare('SELECT changes() AS written')]);
   }
 
-  const changed = changes(result);
+  const changed = writtenVehicle(results[1]);
   const persisted =
     await getDriverVehicle(
       env,

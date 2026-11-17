@@ -1,4 +1,7 @@
-// Internal storage API; not an HTTP or driver-input boundary.
+// Legacy internal candidate storage; not an HTTP or driver-input boundary.
+// This helper evaluates the CURRENT head, not the first-save binding added in
+// 0021. Trusted moderation must use the pinned binding and a trusted assessment;
+// do not wire this helper directly to registration/admission or an Admin route.
 // The caller supplies year and powertrain verification from server moderation.
 import { evaluateVehicleClassification } from './vehicleClassification.js';
 

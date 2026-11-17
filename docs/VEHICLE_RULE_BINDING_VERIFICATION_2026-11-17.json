@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-17",
+  "scope": "first-save-rule-binding-and-owner-only-classifier-powers",
+  "status": "ci-verified",
+  "sourceCommit": "a52b83ba1da0e8024946f2d92288e6f6e52cc383",
+  "sourceTree": "dad21bcb855f8d49bc2446f6bbfc5a0eb9745c55",
+  "workflowRun": 44078545851,
+  "workflowJob": 134022783461,
+  "ownerDecision": "Contract approved; new classifier rule-management and exception powers must not be given to dispatchers.",
+  "checks": {
+    "newActualSqliteHttpCases": 17,
+    "npmTestScripts": 74,
+    "migrationSmokeCount": 21,
+    "preflightCases": 12,
+    "referenceCases": 6,
+    "androidSecurityGuardsExecuted": [
+      8,
+      5
+    ],
+    "nativeD1Workflows": 10,
+    "protectedOwnerCliScenarios": 6,
+    "dependencyAuditVulnerabilities": 0,
+    "workerBundleDryRun": true,
+    "nativePopulatedUpgradeAndRollback": true,
+    "nativeTriggerCountRegression": true
+  },
+  "sourceSha256": {
+    ".github/workflows/backend-tests.yml": "c19374f05884bfd0f0b2377f6b19f35c11e8e18d2bb77eefef2f31e1057d931e",
+    "migrations/0021_vehicle_rule_bindings.sql": "2615041bd18690aeb8397859ad2a2a1c3fee6f8ad773e1ec3380ed59d8664b1c",
+    "package.json": "a007acb2a9b61ce41e127f75dce45730d614b00381b72d0739f23b837a83faae",
+    "src/core/adminAuthorization.js": "d71516f5a0fa2e67e813da7877471276a6c4fd9a715801c06c195485125fdb00",
+    "src/core/driverRegistrationRepository.js": "48e5e8efda8761925de7913bc01ca5aab572e9d9c1dbbed7b87c6c65bc6d416b",
+    "src/core/vehicleClassificationRepository.js": "0781ee2012cafd08bfbe6cf26b706dbc0f533d12a9ab0ee49462d404fd8b35b8",
+    "src/core/vehicleRuleBindingRepository.js": "a99214f50a5655eff14ca0aaa0114b23c70dfbe3e4b11ba2c565c392e6fd5ff9",
+    "tests/driverRegistrationService.test.mjs": "3051ea7f6c285b2493f0ab45847a64bf8f3ff4deca933619d098d2117cda3e12",
+    "tests/vehicleRuleBinding.test.mjs": "33a5e1c2ed7b83b36803221f60c9418b175577d49ae17f94e65820a75a9a77ee",
+    "tools/check_rule_binding_d1.mjs": "7091184525b7ef063532cec12b4c1eb13c9155747dce2cd8981ff070031023a4"
+  },
+  "priorRun": {
+    "run": 44077774303,
+    "job": 134020146192,
+    "sourceCommit": "c959ed587388d89b660578e5156fa5c18b20aa7f",
+    "conclusion": "failure",
+    "reason": "Native D1 includes trigger writes in meta.changes; old vehicle mutation check could return an error after committed write. Fixed with top-level SQL changes() in the same atomic batch; regression added."
+  },
+  "localLimits": [
+    "Protected OWNER CLI child-process tests remain sandbox-restricted locally; full CI must pass without exclusions.",
+    "Two initial fixture errors (wrong owner column name; non-HTTP-safe legacy fixture VIN/ID) corrected without weakened public validation."
+  ],
+  "verifiedScope": [
+    "Immutable rule binding at first save; null when no matching current rule.",
+    "Explicit make/model/year edit captures current rule; unrelated edits retain previous binding.",
+    "Populated migration preserves legacy data without invented binding; failure rollback.",
+    "Binding/audit errors roll back atomic vehicle writes; top-level count independent of trigger metadata.",
+    "Dispatcher protected grants denied by SQL and server, including old rows and case/ECMAScript edge whitespace."
+  ],
+  "boundaries": {
+    "newAdminRuleHttpApiImplemented": false,
+    "trustedAssessmentImplemented": false,
+    "newAdmissionGuardsImplemented": false,
+    "legacyCandidateHelperUsesBinding": false,
+    "adminUiImplemented": false,
+    "newAndroidBuildProduced": false,
+    "allPowertrainVariantsReviewed": false,
+    "catalogSeedActivated": false,
+    "remoteMigrationPerformed": false,
+    "mergePerformed": false,
+    "deployPerformed": false,
+    "g1Paused": true
+  },
+  "limits": [
+    "Binding is not approval, trusted parameters or class; no new line admission.",
+    "Legacy current-head candidate helper must not be used for trusted pinned moderation.",
+    "Trusted review/API/admission/Admin UI, legacy transfer plan, BEV research and complete in_progress handoff remain.",
+    "OWNER MFA policy retained; no new external mutation route in this component.",
+    "Later documentation-only commits do not replace the verified code SHA."
+  ],
+  "conclusion": "success"
+}
