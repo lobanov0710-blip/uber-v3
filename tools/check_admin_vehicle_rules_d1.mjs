@@ -14,7 +14,9 @@ try {
   const DB=await mf.getD1Database('DB','admin-rules');
   for(const type of ['table','index','trigger'])for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type=? AND sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all(type))await DB.prepare(row.sql).run();
   await seedRuleActors(DB);
-  const names=(await DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()).results.map(x=>x.name);
+  // Enumerate the exact application schema copied above. D1 also lists private
+  // provider tables such as _cf_METADATA; their contents must remain inaccessible.
+  const names=local.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(x=>x.name);
   const snapshot=async()=>{
     const values=[];for(const name of names)values.push((await DB.prepare('SELECT * FROM "'+name+'" ORDER BY rowid').all()).results);
     return values;
