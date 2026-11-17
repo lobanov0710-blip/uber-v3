@@ -26,7 +26,7 @@ try {
   };
   const login=await send('POST','/staff/login',{login:driverId,password:fixturePassword});assert.equal(login.status,200);
   const token=login.body.accessToken,body={vin:'XW8ZZZ61ZFG000001',plate:'SYNTHETIC',make:'Toyota',model:'Camry',modelYear:2020,
-    color:null,capacity:4,baggageCapacity:'standard',usageBasis:'owner'};
+    color:'Белый',capacity:4,baggageCapacity:'standard',usageBasis:'owner'};
   const legacy=await send('POST','/v1/driver/vehicles',body,token);assert.equal(legacy.status,201);
   const vehicles=(await DB.prepare('SELECT * FROM vehicles ORDER BY id').all()).results;
   const documents=(await DB.prepare('SELECT * FROM document_resources ORDER BY id').all()).results;

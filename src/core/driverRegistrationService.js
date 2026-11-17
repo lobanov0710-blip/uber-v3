@@ -16,6 +16,7 @@ import {
   updateDriverRegistrationProfile,
   updateDriverVehicle
 } from "./driverRegistrationRepository.js";
+import { normalizeVehicleColor } from './vehicleColor.js';
 
 
 const BAGGAGE_CAPACITIES =
@@ -208,10 +209,7 @@ function normalizeVehicle(input, allowMissingYear = false) {
   const plate = clean(input.plate);
   const make = clean(input.make);
   const model = clean(input.model);
-  const color =
-    input.color == null || clean(input.color) === ""
-      ? null
-      : clean(input.color);
+  const color = normalizeVehicleColor(input.color);
   const modelYear = input.modelYear ?? null;
   const capacity = Number(input.capacity);
   const baggageCapacity = clean(input.baggageCapacity).toLowerCase();
@@ -225,7 +223,7 @@ function normalizeVehicle(input, allowMissingYear = false) {
     make.length > 80 ||
     model.length < 1 ||
     model.length > 80 ||
-    (color !== null && color.length > 80) ||
+    color === null ||
     (!(modelYear === null && allowMissingYear) &&
       (!Number.isSafeInteger(modelYear) || modelYear < 1 || modelYear > 9999)) ||
     !Number.isSafeInteger(capacity) ||

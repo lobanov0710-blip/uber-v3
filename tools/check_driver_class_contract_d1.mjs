@@ -20,11 +20,16 @@ try {
     return {status:response.status,body:await response.json()};
   };
   const session=await send('POST','/staff/login',{login:driverId,password:fixturePassword});assert.equal(session.status,200);
-  const token=session.body.accessToken,body={vin:'XW8ZZZ61ZFG000001',plate:'SYNTHETIC',make:'Toyota',model:'Camry',modelYear:2020,color:null,capacity:4,baggageCapacity:'standard',usageBasis:'owner'};
+  const token=session.body.accessToken,body={vin:'XW8ZZZ61ZFG000001',plate:'SYNTHETIC',make:'Toyota',model:'Camry',modelYear:2020,color:'Белый',capacity:4,baggageCapacity:'standard',usageBasis:'owner'};
   assert.equal((await send('POST','/v1/driver/vehicles',body)).status,401);
   assert.equal((await send('POST','/v1/driver/vehicles',{...body,vehicleClass:'business'},token)).status,400);
+  const missingColor={...body};delete missingColor.color;
+  assert.equal((await send('POST','/v1/driver/vehicles',missingColor,token)).status,400);
+  for(const color of [null,'','  ',42])assert.equal((await send('POST','/v1/driver/vehicles',{...body,color},token)).status,400);
   const created=await send('POST','/v1/driver/vehicles',body,token);assert.equal(created.status,201);
   const car=created.body.vehicle;assert.equal(car.vehicleClass,null);assert.equal(car.modelYear,2020);
+  assert.equal(car.color,'Белый');
+  assert.equal((await send('PATCH','/v1/driver/vehicles/'+car.id,{color:' ',expectedRevision:1},token)).status,400);
   await DB.prepare("UPDATE vehicles SET class='comfort',status='approved' WHERE id=?1").bind(car.id).run();
   await DB.prepare("INSERT INTO driver_availability(driver_id,active_vehicle_id,state,revision,updated_at) VALUES(?1,?2,'on_line',1,1)").bind(driverId,car.id).run();
   await DB.prepare("INSERT INTO orders(id,name,phone,route,trip_date,status,driver_id,created_at,updated_at) VALUES('order_native_class','Synthetic','+79990000000','Synthetic','2030-01-01','taken',?1,1,1)").bind(driverId).run();
@@ -43,5 +48,5 @@ try {
   const preserved=await DB.prepare('SELECT class,model_year,revision FROM vehicles WHERE id=?1').bind(car.id).first();
   assert.equal(preserved.class,'comfort');assert.equal(preserved.model_year,2021);assert.equal(preserved.revision,2);
   console.log(JSON.stringify({engine:'native local workerd HTTP/D1',driverSystemClassContract:'PASS',
-    driverClassRejected:true,yearPersisted:true,activeVehicleInvalidated:true,lineDisabled:true,manualDispatcherFlag:true,auditRollback:true}));
+    driverClassRejected:true,requiredColor:true,yearPersisted:true,activeVehicleInvalidated:true,lineDisabled:true,manualDispatcherFlag:true,auditRollback:true}));
 } finally {local.sqlite.close();await mf.dispose();}
