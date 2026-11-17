@@ -52,6 +52,16 @@ export async function atomicVehicleReviewWorkflow(env,send){
   assert.equal((await env.DB.prepare("SELECT status FROM orders WHERE id='order_atomic_review'").first()).status,'in_progress');
   assert.equal((await env.DB.prepare("SELECT count(*) n FROM order_assignments WHERE order_id='order_atomic_review'").first()).n,1);
   await assert.rejects(env.DB.prepare("DELETE FROM vehicle_reverification_assignment_holds WHERE assignment_id='assignment_atomic_review'").run());
+  const newEvidence=[];
+  for(const[id,kind]of [['document_atomic_new_front','sts_front'],['document_atomic_new_back','sts_back']]){
+    await env.DB.prepare("INSERT INTO document_resources(id,owner_driver_id,vehicle_id,kind,private_object_key,status,created_at,updated_at) VALUES(?1,?2,?3,?4,?1,'verified',1,1)").bind(id,driverId,s.vehicle.id,kind).run();
+    newEvidence.push({documentId:id,expectedRevision:1});
+  }
+  const newProof=await s.capture({...input,expectedRevision:5,expectedInputRevision:2,evidence:newEvidence},'atomic-new-selected-evidence');assert.equal(newProof.ok,true);
+  await env.DB.prepare("UPDATE driver_profiles SET registration_status='under_review' WHERE staff_account_id=?1").bind(driverId).run();
+  assert.equal((await send('POST',path,{decision:'approved',expectedRevision:6},s.token,'atomic-approval-new-documents')).status,200);
+  await env.DB.prepare("UPDATE document_resources SET private_object_key='ObsoleteSyntheticChanged' WHERE id='document_trusted_front'").run();
+  const stable=await env.DB.prepare('SELECT status,class,revision FROM vehicles WHERE id=?1').bind(s.vehicle.id).first();assert.equal(stable.status,'approved');assert.equal(stable.class,'business');assert.equal(stable.revision,7);
   return {atomicVehicleReview:'PASS',legacyApprovalBypassDenied:true,serverClassOnApproval:true,correctionUsesCurrentRule:true,
-    bindingHistoryPreserved:true,offline:true,reapprovalDoesNotReleaseTrip:true,lineAndPhaseBlocked:true,bothDonePathsBlocked:true,noAutomaticReplacement:true,atomicCorrectionAuditRollback:true};
+    bindingHistoryPreserved:true,offline:true,reapprovalDoesNotReleaseTrip:true,lineAndPhaseBlocked:true,bothDonePathsBlocked:true,noAutomaticReplacement:true,atomicCorrectionAuditRollback:true,obsoleteEvidenceIsolation:true};
 }

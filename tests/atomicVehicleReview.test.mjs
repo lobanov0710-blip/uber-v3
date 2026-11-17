@@ -100,3 +100,18 @@ test('legacy approval also enforces the owner-required body color',async t=>{
  DB.sqlite.prepare("UPDATE vehicles SET color='Белый' WHERE id=?").run(s.vehicle.id);
  assert.equal((await send('POST',path,{decision:'approved',expectedRevision:2},s.token,'atomic-restored-color')).status,200);
 });
+test('changing obsolete evidence does not revoke a newer approval backed by different documents',async t=>{
+ const {DB,env,send}=await setup(t),s=await trustedScenario(env,send);await prepareVehicleApproval(env,s.vehicle.id);await s.capture();
+ const path='/v1/admin/registrations/'+driverId+'/review/items/vehicle/'+s.vehicle.id;
+ assert.equal((await send('POST',path,{decision:'approved',expectedRevision:2},s.token,'atomic-old-evidence-first-approval')).status,200);
+ const evidence=[];
+ for(const [id,kind]of [['document_new_sts_front','sts_front'],['document_new_sts_back','sts_back']]){
+  DB.sqlite.prepare("INSERT INTO document_resources(id,owner_driver_id,vehicle_id,kind,private_object_key,status,created_at,updated_at) VALUES(?,?,?,?,?,'verified',1,1)").run(id,driverId,s.vehicle.id,kind,id);
+  evidence.push({documentId:id,expectedRevision:1});
+ }
+ const newProof=await s.capture({...s.body,expectedRevision:3,evidence},'atomic-new-evidence-proof');assert.equal(newProof.ok,true);
+ assert.equal((await send('POST',path,{decision:'approved',expectedRevision:4},s.token,'atomic-new-evidence-approval')).status,200);
+ DB.sqlite.exec("UPDATE document_resources SET private_object_key='ObsoleteSyntheticChanged' WHERE id='document_trusted_front'");
+ const vehicle=DB.sqlite.prepare('SELECT class,status,revision FROM vehicles WHERE id=?').get(s.vehicle.id);assert.equal(vehicle.status,'approved');assert.equal(vehicle.class,'comfort');assert.equal(vehicle.revision,5);
+ assert.equal(DB.sqlite.prepare('SELECT id FROM vehicle_current_trusted_assessments WHERE vehicle_id=?').get(s.vehicle.id).id,newProof.assessmentId);
+});

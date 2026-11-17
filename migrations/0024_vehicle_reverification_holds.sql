@@ -11,6 +11,8 @@ BEGIN SELECT RAISE(ABORT,'vehicle reverification hold is immutable'); END;
 CREATE TRIGGER vehicle_reverification_hold_no_delete BEFORE DELETE ON vehicle_reverification_assignment_holds
 BEGIN SELECT RAISE(ABORT,'vehicle reverification hold is immutable'); END;
 CREATE TRIGGER vehicle_assessment_lost_trust AFTER INSERT ON vehicle_assessment_invalidations
+WHEN EXISTS(SELECT 1 FROM vehicle_trusted_assessments t WHERE t.id=NEW.assessment_id
+ AND t.sequence=(SELECT MAX(sequence) FROM vehicle_trusted_assessments WHERE vehicle_id=t.vehicle_id))
 BEGIN
  INSERT INTO vehicle_reverification_assignment_holds(assignment_id,vehicle_id,assessment_id,created_at)
  SELECT a.id,a.vehicle_id,NEW.assessment_id,NEW.created_at FROM order_assignments a
