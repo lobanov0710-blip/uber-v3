@@ -49,10 +49,17 @@ service должен читать закреплённую версию и со�
 
 ## Проверки
 
-16 actual SQLite/HTTP cases: populated20→21 и rollback, сохранность всех старых
+17 actual SQLite/HTTP cases: populated20→21 и rollback, сохранность всех старых
 таблиц/FK/integrity, first save/unknown rule/new registration, no-op/unrelated
 edits, отдельные make/model/year edits, audit/binding failure rollback,
 immutable history/owner-bound read/stale revision, запрет грантов и old erroneous
 rows/потеря owner binding. Native Worker HTTP/D1 fixture проверяет actual upgrade,
 его rollback, trigger pinning и запрет полномочий; полный CI обязателен.
 Итоговый source/run/results фиксируются отдельно после окончания проверки.
+
+Native D1 обнаружил trigger-inclusive meta.changes: прежняя проверка1 могла
+ошибочно вернуть409 после committed INSERT. Запись автомобиля теперь читает
+SQL changes() сразу после основной mutation в той же batch, отделяя её от
+trigger writes. Это не ослабление проверки: допустимы только0/1 top-level rows.
+Отдельная регрессия искусственно увеличивает wrapper metadata и проверяет
+корректный HTTP итог; native CI обязан подтвердить реальный D1.

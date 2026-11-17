@@ -64,6 +64,18 @@ function createFakeDb() {
   return {
     state,
 
+    async batch(statements) {
+      const results = []; let written = 0;
+      for (const statement of statements) {
+        if (/^SELECT changes\(\) AS written$/.test(statement.sql)) {
+          results.push({success:true,results:[{written}]});
+        } else {
+          const result = await statement.run(); written = result.meta.changes; results.push(result);
+        }
+      }
+      return results;
+    },
+
     prepare(
       sql
     ) {

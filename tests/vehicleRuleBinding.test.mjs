@@ -120,6 +120,17 @@ test('stale write does not append binding history',async t=>{
   assert.equal((await send('PATCH','/v1/driver/vehicles/'+car.id,{modelYear:2021,expectedRevision:99})).status,409);
   assert.equal((await binding(env,driverId,car.id)).inputRevision,1);
 });
+test('D1 trigger-inclusive meta changes cannot turn a committed single vehicle write into a false error',async t=>{
+  const {DB,send,create}=await setup(t);const batch=DB.batch.bind(DB);
+  DB.batch=async statements=>{
+    const results=await batch(statements);
+    for(let i=0;i<statements.length;i++)if(/(?:INSERT INTO|UPDATE) vehicles/.test(statements[i].sql))results[i].meta.changes+=10;
+    return results;
+  };
+  const car=await create();
+  const patched=await send('PATCH','/v1/driver/vehicles/'+car.id,{modelYear:2021,expectedRevision:1});
+  assert.equal(patched.status,200);assert.equal(patched.body.vehicle.revision,2);
+});
 test('SQL denies new dispatcher permission grants and updates, including case/space forms',async t=>{
   const {DB}=await setup(t);
   for(const permission of ['vehicle_rules.manage','vehicles.approve_exception',' VEHICLE_RULES.MANAGE ','\tVEHICLE_RULES.MANAGE\n','\u00a0vehicles.approve_exception\ufeff']){

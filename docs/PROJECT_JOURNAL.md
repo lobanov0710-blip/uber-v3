@@ -3387,3 +3387,20 @@ candidate helper и не представляет approved pinned review. Нел
 его к допуску/маршруту; будущий trusted service читает новый binding.
 Trusted API/admission/Admin UI/BEV review/legacy transition/in_progress handoff
 ещё не готовы. Нет seed/real materials/remote migration/merge/deploy, G1paused.
+
+
+Первый CI44077774303/job134020146192, sourcec959ed587388d89b660578e5156fa5c18b20aa7f,
+FAILED на existing native Driver contract: POST вернул409 вместо201. Полный
+74-script npm набор прошёл, но первый run не является итоговым PASS. Найдено
+реальное отличие D1 meta.changes: он включает INSERT binding из триггера,
+прежний helper ожидал максимум1 и мог объявить ошибку уже committed vehicle
+write. Для insert/update теперь SQL changes() читается сразу после top-level
+mutation в той же atomic batch; допустимы только0/1. Audit condition сохраняет
+changes() semantics после SELECT. Нельзя заменять это проверкой meta>=1,
+которая не различает основную запись и trigger side effects.
+
+Добавлен17-й actual SQL/HTTP regression с увеличенным D1 wrapper metadata,
+legacy fake расширен для чтения top-level count в batch. New17, existing8
+Driver write и registration service PASS локально; полный native CI повторяется
+на исправленном source. Ошибка и первый failed run сохранены, проверка не
+пропущена/не ослаблена. Реальных данных/deploy в этом инциденте не было.
