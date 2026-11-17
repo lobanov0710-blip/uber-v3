@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-17",
+  "scope": "internal-version-store-only",
+  "status": "ci-verified",
+  "sourceCommit": "aef9dfc77dc861a46e97792a27773cb4c5f6542b",
+  "sourceTree": "c8bfbb39385e494e17112f2d0e87711cca0cf5dc",
+  "workflowRun": 44052040564,
+  "workflowJob": 133931991226,
+  "conclusion": "success",
+  "checks": {
+    "npmTestScripts": 71,
+    "newEvaluatorTests": 7,
+    "newActualSqliteStoreTests": 12,
+    "referenceTests": 6,
+    "migrations": 19,
+    "preflightCases": 12,
+    "nativeLocalD1Workflows": 7,
+    "protectedOwnerCliScenarios": 6,
+    "dependencyAuditVulnerabilities": 0,
+    "workerBundleDryRun": true
+  },
+  "sourceSha256": {
+    "src/core/vehicleClassification.js": "f817e0727b3a310017a43896fff9cbb29916e17ee1c09ab812d3cb33fb5855de",
+    "src/core/vehicleClassificationRepository.js": "c16bc0c665c1a59abe78dbe7a9b697e822dd36edeff39f2f74affe88beaf9f8f",
+    "migrations/0019_vehicle_classification_versions.sql": "38a1917325f81eb33daa7b3eb5e00943aeb5cd92aa3477e686434d3332c50c1a",
+    "tests/vehicleClassification.test.mjs": "22dd3fec1c8ab96943d99b6a12aa563b5384c1292d2bf1b57aca0e9a2a75bd4b",
+    "tests/vehicleClassificationRepository.test.mjs": "7716b22426ec3836ac689efb85fa2877d77462677964434a82329e3afb5a4e3a",
+    "tools/check_vehicle_classification_d1.mjs": "02b2093fcedb0c0ce92eb540b7b29976eee1c28a79ee3a056110f0efd8cc1738",
+    "tools/check_owner_phone_provisioning.py": "49ae49e733ae439930f1c6518fd2d0776eacb96afa06fc71946bf50eaf7d9917"
+  },
+  "firstRun": {
+    "run": 44051103873,
+    "sourceCommit": "3583ca6f9c341730d2a18cb3dcdc63fe6ac6dcf2",
+    "conclusion": "failure",
+    "cause": "Original 18-migration OWNER setup fixture received a 19-migration source tree. Production refusal kept; positive fixtures model original target and additional negative test verifies rejection of newer chain."
+  },
+  "localLimit": "Full npm test locally stopped at existing OWNER CLI spawnSync EPERM; full CI passed without weakening assertions.",
+  "boundaries": {
+    "newTablesSeeded": false,
+    "registrationIntegrated": false,
+    "routesAdded": false,
+    "moderationVerificationIntegrated": false,
+    "lineAdmissionIntegrated": false,
+    "tripStopOrReassignIntegrated": false,
+    "androidChanged": false,
+    "allVehiclePowertrainsReviewed": false,
+    "mergePerformed": false,
+    "deployPerformed": false,
+    "remoteMigrationPerformed": false,
+    "g1Paused": true
+  },
+  "limits": [
+    "Internal repository only: calling service must enforce session, permissions, ownership and audit.",
+    "powertrainVerified must come from trusted server moderation, never driver input.",
+    "Candidate is not approval or line admission.",
+    "Current CSV121 rows is not activated; all generations/variants are not fully reviewed."
+  ]
+}

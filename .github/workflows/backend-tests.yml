@@ -7,6 +7,7 @@ on:
       - 'arch/g2-owner-totp-mfa'
       - 'arch/g2-admin-assignment-read'
       - 'arch/g2-admin-photo-control-read'
+      - 'arch/g2-classifier-version-store'
   pull_request:
     branches:
       - main
@@ -41,6 +42,8 @@ jobs:
         run: python3 tools/test_migrations.py
       - name: Validate fail-closed D3 staging preflight
         run: python3 tests/d3StagingPreflight.test.py
+      - name: Verify approved vehicle reference invariants
+        run: python3 tests/vehicleClassifierReference.test.py -v
       - name: Run backend unit and router tests
         run: npm test
       - name: Verify audit transaction with local workerd and D1
@@ -55,6 +58,8 @@ jobs:
         run: node tools/check_admin_vehicle_read_d1.mjs
       - name: Verify OWNER-only phone scope with local workerd and D1
         run: node tools/check_owner_phone_d1.mjs
+      - name: Verify classification version storage with local workerd and D1
+        run: node tools/check_vehicle_classification_d1.mjs
       - name: Verify protected OWNER CLI with actual Wrangler import output
         run: python3 tools/check_owner_phone_provisioning.py
       - name: Bundle Worker without deploying
