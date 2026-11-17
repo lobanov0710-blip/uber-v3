@@ -2947,3 +2947,20 @@ Runtime test assertions не ослаблялись.
 нет remote migration/merge/deploy/реальных материалов. Это целевое исправление
 поля; дальнейший trusted Admin classification остаётся отдельной работой.
 Каноническая синхронизация меняет только append журнала.
+
+
+## G2: Admin справочник — API и проверенный CI, 2026-11-17
+
+В рамках утверждённого classification contract и поправки «права диспетчерам не давать» выполнен следующий backend prerequisite: list/version GET правил, OWNER-only POST новой неизменяемой версии и metadata GET автомобиля. SQL повторяет current staff/session/tokenVersion/OWNER binding/MFA factor/family; запись rule/definitions/head CAS/idempotency/audit атомарна. Dispatcher новые полномочия не получает. Чтение сверяет итоговый доступ и SQL changes() аудита. Class не задаётся водителем; публикация правила не меняет прежние pins/допуски. Цвет остаётся обязательным на сохранении, legacy null читается для исправления.
+
+Migration0022 immutable definitions без seed/backfill. Состав142 марок плюс два уже утверждённых написания CSV сохранён, новых марок/aliases не добавлено. Metadata GET честно возвращает null verifiedParameters/classification и пустые evidence/history до trusted writer. Старый candidate не считается подтверждением. No private object keys/VIN/plate/phone/document content в этих новых ответах; reason хранится в защищённой definition, не в audit.
+
+Проверенный backend source2a5e7b487e9b2a06923586de8230b6b7e63f5f17, tree0aca51165beb7557721a5988aa97132fa8834539, CI44109843561/job134132126272 SUCCESS:75 npm scripts (20 новых actual HTTP/SQLite cases),22 migrations,12 preflight,6 reference,11 native Worker/D1 workflows,6 protected CLI scenarios,audit0,Worker dry-run; все26 шагов success. Отдельно проверены CAS competition/replay/late revocation/audit rollback и populated21→22 с сохранением всех project tables. Native quick_check/FK и SQLite полный integrity_check PASS. Локальный/remote source tree совпадают.
+
+Первые failed CI44108752691/44109157270 сохранены: harness пытался читать закрытую provider _cf_METADATA и использовать неподдерживаемую D1 PRAGMA integrity_check. Исправлены границы application schema и документированный D1 quick_check, полный SQLite integrity_check сохранён. Provider запреты не обходились, gates не отключались; подробности ошибок fixture/инструментов и исправлений — в журнале PR39. Вопрос владельца «все проверки обязательные или можно обойтись важными» не отменяет утверждённых требований: при разработке проверяем по риску, установленные CI/приёмочные gates сохраняются. Для auth/БД выполнен весь server CI.
+
+Draft PR39 от fix/vehicle-color-required(PR38): https://github.com/lobanov0710-blip/uber-v3/pull/39 . Последующий docs-only checkpoint a9e781868e8b381d2c9ca0ed08ec2c42ea3ece14, tree3e51679f77c3bfe8b67f7be7112312f2b9dfc99f не подменяет verified code SHA. Scope/receipt: https://github.com/lobanov0710-blip/uber-v3/blob/arch/g2-admin-vehicle-rules/docs/ADMIN_VEHICLE_RULE_API_IMPLEMENTATION_2026-11-17.md и ADMIN_VEHICLE_RULE_API_VERIFICATION_2026-11-17.json. Исходный docs-only срез контракта помечен историческим, текущий этап указан отдельно.
+
+Android runtime не менялся, нового APK/Android CI здесь нет. Последний отдельно проверенный color baseline: sourcee5712c969049fb6670fd64863db189f3d32eb038, CI44089001617; его проверки не выдаются за результат новой ветки.
+
+Следующие части утверждённого плана: trusted classification/review и assessment/evidence/history, атомарные admission/assignment guards, Admin UI/DTO. Полный powertrain обзор121 строк и legacy/activation ещё pending. Это не готовый полный классификатор и не phone activation. G1paused,D4–D7pending; нет seed/remote migration/реальных чувствительных материалов/merge/deploy/расширения OWNER-phone STAGING. Каноническая синхронизация меняет только append журналов; runtime feature branches не сливаются.
