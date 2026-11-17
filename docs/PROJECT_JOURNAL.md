@@ -3352,3 +3352,38 @@ Admin vehicle classification утверждён с этой поправкой: 
 и фактической смены данных; защита новых OWNER-only прав на сервере и в БД.
 Trusted assessment/review API, итоговый admission guard и Admin UI ещё впереди.
 Это не автоматический допуск или объявление полной реализации контракта.
+
+
+## Binding/OWNER-only prerequisite реализован, CI предстоит — 2026-11-17
+
+От утверждённого contract correction создана ветка arch/g2-classifier-binding.
+Миграция0021 атомарно фиксирует версию при первом INSERT vehicles и создаёт
+immutable input history при фактической смене make/model/model_year. Нет
+backfill/фиктивных лет/версий/классов. Unrelated изменения не выбирают новую
+версию. Internal read owner-bound; binding failure не оставляет автомобиль,
+audit failure откатывает key edit/off_line/новый binding одной транзакцией.
+Server resolver фильтрует новые права у DISPATCHER; adminCan отказывает даже
+при ошибочном permission list. SQL INSERT/UPDATE protected grants не-владельцу
+запрещён; согласован trim/регистр, включая Unicode edge whitespace. Старые
+ошибочные grant rows сохранены без доступа. OWNER сохраняет существующий MFA.
+
+16 новых actual SQLite/HTTP cases PASS. Первые2 ошибки были в fixture: неверное
+имя колонки bound_at вместо created_at и legacy test с невалидным VIN/opaque
+ID вместо допустимого HTTP UUID. Исправление VIN отдельно не устранило ID
+ошибку; fixture заменён настоящим HTTP-created UUID на20-схеме и nullable
+legacy годом до21, assertions/публичная валидация не ослаблялись. Затем16/16
+PASS, including make/model/year отдельно и Unicode permission cases.
+21 migrations smoke,6 reference,12 preflight PASS. Existing admin authorization
+и8 Driver write-contract cases PASS; version-store/schema regressions идут
+отдельно. Полный local npm test дошёл до protected OWNER CLI и вновь не
+прошёл из-за sandbox child process restriction; не объявлен PASS и не ослаблен.
+74-й test script и десятый native D1 workflow добавлены для полного CI.
+
+Один поиск вызвал отсутствующий adminProfileService.js; реальные entrypoints
+найдены через rg, source не менялся по предположению. Новые документы
+VEHICLE_RULE_BINDING_SCOPE_2026-11-17.md отделяют binding от trusted assessment.
+Legacy captureCurrentVehicleClassification остаётся unintegrated current-head
+candidate helper и не представляет approved pinned review. Нельзя подключать
+его к допуску/маршруту; будущий trusted service читает новый binding.
+Trusted API/admission/Admin UI/BEV review/legacy transition/in_progress handoff
+ещё не готовы. Нет seed/real materials/remote migration/merge/deploy, G1paused.

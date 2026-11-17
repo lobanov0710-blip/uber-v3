@@ -37,6 +37,13 @@ function normalizePermission(value) {
     .toLowerCase();
 }
 
+// Owner correction, 2026-11-17: these powers must never be granted to a
+// dispatcher. Old or erroneous database rows are not authorization.
+const OWNER_ONLY_CLASSIFIER_PERMISSIONS = new Set([
+  "vehicle_rules.manage",
+  "vehicles.approve_exception"
+]);
+
 
 export async function resolveAdminAccess(
   env,
@@ -141,7 +148,7 @@ export async function resolveAdminAccess(
                 row?.permission
               )
           )
-          .filter(Boolean)
+          .filter(permission => permission && !OWNER_ONLY_CLASSIFIER_PERMISSIONS.has(permission))
       )
     ];
 
@@ -177,6 +184,10 @@ export function adminCan(
     );
 
   if (!required) {
+    return false;
+  }
+
+  if (OWNER_ONLY_CLASSIFIER_PERMISSIONS.has(required)) {
     return false;
   }
 
