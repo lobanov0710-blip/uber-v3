@@ -12,6 +12,7 @@ on:
       - 'arch/g2-driver-system-class-contract'
       - 'arch/g2-classifier-binding'
       - 'arch/g2-admin-vehicle-rules'
+      - 'arch/g2-trusted-vehicle-assessment'
   pull_request:
     branches:
       - main
@@ -72,6 +73,8 @@ jobs:
         run: node tools/check_rule_binding_d1.mjs
       - name: Verify OWNER rule APIs and populated upgrade with local workerd and D1
         run: node tools/check_admin_vehicle_rules_d1.mjs
+      - name: Verify trusted assessment storage and permanent invalidation with native D1
+        run: node tools/check_trusted_assessment_d1.mjs
       - name: Verify protected OWNER CLI with actual Wrangler import output
         run: python3 tools/check_owner_phone_provisioning.py
       - name: Bundle Worker without deploying
