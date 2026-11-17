@@ -3466,3 +3466,20 @@ driverPrivateUploadService; один Android read выполнен в backend cw
 прочитан по правильному пути. До CI исправлено неверное ожидание строки ошибки
 в native test (фактическая ошибка формы «Проверьте поля...»). Assertions не
 ослаблялись. G1paused,D4–D7pending; нет seed/real data/remote migration/merge/deploy.
+
+
+## Обязательный цвет: backend CI PASS — 2026-11-17
+
+Sourcea8a67fd9aaaf32359aa04370ebece424709d87df,
+treea560708c194fd1f9639f7d8d81751f94cfc89745, CI44088974938/
+job134058811280 SUCCESS.74 npm scripts,10 actual Driver write HTTP cases
+(2 новых по цвету),17 binding regressions,21 migrations,12 preflight,6
+reference,10 native D1 workflows,6 protected CLI scenarios,audit0,Worker
+dry-run PASS. Native D1 явно подтвердил requiredColor. Existing readiness
+проверил7 недопустимых вариантов цвета; без цвета машина не complete.
+Первый run успешен. Не подменять это проверкой Android: его CI/receipt
+самостоятельны. Draft PR38, exact source hashes/границы в
+REQUIRED_VEHICLE_COLOR_API_VERIFICATION_2026-11-17.json. Следующий commit
+только docs; code tree уже сверен локально и удалённо.
+Нет новой миграции/backfill/массового снятия допуска/палитры/новых прав/
+изменения pinned classification. G1paused, remote migration/merge/deploy нет.
