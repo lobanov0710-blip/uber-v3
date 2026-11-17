@@ -2,6 +2,8 @@
 // DRIVER PRIVATE UPLOAD / SUBMISSION SERVICE
 // =========================================
 
+import { normalizeVehicleColor } from './vehicleColor.js';
+
 import {
   getDriverProfile,
   getDriverVehicle,
@@ -982,6 +984,7 @@ export function evaluateDriverRegistrationReadiness(
       Boolean(
         vehicle.usageBasis
       )
+      && normalizeVehicleColor(vehicle.color) !== null
       &&
       missingDocuments.length ===
         0
@@ -1003,6 +1006,9 @@ export function evaluateDriverRegistrationReadiness(
 
       missingUsageBasis:
         !vehicle.usageBasis,
+
+      missingColor:
+        normalizeVehicleColor(vehicle.color) === null,
 
       missingDocuments,
 

@@ -10,7 +10,7 @@ import { getCurrentVehicleRuleBinding as binding } from '../src/core/vehicleRule
 
 const migration=readFileSync(new URL('../migrations/0021_vehicle_rule_bindings.sql',import.meta.url),'utf8');
 const vehicleBody={vin:'XW8ZZZ61ZFG000001',plate:'SYNTHETIC',make:'Toyota',model:'Camry',modelYear:2020,
-  color:null,capacity:4,baggageCapacity:'standard',usageBasis:'owner'};
+  color:'Белый',capacity:4,baggageCapacity:'standard',usageBasis:'owner'};
 async function setup(t,throughMigration=Infinity){
   const DB=sqliteD1({throughMigration});t.after(()=>DB.sqlite.close());await seedModeration(DB);
   const env={DB,JWT_SECRET:'synthetic-rule-binding-jwt-01234567890123456789'};

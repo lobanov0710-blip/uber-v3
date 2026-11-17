@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-17",
+  "scope": "required-vehicle-body-color-api-and-readiness",
+  "status": "ci-verified",
+  "ownerDecision": "Цвет кузова обязателен.",
+  "sourceCommit": "a8a67fd9aaaf32359aa04370ebece424709d87df",
+  "sourceTree": "a560708c194fd1f9639f7d8d81751f94cfc89745",
+  "workflowRun": 44088974938,
+  "workflowJob": 134058811280,
+  "conclusion": "success",
+  "checks": {
+    "npmTestScripts": 74,
+    "driverWriteContractHttpCases": 10,
+    "newColorHttpCases": 2,
+    "bindingRegressionCases": 17,
+    "readinessInvalidColorVariants": 7,
+    "migrationSmokeCount": 21,
+    "preflightCases": 12,
+    "referenceCases": 6,
+    "nativeD1Workflows": 10,
+    "nativeD1RequiredColorCheck": true,
+    "protectedOwnerCliScenarios": 6,
+    "dependencyAuditVulnerabilities": 0,
+    "workerBundleDryRun": true
+  },
+  "sourceSha256": {
+    "src/core/driverPrivateUploadService.js": "5812ac69941c24e04802f55ba1739c079819b93cbf25de145dab8d89434b3ec7",
+    "src/core/driverRegistrationService.js": "4d71e3e710197170b6446e4e7d246216074f044de8732101e290a53ddb1a1be7",
+    "src/core/vehicleColor.js": "9567b8e00ca0f63239c6d1e8908ba074be4b07bcf9bc99e95a5f4466df663544",
+    "tests/driverRegistrationReadiness.test.mjs": "adeaf3fd0d2fc460266e55d851eb3c71f6a87244483fa18867a31e926772e0ed",
+    "tests/driverSystemClassContract.test.mjs": "7acd8cd3eb0b662702723b1eb0cbc8a195ccffbbc638fb3ae3359a228aa3a3f9",
+    "tests/vehicleRuleBinding.test.mjs": "f65330a62ff64a854336f09bc387c881026ec19b21fb6fcb1ce3213274e517b6",
+    "tools/check_driver_class_contract_d1.mjs": "2082e194b012c9636f5985369ee622ae4a299a862fdba44051639cceb42cf4f5",
+    "tools/check_rule_binding_d1.mjs": "99ca858d70dc38cc98a5d596864c8edceee2da695ddef0a8d09cca6fb31bd70e"
+  },
+  "behavior": [
+    "POST requires nonblank string color1..80 after trim; rejects missing/null/non-string/internal controls.",
+    "PATCH validates merged record; omitting valid existing color preserves it.",
+    "Legacy null color remains readable but must be filled before saving.",
+    "Readiness marks missingColor and does not count a colorless vehicle as complete."
+  ],
+  "androidDependency": {
+    "pullRequest": "https://github.com/lobanov0710-blip/TransferDriver/pull/16",
+    "codeCommit": "e5712c969049fb6670fd64863db189f3d32eb038",
+    "workflowRun": 44089001617,
+    "verification": "Separate Android CI/receipt; not certified by this backend-only receipt."
+  },
+  "boundaries": {
+    "newMigrationsCreated": false,
+    "existingDataBackfilled": false,
+    "existingApprovalsMassRevoked": false,
+    "newColorPaletteIntroduced": false,
+    "classificationRuleChanged": false,
+    "dispatcherRightsChanged": false,
+    "remoteMigrationPerformed": false,
+    "mergePerformed": false,
+    "deployPerformed": false,
+    "g1Paused": true
+  },
+  "limits": [
+    "Existing storage/read DTO may retain null for legacy correction; new public saves/readiness require color.",
+    "This is the required-color change only, not completed trusted Admin classification or live Driver acceptance.",
+    "Later docs-only commits do not change the verified code SHA."
+  ]
+}

@@ -98,6 +98,7 @@ const profile = {
 
 
 const ownerVehicle = {
+  color: "Белый",
   id:
     "vehicle_owner",
 
@@ -193,6 +194,7 @@ assert.deepEqual(
 
 
 const rentalVehicle = {
+  color: "Белый",
   id:
     "vehicle_rental",
 
@@ -359,6 +361,14 @@ assert.deepEqual(
   ]
 );
 
+
+
+// Required body color cannot be bypassed by legacy metadata at final submission.
+for (const color of [undefined,null,"","  ",42,{},"Белый\nСерый"]) {
+  const missingColor = evaluateDriverRegistrationReadiness(profile,[{...ownerVehicle,color}],baseMaterials);
+  assert.equal(missingColor.complete,false);
+  assert.equal(missingColor.vehicles[0].missingColor,true);
+}
 
 console.log(
   "✓ DRIVER REGISTRATION READINESS TESTS PASSED"

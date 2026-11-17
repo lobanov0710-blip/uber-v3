@@ -3432,3 +3432,54 @@ security guards8/5 PASS; новый APK/Android CI не создавались. 
 и его HTTP API/правила/evidence, admission guards, Admin UI и оставшийся BEV/
 legacy/in_progress handoff ещё не готовы. Нет seed/real materials/remote
 migration/merge/deploy/нового доступа OWNER-only STAGING; G1paused,D4–D7pending.
+
+
+## Решение владельца: цвет кузова обязателен — 2026-11-17
+
+Указание владельца: «Исправить: цвет кузова на обязательно». Обязательность
+внесена без повторного согласования. Отдельные fix/vehicle-color-required
+ветки созданы от проверенных backend PR37/Android docs PR15. Backend POST
+требует строковый color1..80 после trim, запрещает null/missing/пустое/пробелы/
+нестроковое/внутренние controls. PATCH проверяет итоговую запись: пропущенный
+color сохраняет имеющийся действительный цвет, legacy без цвета нужно заполнить.
+Readiness анкеты требует цвет; missingColor явно указывает причину. Нулевые
+старые значения разрешены только для чтения/исправления, не выдумываются.
+Нет массового исправления/снятия допуска или нового правила классификации.
+
+Driver: «Цвет (необязательно)» заменён на «Цвет кузова», required validation
+с понятной ошибкой. Existing native create/edit scenario расширен: blank/
+whitespace не отправляются, очистка цвета при edit блокирует PATCH; валидный
+цвет явно проверяется в body. DTO продолжает читать legacy null для заполнения.
+Обновлены только synthetic fixtures, связанные с новым обязательным полем.
+Новых палитр/списков цветов/библиотек/ролей/миграций нет.
+
+10 actual API cases PASS (2 новых случая цвета),17 binding regressions,
+existing registration/readiness PASS локально. Security guards8 Driver/5 Admin
+PASS. В existing native D1 harness добавлен requiredColor check; полный backend
+и Android CI ещё предстоят. Новый APK пока не объявлен проверенным.
+
+Ошибки инструментов: команда создания Android worktree сначала ошибочно
+вызвана в backend repo и остановилась на уже существующей ветке, исправлена
+на правильный repo без изменения его кода. Поиск readiness/submit сначала
+использовал несуществующие имена, реальные реализации найдены через rg в
+driverPrivateUploadService; один Android read выполнен в backend cwd, затем
+прочитан по правильному пути. До CI исправлено неверное ожидание строки ошибки
+в native test (фактическая ошибка формы «Проверьте поля...»). Assertions не
+ослаблялись. G1paused,D4–D7pending; нет seed/real data/remote migration/merge/deploy.
+
+
+## Обязательный цвет: backend CI PASS — 2026-11-17
+
+Sourcea8a67fd9aaaf32359aa04370ebece424709d87df,
+treea560708c194fd1f9639f7d8d81751f94cfc89745, CI44088974938/
+job134058811280 SUCCESS.74 npm scripts,10 actual Driver write HTTP cases
+(2 новых по цвету),17 binding regressions,21 migrations,12 preflight,6
+reference,10 native D1 workflows,6 protected CLI scenarios,audit0,Worker
+dry-run PASS. Native D1 явно подтвердил requiredColor. Existing readiness
+проверил7 недопустимых вариантов цвета; без цвета машина не complete.
+Первый run успешен. Не подменять это проверкой Android: его CI/receipt
+самостоятельны. Draft PR38, exact source hashes/границы в
+REQUIRED_VEHICLE_COLOR_API_VERIFICATION_2026-11-17.json. Следующий commit
+только docs; code tree уже сверен локально и удалённо.
+Нет новой миграции/backfill/массового снятия допуска/палитры/новых прав/
+изменения pinned classification. G1paused, remote migration/merge/deploy нет.

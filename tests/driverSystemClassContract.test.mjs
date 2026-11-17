@@ -9,7 +9,7 @@ import { changeDriverAssignmentPhase } from '../src/core/driverTripOperationalSe
 import { transitionOrderTerminal } from '../src/core/orderTerminalMutationService.js';
 import { advanceDriverOrder } from '../src/core/orderRepository.js';
 const body = { vin: 'XW8ZZZ61ZFG000001', plate: 'SYNTHETIC', make: 'Toyota', model: 'Camry',
-  modelYear: 2020, color: null, capacity: 4, baggageCapacity: 'standard', usageBasis: 'owner' };
+  modelYear: 2020, color: 'Белый', capacity: 4, baggageCapacity: 'standard', usageBasis: 'owner' };
 async function setup(t) {
   const DB = sqliteD1(); t.after(() => DB.sqlite.close()); await seedModeration(DB);
   const env = { DB, JWT_SECRET: 'synthetic-driver-class-contract-jwt-01234567890123456789' };
@@ -43,6 +43,29 @@ test('HTTP creation requires a numeric year and returns an unclassified draft', 
   assert.equal(Object.hasOwn(car, 'yearVerified'), false);
   const me = await send('GET', '/v1/driver/me');
   assert.equal(me.body.vehicles.find(v => v.id===car.id).vehicleClass, null);
+});
+test('HTTP requires a nonblank textual body color on creation and editing',async t=>{
+  const {DB,send}=await setup(t);const before=DB.sqlite.prepare('SELECT count(*) n FROM vehicles').get().n;
+  const missing={...body};delete missing.color;
+  assert.equal((await send('POST','/v1/driver/vehicles',missing)).status,400);
+  for(const color of [null,'','  ','\u00a0',42,{},'x'.repeat(81),'Белый\nСерый']){
+    assert.equal((await send('POST','/v1/driver/vehicles',{...body,color})).status,400);
+  }
+  assert.equal(DB.sqlite.prepare('SELECT count(*) n FROM vehicles').get().n,before);
+  const car=await create(send);
+  for(const color of [null,'','  ',42,{}])assert.equal((await send('PATCH','/v1/driver/vehicles/'+car.id,{color,expectedRevision:1})).status,400);
+  assert.equal(DB.sqlite.prepare('SELECT revision FROM vehicles WHERE id=?').get(car.id).revision,1);
+});
+test('legacy missing color remains readable but must be filled before saving; sparse edits preserve valid color',async t=>{
+  const {DB,send}=await setup(t);const car=await create(send);
+  const sparse=await send('PATCH','/v1/driver/vehicles/'+car.id,{capacity:5,expectedRevision:1});
+  assert.equal(sparse.status,200);assert.equal(sparse.body.vehicle.color,'Белый');
+  DB.sqlite.prepare('UPDATE vehicles SET color=NULL WHERE id=?').run(car.id);
+  const me=await send('GET','/v1/driver/me');assert.equal(me.status,200);
+  assert.equal(me.body.vehicles.find(v=>v.id===car.id).color,null);
+  assert.equal((await send('PATCH','/v1/driver/vehicles/'+car.id,{capacity:4,expectedRevision:2})).status,400);
+  const fixed=await send('PATCH','/v1/driver/vehicles/'+car.id,{color:' Чёрный ',expectedRevision:2});
+  assert.equal(fixed.status,200);assert.equal(fixed.body.vehicle.color,'Чёрный');
 });
 test('HTTP rejects driver-supplied class, verification flags, missing year and malformed year', async t => {
   const { send } = await setup(t);
