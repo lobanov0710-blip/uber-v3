@@ -247,6 +247,7 @@ export function assignmentCandidateBlockers(candidate, vehicleId) {
   if (!candidate.vehicleId) blockers.push('vehicle_not_found');
   else {
     if (candidate.vehicleStatus !== 'approved') blockers.push('vehicle_not_approved');
+    if (candidate.classificationValid !== true) blockers.push('vehicle_classification_required');
     if (candidate.photoControlBlocked) blockers.push('vehicle_photo_control_required');
     if (candidate.availabilityState === 'on_line' && candidate.activeVehicleId && candidate.activeVehicleId !== vehicleId) blockers.push('active_vehicle_mismatch');
   }

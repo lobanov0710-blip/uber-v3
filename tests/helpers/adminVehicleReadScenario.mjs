@@ -1,13 +1,17 @@
+import { seedAdmissionReferenceD1,seedAdmissionProofD1 } from './admissionFixture.mjs';
 import assert from 'node:assert/strict';
 import { seedModeration,moderator,fixturePassword,driverId } from './adminModerationScenario.mjs';
 export const car='vehicle_fixture001',car2='vehicle_fixture002';
 export async function seedVehicleReads(DB){
-  await seedModeration(DB);
+  await seedAdmissionReferenceD1(DB);
+  await seedAdmissionReferenceD1(DB,'Test','Car2');
+  await seedModeration(DB,{vehicleYear:2023,vehicleColor:'White'});
   await DB.prepare('DELETE FROM staff_permissions').run();
   for(const permission of ['vehicles.read','vehicles.verify'])await DB.prepare('INSERT INTO staff_permissions(account_id,permission,granted_by,created_at) VALUES(?1,?2,?1,1)').bind(moderator,permission).run();
   await DB.prepare("UPDATE vehicles SET status='approved'").run();
-  await DB.prepare(`INSERT INTO vehicles(id,driver_id,vin,plate,make,model,class,capacity,status,created_at,updated_at)
-    VALUES(?1,?2,'TESTVIN0000000002','TEST2','Test','Car2','comfort',4,'approved',1,1)`).bind(car2,driverId).run();
+  await DB.prepare(`INSERT INTO vehicles(id,driver_id,vin,plate,make,model,class,capacity,status,model_year,color,created_at,updated_at)
+    VALUES(?1,?2,'TESTVIN0000000002','TEST2','Test','Car2','comfort',4,'approved',2023,'White',1,1)`).bind(car2,driverId).run();
+  await seedAdmissionProofD1(DB,car);await seedAdmissionProofD1(DB,car2);
 }
 export function minimal(value){for(const secret of ['TESTVIN','+79990000000','Synthetic Driver','PRIVATE_REASON','private_object_key','photos','reviewedBy','reason'])assert.ok(!JSON.stringify(value).includes(secret),secret);}
 export async function vehicleReadWorkflow(DB,send){

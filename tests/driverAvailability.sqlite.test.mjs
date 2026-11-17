@@ -1,3 +1,4 @@
+import { operationAudits } from './helpers/admissionFixture.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { updateDriverAvailability } from '../src/core/driverAvailabilityRepository.js';
@@ -12,6 +13,7 @@ function mutation(key = 'A', claim = 'claim-first') {
       requestDigest: 'B'.repeat(43), claimId: claim } };
 }
 function count(DB, table) {
+  if(table==='audit_events')return operationAudits(DB);
   return DB.sqlite.prepare('SELECT count(*) AS n FROM ' + table).get().n;
 }
 

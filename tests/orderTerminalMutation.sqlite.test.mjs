@@ -1,3 +1,4 @@
+import { seedAdmissionReference,seedAdmissionProof } from './helpers/admissionFixture.mjs';
 import assert from "node:assert/strict";
 import test from "node:test";
 import { webcrypto } from "node:crypto";
@@ -154,6 +155,7 @@ function setup(t) {
     DRIVER.id
   );
 
+  seedAdmissionReference(DB);
   DB.sqlite.prepare(`
     INSERT INTO vehicles (
       id,
@@ -165,6 +167,7 @@ function setup(t) {
       class,
       capacity,
       status,
+      model_year,color,
       created_at,
       updated_at
     )
@@ -178,6 +181,7 @@ function setup(t) {
       'comfort',
       4,
       'approved',
+      2023,'White',
       1,
       1
     )
@@ -185,6 +189,8 @@ function setup(t) {
     VEHICLE,
     DRIVER.id
   );
+
+  seedAdmissionProof(DB,VEHICLE);
 
   return DB;
 }
@@ -871,6 +877,7 @@ test(
           DRIVER.id
       }
     );
+    insertActiveAssignment(DB,{id:'assignment_reuse_admitted',orderId:'order_reuse_123'});
 
     const first =
       await transitionOrderTerminal(
@@ -949,6 +956,7 @@ test(
           DRIVER.id
       }
     );
+    insertActiveAssignment(DB,{id:'assignment_claim_admitted',orderId:'order_claim_123'});
 
     const common = {
       actorAccountId:
@@ -1044,6 +1052,7 @@ test(
           DRIVER.id
       }
     );
+    insertActiveAssignment(DB,{id:'assignment_rollback_admitted',orderId:'order_rollback_123'});
 
     DB.sqlite.exec(`
       CREATE TRIGGER fail_terminal_audit

@@ -1,3 +1,4 @@
+import { trustedVehicleGuard } from './trustedVehicleAdmission.js';
 // =========================================
 // ORDER ASSIGNMENT REPOSITORY
 // =========================================
@@ -394,6 +395,7 @@ export const ASSIGNMENT_ELIGIBILITY_COLUMNS = `
           p.identity_status,
 
           v.status AS vehicle_status,
+          ${trustedVehicleGuard('v','?3')} AS vehicle_classification_valid,
           v.next_photo_check_due_at,
 
           (
@@ -528,6 +530,8 @@ export function assignmentCandidateFromRow(row) {
         : clean(
             row.vehicle_id
           ),
+
+    classificationValid:Number(row.vehicle_classification_valid)===1,
 
     vehicleStatus:
       row.vehicle_status == null
@@ -1037,6 +1041,7 @@ export async function assignOrderToDriverVehicle(
             WHERE v.id = ?6
               AND v.driver_id = ?2
               AND v.status = 'approved'
+              AND ${trustedVehicleGuard('v','?4')}
           )
 
           AND NOT EXISTS (
@@ -1347,6 +1352,7 @@ export async function reassignOrderToDriverVehicle(
             WHERE v.id = ?6
               AND v.driver_id = ?2
               AND v.status = 'approved'
+              AND ${trustedVehicleGuard('v','?4')}
           )
 
           AND NOT EXISTS (

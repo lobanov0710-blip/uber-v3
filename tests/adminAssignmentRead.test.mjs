@@ -1,3 +1,4 @@
+import { seedAdmissionReference,seedAdmissionProof } from './helpers/admissionFixture.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import router from '../src/router.js';
@@ -24,10 +25,10 @@ function order(DB,id=orderId,status='new') {
     VALUES(?,'SYNTHETIC_PRIVATE_PASSENGER','+79990000001','PRIVATE ROUTE','Origin','Destination','2030-01-01','comfort','SYNTHETIC_PRIVATE_COMMENT',?,1,1)`).run(id,status);
 }
 async function setup(t) {
-  const DB=sqliteD1();t.after(()=>DB.sqlite.close());await seedModeration(DB);grants(DB);order(DB);
+  const DB=sqliteD1();t.after(()=>DB.sqlite.close());seedAdmissionReference(DB);seedAdmissionReference(DB,'Test','Car2');await seedModeration(DB,{vehicleYear:2023,vehicleColor:'White'});grants(DB);order(DB);
   DB.sqlite.exec("UPDATE driver_profiles SET registration_status='approved',identity_status='verified'; UPDATE vehicles SET status='approved'");
-  DB.sqlite.prepare(`INSERT INTO vehicles(id,driver_id,vin,plate,make,model,class,capacity,status,created_at,updated_at)
-    VALUES(?,?,'TESTVIN0000000002','TEST2','Test','Car2','comfort',4,'approved',1,1)`).run(car2,driverId);
+  DB.sqlite.prepare(`INSERT INTO vehicles(id,driver_id,vin,plate,make,model,class,capacity,status,model_year,color,created_at,updated_at)
+    VALUES(?,?,'TESTVIN0000000002','TEST2','Test','Car2','comfort',4,'approved',2023,'White',1,1)`).run(car2,driverId);seedAdmissionProof(DB,car);seedAdmissionProof(DB,car2);
   const env={DB,JWT_SECRET:'synthetic-assignment-read-jwt-01234567890123456789',ADMIN_MFA_ENCRYPTION_KEY:Buffer.alloc(32,9).toString('base64')};
   async function send(path,token,method='GET') {
     const response=await router(new Request('https://fixture.invalid'+path,{method,headers:token?{Authorization:'Bearer '+token}:{}}),env,{});

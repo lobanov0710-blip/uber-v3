@@ -25,7 +25,7 @@ try {
  const first=await updateDriverAvailability({DB},args);
  const loser=await updateDriverAvailability({DB},{...args,auditId:'audit_loser',idempotency:{...args.idempotency,claimId:'claim_loser'}});
  const stale=await updateDriverAvailability({DB},{...args,auditId:'audit_stale',idempotency:{...args.idempotency,keyDigest:'C'.repeat(43),claimId:'claim_stale'}});
- const audit=await DB.prepare('SELECT count(*) n FROM audit_events').first();
+ const audit=await DB.prepare('SELECT count(*) n FROM audit_events WHERE id NOT LIKE 'audit_fixture_admission_%'').first();
  if(first.kind!=='success'||loser.kind!=='existing_idempotency'||stale.kind!=='conflict'||audit.n!==1)throw Error('D1 audit invariant failure');
  console.log(JSON.stringify({engine:'local workerd/D1',first:first.kind,loser:loser.kind,stale:stale.kind,auditRows:audit.n,result:'PASS'}));
 } finally {local.sqlite.close();await mf.dispose();}

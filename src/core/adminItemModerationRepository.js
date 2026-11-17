@@ -1,3 +1,4 @@
+import { trustedVehicleGuard } from './trustedVehicleAdmission.js';
 // =========================================
 // ADMIN ITEM MODERATION REPOSITORY
 // =========================================
@@ -1397,11 +1398,7 @@ export async function moderateVehicle(
       "approved"
       ? `
           AND usage_basis IS NOT NULL
-          AND typeof(color)='text' AND length(color)<=80
-          AND length(trim(color,char(9,10,11,12,13,32,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288,65279)))>0
-          AND instr(color,char(0))=0 AND color NOT GLOB ('*['||char(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,127)||']*')
-          AND EXISTS(SELECT 1 FROM vehicle_current_trusted_assessments ta
-            WHERE ta.vehicle_id=vehicles.id AND ta.outcome='candidate' AND ta.class IS NOT NULL)
+          AND ${trustedVehicleGuard('vehicles','?7',false)}
 
           AND EXISTS (
             SELECT 1
@@ -1777,7 +1774,7 @@ export async function finalizeDriverRegistrationModeration(
             FROM vehicles v
             WHERE v.driver_id = ?1
               AND v.status = 'approved'
-              AND EXISTS(SELECT 1 FROM vehicle_current_trusted_assessments ta WHERE ta.vehicle_id=v.id AND ta.outcome='candidate' AND ta.class=v.class)
+              AND ${trustedVehicleGuard('v','?6')}
           )
         `
       : "";

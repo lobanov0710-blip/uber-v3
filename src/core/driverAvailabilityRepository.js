@@ -1,3 +1,4 @@
+import { trustedVehicleGuard } from './trustedVehicleAdmission.js';
 // =========================================
 // DRIVER AVAILABILITY REPOSITORY
 // =========================================
@@ -201,6 +202,7 @@ export async function getOwnedVehicleEligibility(
           v.id,
           v.driver_id,
           v.status,
+          ${trustedVehicleGuard('v','?3')} AS vehicle_classification_valid,
           v.next_photo_check_due_at,
           EXISTS(SELECT 1 FROM order_assignments a JOIN vehicle_reverification_assignment_holds h ON h.assignment_id=a.id
             WHERE a.vehicle_id=v.id AND a.state='active' AND a.revoked_at IS NULL) AS vehicle_reverification_blocked,
@@ -295,6 +297,8 @@ export async function getOwnedVehicleEligibility(
       Number(
         row.photo_control_blocked
       ) === 1,
+
+    classificationValid:Number(row.vehicle_classification_valid)===1,
 
     vehicleReverificationBlocked: Number(row.vehicle_reverification_blocked) === 1,
 
@@ -461,7 +465,7 @@ export async function updateDriverAvailability(
               FROM vehicles v
               WHERE v.id = ?3
                 AND v.driver_id = ?1
-                AND (?4 = 'off_line' OR v.status = 'approved')
+                AND (?4 = 'off_line' OR (v.status = 'approved' AND ${trustedVehicleGuard('v','?5')}))
             )
           )
 

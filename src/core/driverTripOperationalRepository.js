@@ -1,3 +1,4 @@
+import { trustedVehicleGuard } from './trustedVehicleAdmission.js';
 // =========================================
 // DRIVER TRIP OPERATIONAL REPOSITORY
 // =========================================
@@ -848,7 +849,7 @@ export async function advanceDriverAssignmentPhase(
           AND NOT EXISTS(SELECT 1 FROM vehicle_reverification_assignment_holds h WHERE h.assignment_id=a.id)
           AND EXISTS (
             SELECT 1 FROM vehicles v WHERE v.id = a.vehicle_id
-              AND v.class IS NOT NULL AND v.status IN ('approved','photo_check_required')
+              AND v.class IS NOT NULL AND v.status IN ('approved','photo_check_required') AND ${trustedVehicleGuard('v','?7')}
           )
 
           -- Immediate photo-control blocks further operational movement, even if
