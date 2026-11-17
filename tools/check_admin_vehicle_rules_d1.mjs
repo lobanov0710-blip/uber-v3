@@ -45,7 +45,8 @@ try {
   await DB.prepare("INSERT INTO vehicle_classification_rules VALUES('native_rule_invalid','Toyota','Synthetic invalid',1,2023,'business','',1)").run();
   await assert.rejects(DB.prepare("INSERT INTO vehicle_classification_rule_definitions VALUES('native_rule_invalid','[\"crossover\"]','[]',?1,'Synthetic',1)").bind(ownerId).run());
   assert.deepEqual((await DB.prepare('PRAGMA foreign_key_check').all()).results,[]);
-  assert.equal((await DB.prepare('PRAGMA integrity_check').first()).integrity_check,'ok');
+  // D1 authorizes quick_check, not SQLite's unrestricted integrity_check.
+  assert.equal((await DB.prepare('PRAGMA quick_check').first()).quick_check,'ok');
   console.log(JSON.stringify({engine:'native local workerd HTTP/D1',...result,populatedUpgradePreserved:true,
-    failedUpgradeRolledBack:true,noSeed:true,definitionImmutable:true,bodyConstraint:true,foreignKeys:true}));
+    failedUpgradeRolledBack:true,noSeed:true,definitionImmutable:true,bodyConstraint:true,foreignKeys:true,quickCheck:true}));
 } finally {local.sqlite.close();await mf.dispose();}

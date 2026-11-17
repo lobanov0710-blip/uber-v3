@@ -158,6 +158,7 @@ test('populated migration21 ->22 preserves existing data and failed migration ro
   for(let i=0;i<tables.length;i++)assert.equal(JSON.stringify(DB.sqlite.prepare('SELECT * FROM "'+tables[i]+'"').all()),before[i],tables[i]);
   assert.equal(DB.sqlite.prepare('SELECT count(*) n FROM vehicle_classification_rule_definitions').get().n,0);
   assert.deepEqual(DB.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
+  assert.equal(DB.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
 });
 test('competing publications use CAS and concurrent same-key retries create one immutable result',async t=>{
   const {DB,send,owner}=await setup(t);const token=await owner();
