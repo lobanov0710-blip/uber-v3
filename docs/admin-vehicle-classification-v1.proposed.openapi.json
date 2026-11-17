@@ -1487,7 +1487,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "The original vehicle input generation read before correction; null remains subject to the separate legacy activation rules."
           },
           "expectedRuleVersion": {
             "oneOf": [
@@ -1500,7 +1501,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Applied target binding: the pinned version when make/model/year are unchanged, or the current target make/model version after an explicit correction. Exception basisRuleVersion is separate."
           },
           "mode": {
             "type": "string",

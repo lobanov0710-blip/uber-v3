@@ -13,6 +13,7 @@ on:
       - 'arch/g2-classifier-binding'
       - 'arch/g2-admin-vehicle-rules'
       - 'arch/g2-trusted-vehicle-assessment'
+      - 'arch/g2-vehicle-review-atomic'
   pull_request:
     branches:
       - main
@@ -75,6 +76,8 @@ jobs:
         run: node tools/check_admin_vehicle_rules_d1.mjs
       - name: Verify trusted assessment storage and permanent invalidation with native D1
         run: node tools/check_trusted_assessment_d1.mjs
+      - name: Verify atomic corrections, legacy approval guard and held trips with native D1
+        run: node tools/check_atomic_vehicle_review_d1.mjs
       - name: Verify protected OWNER CLI with actual Wrangler import output
         run: python3 tools/check_owner_phone_provisioning.py
       - name: Bundle Worker without deploying

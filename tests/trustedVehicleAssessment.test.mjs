@@ -57,7 +57,9 @@ test('stale vehicle, input or pinned version and changed evidence cannot create 
     const result=await s.capture({...s.body,...extra},'trusted-conflict-'+crypto.randomUUID());assert.equal(result.status,409);
   }
   assert.equal(DB.sqlite.prepare('SELECT count(*) n FROM vehicle_trusted_assessments').get().n,0);
-  assert.equal((await s.capture({...s.body,parameters:{...s.body.parameters,modelYear:2022}},'trusted-correction-not-open')).status,422);
+  const corrected=await s.capture({...s.body,parameters:{...s.body.parameters,modelYear:2022}},'trusted-correction-atomic');
+  assert.equal(corrected.ok,true);assert.equal(corrected.inputRevision,2);
+  assert.equal(DB.sqlite.prepare('SELECT model_year FROM vehicles WHERE id=?').get(s.vehicle.id).model_year,2022);
 });
 test('data and evidence races between precheck and transaction fail closed',async t=>{
   for(const change of ["UPDATE vehicles SET revision=revision+1", "DELETE FROM staff_permissions WHERE permission='vehicles.verify'",

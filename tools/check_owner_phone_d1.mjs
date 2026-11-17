@@ -10,6 +10,7 @@ try{
  const DB=await mf.getD1Database('DB','phone-audit');
  for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all())await DB.prepare(row.sql).run();
  for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL").all())await DB.prepare(row.sql).run();
+ for (const type of ['view','trigger']) for (const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type=? AND sql IS NOT NULL ORDER BY rowid").all(type)) await DB.prepare(row.sql).run();
  // Issue the pre-existing dispatcher session outside phone mode through the tested service.
  const {loginStaff}=await import('../src/core/staffAuthService.js');
  const send=async(route,body,token,phone=true)=>{

@@ -10,6 +10,7 @@ try {
   const DB=await mf.getD1Database('DB','assignment-read-audit');
   for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all())await DB.prepare(row.sql).run();
   for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL").all())await DB.prepare(row.sql).run();
+  for (const type of ['view','trigger']) for (const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type=? AND sql IS NOT NULL ORDER BY rowid").all(type)) await DB.prepare(row.sql).run();
   await seedModeration(DB);await DB.prepare('DELETE FROM staff_permissions').run();
   for(const p of ['orders.read','orders.assign','drivers.read','vehicles.read'])await DB.prepare('INSERT INTO staff_permissions(account_id,permission,granted_by,created_at) VALUES(?1,?2,?1,1)').bind(moderator,p).run();
   await DB.prepare("UPDATE driver_profiles SET registration_status='approved',identity_status='verified'").run();await DB.prepare("UPDATE vehicles SET status='approved'").run();

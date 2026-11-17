@@ -16,6 +16,7 @@ try{
  const DB=await mf.getD1Database('DB','mfa-audit');
  for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all())await DB.prepare(row.sql).run();
  for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL").all())await DB.prepare(row.sql).run();
+ for (const type of ['view','trigger']) for (const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type=? AND sql IS NOT NULL ORDER BY rowid").all(type)) await DB.prepare(row.sql).run();
  const password='Fixture-Owner-Password-123!',v=await hashStaffPassword(password),id='fixture-owner';
  await DB.prepare(`INSERT INTO staff_accounts(id,login,display_name,role,status,password_algorithm,password_iterations,password_salt,password_hash,password_changed_at,created_at,updated_at)
  VALUES(?1,'owner.fixture','Fixture OWNER','admin','active',?2,?3,?4,?5,1,1,1)`).bind(id,v.passwordAlgorithm,v.passwordIterations,v.passwordSalt,v.passwordHash).run();

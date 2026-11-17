@@ -245,3 +245,17 @@ GET trusted integration и итоговые admission guards пока не по�
 OpenAPI read schema дополнена обязательным color field с legacy null, согласно
 прямой поправке владельца и уже действующему GET. Новое поле в review write
 не добавлено; обязательность цвета на public vehicle save сохраняется.
+
+
+PR41 продолжает этот storage prerequisite: атомарные make/model/year corrections,
+сброс прежнего допуска/off_line, immutable hold старого назначения, SQL guard
+прежнего approved с проекцией system class и актуальным actor/session/MFA.
+Reapproval машины не снимает hold старого trip. Изменение obsolete evidence
+не сбрасывает актуальный результат по другим документам. Подробности и границы:
+[atomic review](ATOMIC_VEHICLE_REVIEW_2026-11-17.md).
+Public classification/review, trusted GET/history/UI и общий current assessment
+guard всех admission/legacy/expiry paths остаются следующими частями; это не
+готовый полный rollout. expectedInputRevision описывает исходную generation,
+expectedRuleVersion — применяемую целевую версию при явной коррекции либо
+прежнюю закреплённую без смены ключей; basis exception передаётся отдельно.
+Ограничения/поля контракта не расширены.

@@ -2,6 +2,15 @@
 // ADMIN ITEM MODERATION REPOSITORY
 // =========================================
 import { phoneFixtureAllowed } from './adminPhoneTestScope.js';
+import { authorized } from './adminClassifierAccess.js';
+
+// The same authoritative session/MFA SQL is remapped to the legacy statements.
+function approvalAuthority(actor,session,token,now,permissions){
+  return permissions.map(permission=>{
+    const slots={1:actor,2:session,3:token,4:now,5:"'"+permission+"'",6:'0'};
+    return '('+authorized.replace(/\?([1-6])\b/g,(_,n)=>slots[n])+')';
+  }).join(' AND ');
+}
 
 import {
   prepareMutationIdempotencyClaim,
@@ -1339,6 +1348,7 @@ export async function moderateVehicle(
   env,
   {
     actorAccountId,
+    authorizationPrincipal,
     driverId,
     vehicleId,
     expectedRevision,
@@ -1387,6 +1397,11 @@ export async function moderateVehicle(
       "approved"
       ? `
           AND usage_basis IS NOT NULL
+          AND typeof(color)='text' AND length(color)<=80
+          AND length(trim(color,char(9,10,11,12,13,32,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288,65279)))>0
+          AND instr(color,char(0))=0 AND color NOT GLOB ('*['||char(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,127)||']*')
+          AND EXISTS(SELECT 1 FROM vehicle_current_trusted_assessments ta
+            WHERE ta.vehicle_id=vehicles.id AND ta.outcome='candidate' AND ta.class IS NOT NULL)
 
           AND EXISTS (
             SELECT 1
@@ -1446,6 +1461,7 @@ export async function moderateVehicle(
 
         SET
           status = ?5,
+          class = CASE WHEN ?5='approved' THEN (SELECT ta.class FROM vehicle_current_trusted_assessments ta WHERE ta.vehicle_id=vehicles.id AND ta.outcome='candidate') ELSE class END,
           revision = revision + 1,
           last_review_id = ?6,
           updated_at = ?7,
@@ -1468,6 +1484,7 @@ export async function moderateVehicle(
           AND status = ?4
 
           ${approvalGuard}
+          AND ${approvalAuthority('?8','?14','?15','?7',['vehicles.verify'])}
 
           AND EXISTS (
             SELECT 1
@@ -1530,7 +1547,9 @@ export async function moderateVehicle(
           : requirePositiveInteger(
               nextPhotoCheckDueAt,
               "nextPhotoCheckDueAt"
-            )
+            ),
+        authorizationPrincipal?.sessionId??null,
+        authorizationPrincipal?.tokenVersion??null
       );
 
   const review =
@@ -1651,6 +1670,7 @@ export async function finalizeDriverRegistrationModeration(
   env,
   {
     actorAccountId,
+    authorizationPrincipal,
     driverId,
     expectedRevision,
     decision,
@@ -1757,6 +1777,7 @@ export async function finalizeDriverRegistrationModeration(
             FROM vehicles v
             WHERE v.driver_id = ?1
               AND v.status = 'approved'
+              AND EXISTS(SELECT 1 FROM vehicle_current_trusted_assessments ta WHERE ta.vehicle_id=v.id AND ta.outcome='candidate' AND ta.class=v.class)
           )
         `
       : "";
@@ -1777,6 +1798,7 @@ export async function finalizeDriverRegistrationModeration(
           AND registration_status = ?3
 
           ${approvalGuard}
+          AND ${approvalAuthority('?7','?12','?13','?6',['drivers.verify_documents','drivers.verify_identity','vehicles.verify'])}
 
           AND EXISTS (
             SELECT 1
@@ -1821,7 +1843,9 @@ export async function finalizeDriverRegistrationModeration(
         requireText(
           idempotency.claimId,
           "claimId"
-        )
+        ),
+        authorizationPrincipal?.sessionId??null,
+        authorizationPrincipal?.tokenVersion??null
       );
 
   const review =

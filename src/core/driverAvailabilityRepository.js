@@ -202,6 +202,8 @@ export async function getOwnedVehicleEligibility(
           v.driver_id,
           v.status,
           v.next_photo_check_due_at,
+          EXISTS(SELECT 1 FROM order_assignments a JOIN vehicle_reverification_assignment_holds h ON h.assignment_id=a.id
+            WHERE a.vehicle_id=v.id AND a.state='active' AND a.revoked_at IS NULL) AS vehicle_reverification_blocked,
 
           (
             (
@@ -293,6 +295,8 @@ export async function getOwnedVehicleEligibility(
       Number(
         row.photo_control_blocked
       ) === 1,
+
+    vehicleReverificationBlocked: Number(row.vehicle_reverification_blocked) === 1,
 
     photoControlGrace:
       Number(
@@ -437,6 +441,8 @@ export async function updateDriverAvailability(
 
         WHERE driver_id = ?1
           AND revision = ?2
+
+          AND (?4='off_line' OR NOT EXISTS(SELECT 1 FROM order_assignments a JOIN vehicle_reverification_assignment_holds h ON h.assignment_id=a.id WHERE a.driver_id=?1 AND a.state='active' AND a.revoked_at IS NULL))
 
           AND (?4 = 'off_line' OR EXISTS (
             SELECT 1

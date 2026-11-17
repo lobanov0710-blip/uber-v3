@@ -11,7 +11,7 @@ const mf = new Miniflare(convertV4MiniflareOptions({ workers: [{ name: 'classifi
   d1Databases: ['DB'], compatibilityDate: '2026-08-20' }] }));
 try {
   const DB = await mf.getD1Database('DB', 'classifier-store-audit');
-  for (const type of ['table', 'index', 'trigger']) {
+  for (const type of ['table', 'index', 'view', 'trigger']) {
     for (const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type=? AND sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all(type)) {
       await DB.prepare(row.sql).run();
     }
