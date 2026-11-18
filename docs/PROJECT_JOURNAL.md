@@ -3658,3 +3658,42 @@ Verification receipt опубликован docs-only commit `3e4d692092da39f28c
 ### Подтверждение публикации public API и синхронизации — 2026-11-18
 
 Receipt/scope/результаты опубликованы docs-only commit `f0e5a2b4eb757d733018553aa9c30196b12d5b99`, tree `30633c2c2dd50b8ac47595d2c6e33beae6101b79`; удалённый receipt побайтно совпал с локальным. PR №43 обновлён итоговым поведением, проверенным source/CI и открытыми частями; остаётся draft, не merged. Канонический TransferDriver `arch/spec-v1-security-baseline` — `504c90e96f01a273be6749e31d23a2b29505f7b6`, backend `arch/spec-v1-backend-phase1` — `f4c542adbb77f7a436efa3bcbdef05e45292102d`; последующее чтение refs подтвердило эти SHA. Каждый канонический commit меняет только `docs/PROJECT_JOURNAL.md`: 11 добавленных строк, 0 удалённых, AGENTS/runtime не меняются. Ref updates выполнены с expected head без force. Этот последний checkpoint — только журнал; проверенный source `5836e183f86c656c17bf77f77bb94e968f730df5` не подменяется docs SHA.
+
+
+## G2: readiness audit и локальная инвентаризация — 2026-11-18
+
+По команде владельца «Далее» сверены AGENTS, утверждённый контракт, план и журналы.
+Продолжена следующая часть после OWNER editor PR19. Новая отдельная ветка
+`arch/g2-classifier-readiness-audit`; backend parent PR43 head
+`84bcb31655b9a952816a226c1807d5a243e20bcb`, Android docs parent PR19 head
+`eaea54a7bfb64439eec08bb60d55cb2188341f5d`. Heads сверены read-only через GitHub.
+
+CSV121 SHA256 `553384af5b49252d3b3acbc3973ef6dae7fc40d348156debf4f0fab24c5ae880`
+сохранён: 76/22/23, годы/поля/порядок без изменений, архив116 не изменён.
+Новый реестр учитывает121 правило: 9 mixed families с частичными первичными
+свидетельствами,112 pending; полного покрытия всех поколений/лет/рынков нет ни
+у одной строки. Уточнён источник SpaceTourer: бензин в статье относится к
+Berlingo. S9 получает первичный HIMA source; Avatr12 имеет hybrid trim, но кузов
+и фактический автомобиль не объявлены проверенными. BEV-удаления/L7-L9 сохранены.
+
+Подготовлен offline Python aggregate inventory: существующий закрытый snapshot,
+mode=ro+immutable/query_only, одна read transaction, fixed SQL/deny writes и
+functions/ATTACH, reject WAL/sidecars, безопасный отказ без raw error/path/PII,
+18 счётчиков, всегда admissionEvaluated=false/activationAuthorized=false.
+Только синтетические файлы; реальная legacy inventory НЕ выполнена. Данные
+snapshot не запрашивались/не загружались. Runtime/API/schema/Android не менялись.
+
+Локально11 новых tests,24 migrations,12 preflight,6 reference PASS. Новые tests
+добавлены в штатный CI. При подготовке исправлены ошибки синтетической фикстуры:
+число owner-binding columns, длина VIN, уникальность document object key; первые
+запуски были FAIL, после исправления11 PASS. Локальный общий npm остановился
+на существующем ownerMfaControlPlaneCli: spawnSync EPERM/пустые streams в этой
+среде; это не PASS и не доказательство дефекта runtime. Полный Node22/native
+D1/CLI/dependency audit/Worker dry-run ожидается в GitHub CI, ограничения не обходились.
+
+Подробности: VEHICLE_CLASSIFIER_READINESS_2026-11-18.md и machine-readable
+VEHICLE_POWERTRAIN_AUDIT_2026-11-18.json в backend. До активации нужны полный
+powertrain обзор, реальная защищённая инвентаризация и рассмотрение плана пробелов.
+Нет seed/backfill/remote migration/merge/deploy/нового APK/расширения OWNER-phone
+или dispatcher powers. G1paused,D4–D7pending. Android только docs, прежняя
+проверка PR19 сохраняется отдельно. CI/публикация фиксируются следующим checkpoint.
