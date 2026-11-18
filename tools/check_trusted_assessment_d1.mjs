@@ -43,5 +43,5 @@ try {
   assert.deepEqual((await DB.prepare('PRAGMA foreign_key_check').all()).results,[]);
   assert.equal((await DB.prepare('PRAGMA quick_check').first()).quick_check,'ok');
   console.log(JSON.stringify({engine:'native local workerd HTTP authentication + internal D1 storage',...result,
-    populatedUpgradePreserved:true,failedUpgradeRolledBack:true,noSeed:true,foreignKeys:true,quickCheck:true,publicReviewRemainsClosed:true}));
+    populatedUpgradePreserved:true,failedUpgradeRolledBack:true,noSeed:true,foreignKeys:true,quickCheck:true,publicReviewReplaysInternalAssessment:true}));
 } finally {local.sqlite.close();await mf.dispose();}

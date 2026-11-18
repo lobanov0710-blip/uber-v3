@@ -139,13 +139,13 @@ test('SQL rejects invalid rule body definitions independently of HTTP validation
   assert.throws(()=>DB.sqlite.prepare('INSERT INTO vehicle_classification_rule_definitions VALUES(?,?,?,?,?,1)')
     .run('rule_invalid_body','["sedan"]','[42]',ownerId,'Synthetic'));
 });
-test('owner-phone scope remains closed and unsupported review POST is not exposed',async t=>{
+test('owner-phone scope remains closed and malformed public review is rejected',async t=>{
   const {env,send,owner}=await setup(t);
   const res=await worker.fetch(new Request('https://uber-v3-staging.lobanov0710.workers.dev/v1/admin/vehicle-rules'),
     {...env,APP_ENV:'staging',ADMIN_PHONE_TEST_ONLY:'true'},{});
   assert.equal(res.status,404);
   const token=await owner();
-  assert.equal((await send('POST','/v1/admin/vehicles/vehicle_fixture001/classification/review',{},token,'review-not-implemented')).status,404);
+  assert.equal((await send('POST','/v1/admin/vehicles/vehicle_fixture001/classification/review',{},token,'review-invalid-payload')).status,400);
 });
 test('populated migration21 ->22 preserves existing data and failed migration rolls back',async t=>{
   const DB=sqliteD1({throughMigration:21});t.after(()=>DB.sqlite.close());await seedRuleActors(DB);

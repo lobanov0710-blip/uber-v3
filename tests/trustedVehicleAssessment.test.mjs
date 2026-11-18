@@ -116,9 +116,12 @@ test('populated22 ->23 preserves all old tables and rolls back failed upgrades w
   DB.sqlite.exec(sql);assert.deepEqual(snapshot(),before);assert.equal(DB.sqlite.prepare('SELECT count(*) n FROM vehicle_trusted_assessments').get().n,0);
   assert.equal(DB.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok');assert.deepEqual(DB.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
 });
-test('public review POST stays closed until correction, projection and admission orchestration are implemented',async t=>{
+test('public review POST records a candidate without approving the vehicle',async t=>{
   const {env,send}=await setup(t),s=await trustedScenario(env,send);
-  assert.equal((await send('POST','/v1/admin/vehicles/'+s.vehicle.id+'/classification/review',s.body,s.ownerToken,'trusted-public-closed')).status,404);
+  const result=await send('POST','/v1/admin/vehicles/'+s.vehicle.id+'/classification/review',s.body,s.ownerToken,'trusted-public-candidate');
+  assert.equal(result.status,200);assert.equal(result.body.classification.outcome,'candidate');
+  const row=await env.DB.prepare('SELECT status,class FROM vehicles WHERE id=?1').bind(s.vehicle.id).first();
+  assert.equal(row.status,'draft');assert.equal(row.class,null);
 });
 test('OWNER exception uses a rule of the same make while retaining the real unknown model and older year',async t=>{
   const {DB,env,send}=await setup(t),s=await trustedScenario(env,send);
