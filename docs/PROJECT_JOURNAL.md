@@ -3813,3 +3813,21 @@ CI/APK не запускались и не объявляются проверк
 receipt остаётся привязанным к прежнему source, новый ledger проверен отдельно.
 Вопрос лифтбеков pending; никакое решение за владельца не принято. Публикация
 в PR44/PR20 и append-only канонические журналы выполняется после этих проверок.
+
+
+## G2: опубликован первый проход 121 семейства — 2026-11-18
+
+Backend docs source `0fd9cd414fbedb02ac43c3a59ee906664e0cd73a`, tree `81197f2d8f63c026af10d73d265fdfb9b910e61b`,
+local `35e736a8de39cc828735ff6e0c8b4d543235e165`; Android docs source `7267d682caaebc96253ae0e2b9e63dc876443eae`,
+tree `6400a0f667d50c440f2c925f826f8a092d8fd600`. Локальные/remote trees совпали при публикации;
+PR44/PR20 остаются draft, remote branch обновлялись с expected-head без force.
+Все121 строки имеют частичное первичное свидетельство;111 источников,
+0 исчерпывающих диапазонов. EvidenceAccess/пределы индекса/timeout сохранены.
+Verification receipt: VEHICLE_POWERTRAIN_EVIDENCE_VERIFICATION_2026-11-18.json.
+6 reference PASS и целостность ledger/hash/ссылок/исходных строк PASS. Runtime
+hashes прежнего CI44334924707 source a3dc5bd299cd063bbeee4f1195ac5d6e656faabb
+не изменились. Этот этап docs-only, нового полного CI/Android APK нет.
+Вопрос лифтбеков ожидает решения владельца; body enum/guards и business/minivan
+не менялись. Исчерпывающий обзор/actual legacy inventory/активация не закрыты.
+G1paused,D4–D7pending; нет seed/backfill/remote migration/merge/deploy/real PII.
+Канонические журналы синхронизируются отдельным append-only checkpoint.

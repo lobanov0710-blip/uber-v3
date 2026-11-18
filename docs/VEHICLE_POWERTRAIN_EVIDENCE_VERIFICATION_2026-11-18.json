@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-18",
+  "scope": "Documentation-only revision 2 of first powertrain-family evidence pass",
+  "repository": "lobanov0710-blip/uber-v3",
+  "pullRequest": "https://github.com/lobanov0710-blip/uber-v3/pull/44",
+  "sourceCommit": "0fd9cd414fbedb02ac43c3a59ee906664e0cd73a",
+  "sourceTree": "81197f2d8f63c026af10d73d265fdfb9b910e61b",
+  "localSourceCommit": "35e736a8de39cc828735ff6e0c8b4d543235e165",
+  "androidDocumentation": {
+    "pullRequest": "https://github.com/lobanov0710-blip/TransferDriver/pull/20",
+    "sourceCommit": "7267d682caaebc96253ae0e2b9e63dc876443eae",
+    "sourceTree": "6400a0f667d50c440f2c925f826f8a092d8fd600"
+  },
+  "sha256": {
+    "docs/VEHICLE_POWERTRAIN_AUDIT_2026-11-18.json": "8df887adebca225eb9b6c3fc0b08351f384ad2623849ba11307538d0257883ff",
+    "docs/VEHICLE_CLASSIFIER_READINESS_2026-11-18.md": "641cdce4064d215d867c9e7a36b05836e13b0efe0f709b65cdf83489fc3fd6e5",
+    "docs/VEHICLE_BODY_POLICY_CLARIFICATION_2026-11-18.md": "d454a72c4135938c1236a0f4450a23693e1a769906daeea3f2907997d26586e0",
+    "docs/vehicle-classifier-v1.csv": "3f8297f7b750816e13a3ceb82182e10f33bc42cdc308feb8e8ae2f1fa27ecc7d",
+    "docs/vehicle-classifier-v2-proposed.csv": "553384af5b49252d3b3acbc3973ef6dae7fc40d348156debf4f0fab24c5ae880"
+  },
+  "checks": {
+    "exactCatalogueRows": 121,
+    "originalCatalogueFieldsAndOrderPreserved": true,
+    "archivedRows": 116,
+    "uniqueSourceIds": 111,
+    "originalSourceRecordsPreserved": 9,
+    "validRowReferences": true,
+    "exactMakeModelPairs": true,
+    "httpsWithoutEmbeddedCredentials": true,
+    "existingReferenceTests": "6 PASS",
+    "gitDiffCheck": "PASS",
+    "nonDocumentationFilesUnchanged": true
+  },
+  "evidence": {
+    "partialFamilyRows": 121,
+    "familiesWithoutSource": 0,
+    "exhaustiveRows": 0,
+    "accessCounts": {
+      "prior_phase_record": 9,
+      "primary_indexed_excerpt": 88,
+      "primary_page": 13,
+      "primary_indexed_excerpt_with_current_redirect": 1
+    },
+    "publishedYearMarketScopeRetained": true,
+    "originalDocumentsAllRead": false
+  },
+  "runtimeBaseline": {
+    "sourceCommit": "a3dc5bd299cd063bbeee4f1195ac5d6e656faabb",
+    "ciRun": 44334924707,
+    "ciJob": 134908905914,
+    "priorConclusion": "success",
+    "runtimeHashesStillMatch": true,
+    "newFullCiRun": false,
+    "newAndroidBuild": false,
+    "reason": "Only documentation changed; the earlier CI result is not attributed to new evidence text or links."
+  },
+  "limits": {
+    "exhaustivePowertrainReviewCompleted": false,
+    "actualLegacyInventoryCompleted": false,
+    "activationAuthorized": false,
+    "ownerLiftbackDecision": "pending",
+    "newBodyPolicyApplied": false,
+    "remoteDataAccessed": false,
+    "seedOrBackfill": false,
+    "remoteMigration": false,
+    "merge": false,
+    "deploy": false,
+    "newApk": false,
+    "driverG1": "paused",
+    "D4toD7": "pending"
+  }
+}
