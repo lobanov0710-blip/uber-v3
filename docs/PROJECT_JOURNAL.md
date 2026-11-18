@@ -3723,3 +3723,34 @@ pre-classifier, broken trust и whitespace cases:14 tests PASS локально.
 121 audit/реальной inventory/активации и запреты публикации чувствительных данных,
 G1paused,D4–D7pending сохраняются. Ошибки patch context при обновлении отчёта не
 изменили файлов; контекст перечитан, документ обновлён. Бизнес-правила не менялись.
+
+
+## G2 readiness: финальная проверка исправленного inventory — 2026-11-18
+
+Source `a3dc5bd299cd063bbeee4f1195ac5d6e656faabb`, tree `cac28aa06c0688af58efb228869ff99add848e7d`,
+local `bf550cd5ff47d56ab825070149fed8169fbe48a3`: tree parity подтверждена. CI
+`44334924707` / job `134908905914` SUCCESS, все31 steps:
+14 inventory tests,79 npm-команд,24 migrations,12 preflight,6 reference,
+15 native workerd/D1 workflows,6 protected CLI scenarios с actual Wrangler4.125.0,
+dependency audit0 и Worker bundle dry-run PASS. Raw decoded job log и точный
+head проверены. Первая CI44333828910 с11 inventory tests также SUCCESS;
+локальный EPERM и исправленные ошибки фикстур не скрыты предыдущими записями.
+Уточнение счётчика шагов: GitHub добавляет финальный Complete job; прежние30
+в предварительной записи были без него. Финальный API возвращает31 SUCCESS.
+
+Новая проверка подтверждает чтение pre-classifier snapshot без миграций,
+явные schemaCapabilities, безопасный отказ для повреждённого слоя/WAL/sidecars,
+отсутствие raw PII/errors, запрет записи/ATTACH/extension, expiry без invalidation,
+immutable hold/offline, отсутствие выдуманного года/pin/trust. Runtime/schema/
+зависимости backend не менялись; после CI публикуются только docs/receipt.
+JSON receipt: VEHICLE_CLASSIFIER_READINESS_VERIFICATION_2026-11-18.json.
+
+Draft backend PR44 и Android docs PR20 остаются открытыми; не merged.
+CSV121 и архив116 сохранены. 9 семейств имеют частичные первичные свидетельства,
+112 pending в реестре; это не исчерпывающий обзор годов/поколений/рынков.
+Реальная inventory/обработка legacy/активация/live acceptance остаются открытыми.
+Нет real sensitive data, remote migration, seed/backfill, deployment, нового APK,
+расширения OWNER-phone или dispatcher powers. Android docs-only; отдельный
+проверенный PR19 baseline сохраняется. G1paused,D4–D7pending.
+Следующий шаг — продолжить powertrain evidence и подготовку защищённой реальной
+инвентаризации в рамках отдельно утверждённого доступа; новые допуски не назначены.
