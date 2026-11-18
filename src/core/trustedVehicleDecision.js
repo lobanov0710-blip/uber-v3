@@ -18,7 +18,8 @@ export function decideTrustedVehicle(parameters, rule, decisions, exception = nu
   if (!rule) return result('manual_review', ['model_not_found']);
   // Hard policy applies even to exceptions and independent of rule authoring.
   const businessBody = parameters.make === 'Li Auto' && ['L7', 'L9'].includes(parameters.model) ? 'crossover' : 'sedan';
-  if ((rule.vehicleClass === 'comfort' && !['sedan', 'crossover'].includes(parameters.bodyType)) ||
+  if ((parameters.bodyType === 'liftback' && rule.vehicleClass !== 'comfort') ||
+      (rule.vehicleClass === 'comfort' && !['sedan', 'crossover', 'liftback'].includes(parameters.bodyType)) ||
       (rule.vehicleClass === 'business' && parameters.bodyType !== businessBody) ||
       (rule.allowedBodyTypes !== null && !rule.allowedBodyTypes.includes(parameters.bodyType))) return result('excluded', ['body_type_not_allowed']);
   const reasons = [];

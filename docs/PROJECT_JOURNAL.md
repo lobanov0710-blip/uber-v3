@@ -3831,3 +3831,47 @@ hashes прежнего CI44334924707 source a3dc5bd299cd063bbeee4f1195ac5d6e656
 не менялись. Исчерпывающий обзор/actual legacy inventory/активация не закрыты.
 G1paused,D4–D7pending; нет seed/backfill/remote migration/merge/deploy/real PII.
 Канонические журналы синхронизируются отдельным append-only checkpoint.
+
+
+## G2: OWNER утвердил лифтбек только в Комфорте — 2026-11-18
+
+В ответ на предложенный выбор владелец сказал «Только в комфорте». Решение
+явное, повторного утверждения не требуется: отдельный liftback разрешён только
+для comfort, включая запрет business/minivan/OWNER exception bypass. Сохранены
+Li Auto L7/L9 crossover exceptions, BEV запрет, pin/history, проверка года/
+документов, class вычисляет backend; авто не получает допуск автоматически.
+Обновлены AGENTS и решение. Новые отдельные worktrees/ветки
+arch/g2-comfort-liftback созданы поверх проверенных PR44/PR20. G1paused,D4–D7pending.
+
+Перед реализацией исследована SQLite миграция с FK ON: простая замена parent
+таблицы с RESTRICT children завершилась FK failure только в in-memory probe;
+данные проекта не затронуты. Выбран явный атомарный rebuild трёх связанных
+assessment/invalidation/hold таблиц с сохранением идентификаторов, всех значений,
+rowid, FK и NOT NULL/CHECK; временного кодирования liftback как other не будет.
+Populated upgrade/rollback и запрет записи/изменения истории обязательны в tests.
+Backend/Admin проверки и полные CI ещё не выполнены для нового изменения.
+Remote migration/seed/backfill/merge/deploy/реальные данные не выполняются.
+
+
+## G2: подготовлена реализация liftback только для comfort — 2026-11-18
+
+Backend enum/API/decision/SQL guard и миграция0025, Admin DTO/body selector/
+readonly label/OWNER checkbox/confirmation обновлены в новых отдельных ветках.
+minivan null policy не обходит liftback restriction. Старые definitions/pins и
+неявный fallback2 сохранены, SQL требует явного liftback в definition. Driver
+runtime не меняется. Body metadata ledger теперь отражает утверждение OWNER,
+но ranges/actual inventory/activation остаются открытыми.
+
+Локально2 новых populated upgrade/HTTP/SQL/policy tests PASS,16 trusted assessment
+и9 admission cases PASS,25 migration smoke/12 preflight/14 inventory/6 reference
+PASS. Android security8/5 и native runner5 PASS. Исправлена ошибка нового replay
+test: requestId каждого HTTP запроса новый, неизменный receipt сравнивается
+отдельно; серверный replay не менялся. Один локальный запуск неверного имени
+adminVehicleRules.test.mjs получил MODULE_NOT_FOUND; правильный npm script
+adminVehicleRuleApi запускается отдельно, это не дефект runtime/успешный тест.
+3 JVM и2 native UI cases добавлены, полные Android/backend CI ещё pending.
+Screenshots используют liftback в тех же synthetic states; никаких real data.
+Описание/пределы: COMFORT_LIFTBACK_IMPLEMENTATION_2026-11-18.md.
+
+
+Локальный правильный `npm run test:admin-vehicle-rules` завершён:20 tests PASS. Новый liftback workflow повторён после добавления HTTP unknown-body отрицательного случая:2 tests PASS. Перед публикацией diff --check PASS; полные CI и Android JVM/native остаются pending.
