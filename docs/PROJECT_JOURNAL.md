@@ -3094,3 +3094,47 @@ audit и подготовка защищённой реальной inventory/п
 inventory/активация/live acceptance не выполнены. Нет seed/backfill/remote
 migration/merge/deploy/real sensitive data/OWNER-phone expansion/dispatcher powers.
 G1paused,D4–D7pending; новые допуски и производственные изменения не утверждались.
+
+
+## G2: первый проход powertrain evidence по всем 121 семействам — 2026-11-18
+
+По команде «Далее» сверены AGENTS/план/журнал и актуальные heads. Продолжены
+draft PR44 backend / PR20 Android docs. Revision2 реестра содержит111 первичных
+источников:102 добавлены к прежним9. Для каждой121 строки найдено частичное
+свидетельство ДВС/гибридного исполнения;0 строк без семейного источника.
+Исчерпывающих диапазонов лет/поколений/рынков0. Это первый проход перечня,
+а не завершённая проверка всех автомобилей или готовность активации.
+
+Mixed Lexus ES подтверждён первичной публикацией BEV/HEV. Найдены точные SAIC
+G10 MY2025 и Opel Italy ZAFIRA LIFE diesel; LDV G10+ cargo, соседние названия
+в меню и brand aliases не применены как подстановка. Источники/год/рынок/
+evidenceAccess сохранены:13 rendered passages,88 indexed excerpts,1 indexed
+redirect и9 прежних записей. PDF Zafira Life timeout при прямом fetch; доступный
+первичный индекс не выдаётся за полное чтение. Ранние документы явно не
+подтверждают весь minYear+ диапазон. CNG/соседние модели не создают новые правила.
+
+В источниках UNI-V и FAW/Bestune B70 названы лифтбеками, а утверждённый Комфорт
+разрешает sedan/crossover. Явного тождества в repo не найдено. Владельцу сразу
+отправлен вопрос: разрешить отдельный liftback только Комфорт либо сохранить
+ограничение. Ответ ожидается, вариант не выбран. Enum/schema/body guards,
+Бизнес/Минивэн и existing pins не менялись. Конкретные варианты и границы:
+VEHICLE_BODY_POLICY_CLARIFICATION_2026-11-18.md.
+
+6 reference tests PASS; exact121 rows/order/fields, archive116, фиксированные CSV
+hashes,111 unique IDs/HTTPS без embedded credentials, source references и9
+исходных записей проверены. Ошибка разбиения FAW/Bestune B70 в локальном черновике
+исправлена до публикации; каталог не менялся. Ledger SHA256
+`8df887adebca225eb9b6c3fc0b08351f384ad2623849ba11307538d0257883ff`.
+Только docs; tool/test/workflow/runtime hashes baseline
+`a3dc5bd299cd063bbeee4f1195ac5d6e656faabb` / CI44334924707 сохраняются.
+Новый полный CI/Android build не запускался; прежний PASS не приписан новым ссылкам.
+
+Backend evidence source `0fd9cd414fbedb02ac43c3a59ee906664e0cd73a`,
+final docs head `2df3d0e85ee4417c177464f8c88cf9ddd6a97b60`;
+Android docs source `7267d682caaebc96253ae0e2b9e63dc876443eae`,
+final docs head `353f9115c65f5944c82dd1e411f1543ce2299b2d`.
+Local/remote trees совпали; VEHICLE_POWERTRAIN_EVIDENCE_VERIFICATION_2026-11-18.json
+фиксирует отдельную проверку evidence. Старый receipt привязан к старому source.
+Actual legacy inventory/исчерпывающий powertrain review/активация/live acceptance
+открыты. G1paused,D4–D7pending; нет real PII, seed/backfill/remote migration/merge/
+deploy/нового APK/расширения OWNER-phone или dispatcher powers.
