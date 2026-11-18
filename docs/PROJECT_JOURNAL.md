@@ -3055,3 +3055,42 @@ Admin APK14435749011 и native evidence14435374402 archives скачаны, SHA2
 Первый source4bea0c17823958a549163c46341306e7edb71a45/CI44318363459 тоже полный PASS423/143/56; после ручной сверки исправлен misleading definitive-write error label, добавлены native400/no retry/no commit и phone scope до rule GET. Итоговый source прошёл полный CI заново. В этом этапе нет failed/cancelled runs; исторический intermittent Driver focus root cause остаётся открытым, диагностика/gesture/focus/colors/timeouts сохранены. APK synthetic/ephemeral debug, не production release или proof phone upgrade; live phone acceptance не выполнялась.
 
 Readonly PR17 + review/exception PR18 + OWNER rule editor PR19 реализуют Android UI части утверждённого контракта отдельными draft ветками; не full classifier activation. Full powertrain121/legacy inventory/live acceptance открыты. G1paused,D4–D7pending; нет merge/deploy/remote migration/seed/backfill/phone allowlist расширения/новых grants или бизнес-решений. Запись append-only, прежние journal/AGENTS/runtime не заменяются.
+
+
+## G2: проверенная локальная inventory и частичный powertrain аудит — 2026-11-18
+
+По команде «Далее» после OWNER editor сверены правила/план/журналы. Draft
+[backend PR44](https://github.com/lobanov0710-blip/uber-v3/pull/44) и
+[Android docs PR20](https://github.com/lobanov0710-blip/TransferDriver/pull/20).
+Проверенный source `a3dc5bd299cd063bbeee4f1195ac5d6e656faabb`,
+tree `cac28aa06c0688af58efb228869ff99add848e7d`; CI
+`44334924707` / job `134908905914` SUCCESS:31 steps включая Complete job,
+14 новых inventory tests,79 npm-команд,24 migrations,12 preflight,6 reference,
+15 native D1 workflows,6 protected actual Wrangler CLI cases, audit0, Worker
+dry-run PASS. Decoded logs/head проверены. Прежний CI44333828910 также PASS
+для первой11-test версии. Ошибки синтетических фикстур исправлены; локальный
+общий npm был ограничен spawnSync EPERM и не выдавался за PASS.
+
+Inventory читает только закрытый local snapshot до/после classifier migrations:
+mode=ro+immutable/query_only, fixed SQL/deny mutation/ATTACH/extensions,
+reject WAL/sidecars, schemaCapabilities вместо выдуманного года/pin/trust;
+18 агрегатов без PII/raw errors, всегда admissionEvaluated=false и
+activationAuthorized=false. Исправлено найденное требование новой схемы перед
+legacy inventory; broken existing trust layer отклоняется. Реальной базы не было.
+
+CSV121 SHA256 `553384af5b49252d3b3acbc3973ef6dae7fc40d348156debf4f0fab24c5ae880`
+и архив116 сохранены. Новый реестр:9 семейств с частичными первичными сведениями,
+112 pending; исчерпывающий обзор годов/поколений/рынков не завершён.
+Уточнён ошибочный бензиновый SpaceTourer: статья относит бензин к Berlingo.
+S9 подтверждён первичным HIMA source, Avatr12 имеет hybrid trim; это не допуск
+конкретного автомобиля или снятие условий кузова. BEV removals/L7-L9 сохранены.
+
+Отчёт/реестр/verification JSON в ветке `arch/g2-classifier-readiness-audit`;
+backend docs head `18a5f85ebfaeffc50f170544ee9dff7d75311d11`,
+Android docs head `174c151c5f67b571a2631eeae844253a656102a7`; после CI только docs.
+Runtime/schema/dependencies backend и Android runtime не менялись; нового APK
+нет, проверенный PR19 остаётся отдельным baseline. Следом продолжается evidence
+audit и подготовка защищённой реальной inventory/плана пробелов. Реальная
+inventory/активация/live acceptance не выполнены. Нет seed/backfill/remote
+migration/merge/deploy/real sensitive data/OWNER-phone expansion/dispatcher powers.
+G1paused,D4–D7pending; новые допуски и производственные изменения не утверждались.
