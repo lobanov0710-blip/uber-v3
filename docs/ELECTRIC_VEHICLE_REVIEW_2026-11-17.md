@@ -29,10 +29,13 @@ Voyah Passion предлагается в [гибридной версии](http
 [BYD Han — электрический и гибридный](https://en.byd.com/news/byds-flagship-han-ev-series-officially-goes-on-sale/).
 Также подтверждены гибридные версии [Denza D9](https://media.byd.com/denza-brings-super-hybrid-tech-to-mpv-segment-with-d9-dm-i/?lang=eng)
 и [Voyah Dream](https://voyah.ru/media/download/docs/4vzwjh__rkovodstvo-pol-zovatela-voyah-dream.pdf).
-Производитель подтверждает бензиновую/дизельную наряду с электрической версией
+Производитель подтверждает дизельную наряду с электрической версией
 [Citroën SpaceTourer](https://www.media.stellantis.com/uk-en/citroen/press/citroen-broadens-powertrain-choice-on-spacetourer-berlingo-with-introduction-of-petrol-diesel-variants)
 и дизельную наряду с электрической версией
 [Opel Zafira](https://www.media.stellantis.com/em-en/opel/press/powerful-mpv-opel-zafira-with-newly-developed-2-2-litre-diesel).
+Уточнение 2026-11-18: бензиновый вариант в сообщении Citroën относится к
+Berlingo, а не SpaceTourer. Новый частичный обзор и пределы поколений/лет:
+[readiness audit](VEHICLE_CLASSIFIER_READINESS_2026-11-18.md).
 Конкретные поколения и годы модели из CSV нуждаются в отдельной проверке.
 Строка модели без поля силовой установки не позволяет технически исключить
 только BEV-версию. До внедрения потребуется подтверждать тип конкретного авто

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-18",
+  "scope": "Read-only local classifier readiness inventory and partial powertrain evidence ledger",
+  "status": "ci-verified-local-tool; powertrain-audit-and-real-inventory-incomplete",
+  "repository": "lobanov0710-blip/uber-v3",
+  "branch": "arch/g2-classifier-readiness-audit",
+  "pullRequest": "https://github.com/lobanov0710-blip/uber-v3/pull/44",
+  "androidDocumentationPullRequest": "https://github.com/lobanov0710-blip/TransferDriver/pull/20",
+  "sourceCommit": "a3dc5bd299cd063bbeee4f1195ac5d6e656faabb",
+  "localSourceCommit": "bf550cd5ff47d56ab825070149fed8169fbe48a3",
+  "sourceTree": "cac28aa06c0688af58efb228869ff99add848e7d",
+  "sha256": {
+    "tools/vehicle_readiness_inventory.py": "82bcd4d7d8d0f212fd80c5cedd403f9c8345820cc993d2cecbd68b6f7ded86fa",
+    "tests/vehicleReadinessInventory.test.py": "3ff3857e96bc383e8cb4bda420b4edbab83378f1b9cc9217c610617cf4e3fddf",
+    ".github/workflows/backend-tests.yml": "3bd945b51a220585fa90c9a1c44efd236cf5c472bc3cad87aed66a54df91372e",
+    "docs/VEHICLE_CLASSIFIER_READINESS_2026-11-18.md": "021cabab4b8110e786837941196d362dfbe2491a64d61e7b2fe4f96f1e22b3dc",
+    "docs/VEHICLE_POWERTRAIN_AUDIT_2026-11-18.json": "c251401f302e3aef72d2bc656cce63cc5b7ae091f2cb114550b18eb6d8eea11b",
+    "docs/vehicle-classifier-v1.csv": "3f8297f7b750816e13a3ceb82182e10f33bc42cdc308feb8e8ae2f1fa27ecc7d",
+    "docs/vehicle-classifier-v2-proposed.csv": "553384af5b49252d3b3acbc3973ef6dae7fc40d348156debf4f0fab24c5ae880"
+  },
+  "ci": {
+    "url": "https://github.com/lobanov0710-blip/uber-v3/actions/runs/44334924707",
+    "runId": 44334924707,
+    "jobId": 134908905914,
+    "conclusion": "success",
+    "successfulSteps": 31,
+    "nodeMajor": 22,
+    "npmVersion": "11.9.0",
+    "inventoryTests": 14,
+    "npmSuiteCommands": 79,
+    "migrations": 24,
+    "preflightTests": 12,
+    "referenceTests": 6,
+    "nativeWorkerdD1Workflows": 15,
+    "protectedActualWranglerScenarios": 6,
+    "dependencyAdvisories": 0,
+    "workerDryRun": "PASS"
+  },
+  "previousSuccessfulSource": {
+    "commit": "8fbc3c3e4930c3efe11cc3e37a34a5b8799f8c04",
+    "runId": 44333828910,
+    "inventoryTests": 11
+  },
+  "localFullNpm": {
+    "status": "blocked",
+    "reason": "Node child-process spawnSync EPERM; CI full suite passed"
+  },
+  "boundaries": {
+    "approvedCatalogueRows": 121,
+    "partialPrimaryEvidenceFamilies": 9,
+    "pendingFamilies": 112,
+    "exhaustiveReviewCompleted": false,
+    "actualLegacyInventoryCompleted": false,
+    "activationAuthorized": false,
+    "remoteDataAccessed": false,
+    "remoteMigration": false,
+    "seedOrBackfill": false,
+    "merge": false,
+    "deploy": false,
+    "newApk": false,
+    "androidRuntimeChanged": false,
+    "driverG1": "paused",
+    "D4toD7": "awaiting owner decisions"
+  }
+}

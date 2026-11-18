@@ -3658,3 +3658,176 @@ Verification receipt опубликован docs-only commit `3e4d692092da39f28c
 ### Подтверждение публикации public API и синхронизации — 2026-11-18
 
 Receipt/scope/результаты опубликованы docs-only commit `f0e5a2b4eb757d733018553aa9c30196b12d5b99`, tree `30633c2c2dd50b8ac47595d2c6e33beae6101b79`; удалённый receipt побайтно совпал с локальным. PR №43 обновлён итоговым поведением, проверенным source/CI и открытыми частями; остаётся draft, не merged. Канонический TransferDriver `arch/spec-v1-security-baseline` — `504c90e96f01a273be6749e31d23a2b29505f7b6`, backend `arch/spec-v1-backend-phase1` — `f4c542adbb77f7a436efa3bcbdef05e45292102d`; последующее чтение refs подтвердило эти SHA. Каждый канонический commit меняет только `docs/PROJECT_JOURNAL.md`: 11 добавленных строк, 0 удалённых, AGENTS/runtime не меняются. Ref updates выполнены с expected head без force. Этот последний checkpoint — только журнал; проверенный source `5836e183f86c656c17bf77f77bb94e968f730df5` не подменяется docs SHA.
+
+
+## G2: readiness audit и локальная инвентаризация — 2026-11-18
+
+По команде владельца «Далее» сверены AGENTS, утверждённый контракт, план и журналы.
+Продолжена следующая часть после OWNER editor PR19. Новая отдельная ветка
+`arch/g2-classifier-readiness-audit`; backend parent PR43 head
+`84bcb31655b9a952816a226c1807d5a243e20bcb`, Android docs parent PR19 head
+`eaea54a7bfb64439eec08bb60d55cb2188341f5d`. Heads сверены read-only через GitHub.
+
+CSV121 SHA256 `553384af5b49252d3b3acbc3973ef6dae7fc40d348156debf4f0fab24c5ae880`
+сохранён: 76/22/23, годы/поля/порядок без изменений, архив116 не изменён.
+Новый реестр учитывает121 правило: 9 mixed families с частичными первичными
+свидетельствами,112 pending; полного покрытия всех поколений/лет/рынков нет ни
+у одной строки. Уточнён источник SpaceTourer: бензин в статье относится к
+Berlingo. S9 получает первичный HIMA source; Avatr12 имеет hybrid trim, но кузов
+и фактический автомобиль не объявлены проверенными. BEV-удаления/L7-L9 сохранены.
+
+Подготовлен offline Python aggregate inventory: существующий закрытый snapshot,
+mode=ro+immutable/query_only, одна read transaction, fixed SQL/deny writes и
+functions/ATTACH, reject WAL/sidecars, безопасный отказ без raw error/path/PII,
+18 счётчиков, всегда admissionEvaluated=false/activationAuthorized=false.
+Только синтетические файлы; реальная legacy inventory НЕ выполнена. Данные
+snapshot не запрашивались/не загружались. Runtime/API/schema/Android не менялись.
+
+Локально11 новых tests,24 migrations,12 preflight,6 reference PASS. Новые tests
+добавлены в штатный CI. При подготовке исправлены ошибки синтетической фикстуры:
+число owner-binding columns, длина VIN, уникальность document object key; первые
+запуски были FAIL, после исправления11 PASS. Локальный общий npm остановился
+на существующем ownerMfaControlPlaneCli: spawnSync EPERM/пустые streams в этой
+среде; это не PASS и не доказательство дефекта runtime. Полный Node22/native
+D1/CLI/dependency audit/Worker dry-run ожидается в GitHub CI, ограничения не обходились.
+
+Подробности: VEHICLE_CLASSIFIER_READINESS_2026-11-18.md и machine-readable
+VEHICLE_POWERTRAIN_AUDIT_2026-11-18.json в backend. До активации нужны полный
+powertrain обзор, реальная защищённая инвентаризация и рассмотрение плана пробелов.
+Нет seed/backfill/remote migration/merge/deploy/нового APK/расширения OWNER-phone
+или dispatcher powers. G1paused,D4–D7pending. Android только docs, прежняя
+проверка PR19 сохраняется отдельно. CI/публикация фиксируются следующим checkpoint.
+
+
+## G2 readiness: совместимость inventory до миграций — 2026-11-18
+
+Первый source `8fbc3c3e4930c3efe11cc3e37a34a5b8799f8c04`, tree
+`7ee1245a91be11f0b6dcb6d750dffd05bda04024`, draft backend PR44: CI
+`44333828910` / job `134904994763` SUCCESS (все30 steps):79 npm commands,
+11 новых inventory tests,24 migrations,12 preflight,6 reference,15 native D1
+workflows,6 actual Wrangler CLI scenarios, audit0, Worker dry-run PASS.
+Raw logs проверены; real Cloudflare requests0 в CLI/новых classification scenarios.
+Android docs-only draft PR20 опубликован отдельно от проверенной сборки PR19.
+
+При сверке порядка внедрения найдено ограничение первого inventory: требовал
+новую схему0024, хотя legacy нужно оценивать до миграций. Исправлено: поддержка
+базовой Driver schema и последовательно отсутствующих слоёв классификатора,
+явные schemaCapabilities; частично сломанный уже существующий слой отклоняется.
+Год/доказательства/кандидаты не выдумываются. Ноль записанных BEV/holds при
+отсутствующем слое не является подтверждением отсутствия проблем. Пустой цвет
+включает Unicode whitespace по правилам trim. Добавлены реальные синтетические
+pre-classifier, broken trust и whitespace cases:14 tests PASS локально.
+
+Первая CI проверка11 tests сохранена как успешная предыдущая версия. Изменённый
+инструмент проходит новый полный CI; старый PASS ему не приписывается. Пределы
+121 audit/реальной inventory/активации и запреты публикации чувствительных данных,
+G1paused,D4–D7pending сохраняются. Ошибки patch context при обновлении отчёта не
+изменили файлов; контекст перечитан, документ обновлён. Бизнес-правила не менялись.
+
+
+## G2 readiness: финальная проверка исправленного inventory — 2026-11-18
+
+Source `a3dc5bd299cd063bbeee4f1195ac5d6e656faabb`, tree `cac28aa06c0688af58efb228869ff99add848e7d`,
+local `bf550cd5ff47d56ab825070149fed8169fbe48a3`: tree parity подтверждена. CI
+`44334924707` / job `134908905914` SUCCESS, все31 steps:
+14 inventory tests,79 npm-команд,24 migrations,12 preflight,6 reference,
+15 native workerd/D1 workflows,6 protected CLI scenarios с actual Wrangler4.125.0,
+dependency audit0 и Worker bundle dry-run PASS. Raw decoded job log и точный
+head проверены. Первая CI44333828910 с11 inventory tests также SUCCESS;
+локальный EPERM и исправленные ошибки фикстур не скрыты предыдущими записями.
+Уточнение счётчика шагов: GitHub добавляет финальный Complete job; прежние30
+в предварительной записи были без него. Финальный API возвращает31 SUCCESS.
+
+Новая проверка подтверждает чтение pre-classifier snapshot без миграций,
+явные schemaCapabilities, безопасный отказ для повреждённого слоя/WAL/sidecars,
+отсутствие raw PII/errors, запрет записи/ATTACH/extension, expiry без invalidation,
+immutable hold/offline, отсутствие выдуманного года/pin/trust. Runtime/schema/
+зависимости backend не менялись; после CI публикуются только docs/receipt.
+JSON receipt: VEHICLE_CLASSIFIER_READINESS_VERIFICATION_2026-11-18.json.
+
+Draft backend PR44 и Android docs PR20 остаются открытыми; не merged.
+CSV121 и архив116 сохранены. 9 семейств имеют частичные первичные свидетельства,
+112 pending в реестре; это не исчерпывающий обзор годов/поколений/рынков.
+Реальная inventory/обработка legacy/активация/live acceptance остаются открытыми.
+Нет real sensitive data, remote migration, seed/backfill, deployment, нового APK,
+расширения OWNER-phone или dispatcher powers. Android docs-only; отдельный
+проверенный PR19 baseline сохраняется. G1paused,D4–D7pending.
+Следующий шаг — продолжить powertrain evidence и подготовку защищённой реальной
+инвентаризации в рамках отдельно утверждённого доступа; новые допуски не назначены.
+
+
+## G2: первый powertrain проход всех 121 семейств — 2026-11-18
+
+По команде «Далее» сверены AGENTS, актуальный план, журнал и remote feature/
+canonical heads. Продолжены существующие отдельные draft ветки PR44/PR20.
+G1paused,D4–D7pending; новые производственные действия не разрешались.
+
+К 9 исходным первичным источникам добавлены102: всего111. Для каждой121 строки
+найдено хотя бы частичное первичное свидетельство ДВС/гибридного исполнения;
+строк без семейного источника0, исчерпывающе проверенных диапазонов лет/рынков/
+поколений0. Это первый проход семейств, не снятие activation gate и не проверка
+фактических авто. Revision2 ledger сохраняет все поля121 CSV и archive116/hash.
+
+Lexus ES имеет BEV/HEV в первичной публикации; существующий hard BEV guard и
+каталог не менялись. BMW i5/i7, EQV/eVito, ID.Buzz и иные соседние названия не
+превращены в alias. SAIC G10 MY2025 даёт точное имя и petrol/diesel; LDV G10+
+cargo/вторичные продавцы отклонены как доказательство passenger Maxus G10.
+Точная таблица Opel Italy ZAFIRA LIFE diesel найдена в первичном индексе;
+прямой fetch PDF timeout, полного чтения не заявлено. Публикации, indexed
+excerpts и доступные PDF passages различены evidenceAccess. Некоторые ранние
+источники лежат вне minYear, это явно ограничено scope; годы не выдумываются.
+
+Подготовка поиска выявила пустые выдачи по неверным/узким доменам,404,403 и
+redirect; использованы доступные первичные источники/индекс с явными пределами,
+не обход авторизации. В локальном черновике исправлено разбиение FAW / Bestune
+B70; Bestune/T90 отдельно как утверждено, actual CSV не менялся. Raw статьи/
+руководства не копируются в Git; сохраняются короткие пересказы/URL/дата/пределы.
+
+Найден вопрос: официальные UNI-V/B70 названы лифтбеками при разрешённых
+sedan/crossover в Комфорте. Утверждённого тождества в repo не найдено.
+Владельцу сразу отправлен вопрос: разрешить отдельный liftback только Комфорт
+или сохранить ограничения. Ответ пока ожидается; вариант не выбран, время не
+считается согласием. Зависимые enum/schema/API/body-rule changes не начаты.
+См. VEHICLE_BODY_POLICY_CLARIFICATION_2026-11-18.md.
+
+Изменения только docs. Новый полный Android/backend CI не требуется для этих
+текстов; проверенный runtime source a3dc5bd299cd063bbeee4f1195ac5d6e656faabb /
+CI44334924707 остаётся отдельным baseline, не объявлен тестом новых ссылок.
+Проверки целостности данных/границ и публикация фиксируются следующим checkpoint.
+Нет real vehicle data, remote inventory, seed/backfill/migration/merge/deploy,
+нового APK/активации/расширения OWNER-phone или dispatcher powers.
+
+
+## G2: проверки revision 2 powertrain evidence — 2026-11-18
+
+PASS:121 исходных rule rows/порядок/поля совпадают с актуальным CSV; архив116 и
+оба фиксированных SHA256 сохранены.111 уникальных source IDs и HTTPS URL без
+embedded credentials; все row references разрешаются, пары brand/model точные,
+9 прежних source records сохранены.121 partial,0 exhaustive,activation blocked,
+actual legacy inventory false. Ledger SHA256
+`8df887adebca225eb9b6c3fc0b08351f384ad2623849ba11307538d0257883ff`.
+6 existing vehicle reference tests PASS. Runtime tool/test/workflow SHA256
+сверены с receipt source a3dc5bd299cd063bbeee4f1195ac5d6e656faabb — без изменений;
+в diff только docs. diff --check PASS в обоих worktrees. Новые Android/backend
+CI/APK не запускались и не объявляются проверкой этих документов. Исторический
+receipt остаётся привязанным к прежнему source, новый ledger проверен отдельно.
+Вопрос лифтбеков pending; никакое решение за владельца не принято. Публикация
+в PR44/PR20 и append-only канонические журналы выполняется после этих проверок.
+
+
+## G2: опубликован первый проход 121 семейства — 2026-11-18
+
+Backend docs source `0fd9cd414fbedb02ac43c3a59ee906664e0cd73a`, tree `81197f2d8f63c026af10d73d265fdfb9b910e61b`,
+local `35e736a8de39cc828735ff6e0c8b4d543235e165`; Android docs source `7267d682caaebc96253ae0e2b9e63dc876443eae`,
+tree `6400a0f667d50c440f2c925f826f8a092d8fd600`. Локальные/remote trees совпали при публикации;
+PR44/PR20 остаются draft, remote branch обновлялись с expected-head без force.
+Все121 строки имеют частичное первичное свидетельство;111 источников,
+0 исчерпывающих диапазонов. EvidenceAccess/пределы индекса/timeout сохранены.
+Verification receipt: VEHICLE_POWERTRAIN_EVIDENCE_VERIFICATION_2026-11-18.json.
+6 reference PASS и целостность ledger/hash/ссылок/исходных строк PASS. Runtime
+hashes прежнего CI44334924707 source a3dc5bd299cd063bbeee4f1195ac5d6e656faabb
+не изменились. Этот этап docs-only, нового полного CI/Android APK нет.
+Вопрос лифтбеков ожидает решения владельца; body enum/guards и business/minivan
+не менялись. Исчерпывающий обзор/actual legacy inventory/активация не закрыты.
+G1paused,D4–D7pending; нет seed/backfill/remote migration/merge/deploy/real PII.
+Канонические журналы синхронизируются отдельным append-only checkpoint.

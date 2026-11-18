@@ -1,0 +1,3567 @@
+{
+  "formatVersion": 1,
+  "reviewedAt": "2026-11-18",
+  "sourcePath": "docs/vehicle-classifier-v2-proposed.csv",
+  "sourceSha256": "553384af5b49252d3b3acbc3973ef6dae7fc40d348156debf4f0fab24c5ae880",
+  "activationReadiness": "blocked",
+  "exhaustivePowertrainReviewCompleted": false,
+  "actualLegacyInventoryCompleted": false,
+  "scope": "First family-source pass for all 121 catalogue rows; all year/generation/market ranges remain incomplete",
+  "limits": [
+    "A non-BEV variant observation does not prove absence of BEV variants.",
+    "No row has complete coverage of every CSV year, generation and market.",
+    "No source substitutes for verified documents of the actual vehicle.",
+    "Official marketing body naming does not satisfy actual-vehicle body conditions.",
+    "No CSV, rule seed, admission, legacy history or minimum year is changed.",
+    "Every row still has incomplete year/generation/market coverage; family evidence is not per-vehicle verification.",
+    "Primary indexed excerpts and rendered documents have different access limits recorded per source.",
+    "Fuel type, delivery date, passenger configuration and allowed body must not be inferred from unrelated navigation entries or model aliases."
+  ],
+  "sources": [
+    {
+      "id": "han",
+      "publisher": "BYD",
+      "url": "https://en.byd.com/news/byds-flagship-han-ev-series-officially-goes-on-sale/",
+      "scope": "China; launch article, not all years from 2022",
+      "observation": "Han EV and Han DM plug-in hybrid are distinct variants.",
+      "accessedAt": "2026-11-18",
+      "evidenceAccess": "prior_phase_record"
+    },
+    {
+      "id": "passion",
+      "publisher": "VOYAH Russia",
+      "url": "https://voyah.ru/news/voyah-obuyavlyaet-specifikacii-na-novyj-gibridnyj-sedan-s-uvelichennym-zapasom-hoda-voyah-passion-evr",
+      "scope": "Russia; PASSION EVR announcement, not all years from 2023",
+      "observation": "A range-extended hybrid PASSION variant is described.",
+      "accessedAt": "2026-11-18",
+      "evidenceAccess": "prior_phase_record"
+    },
+    {
+      "id": "dream",
+      "publisher": "VOYAH Russia",
+      "url": "https://voyah.ru/media-link/dream-brochure?id=download_brochure_dream_phev",
+      "scope": "Russia; current DREAM PHEV brochure, not every 2022+ generation",
+      "observation": "The brochure describes a range-extended hybrid powertrain.",
+      "accessedAt": "2026-11-18",
+      "evidenceAccess": "prior_phase_record"
+    },
+    {
+      "id": "d9",
+      "publisher": "BYD / DENZA",
+      "url": "https://media.byd.com/denza-brings-super-hybrid-tech-to-mpv-segment-with-d9-dm-i-475599/?lang=eng",
+      "scope": "Europe; 2026-04-09 release, not evidence for all 2023+ vehicles",
+      "observation": "D9 DM-i combines a plug-in hybrid system with a petrol tank.",
+      "accessedAt": "2026-11-18",
+      "evidenceAccess": "prior_phase_record"
+    },
+    {
+      "id": "es",
+      "publisher": "EXEED Kazakhstan",
+      "url": "https://exeed.kz/ru/news/131/",
+      "scope": "Auto Shanghai 2025 presentation; Kazakhstan distributor",
+      "observation": "ES BEV and ES REEV are described; REEV uses a petrol generator. A presentation is not proof of an individual delivered car.",
+      "accessedAt": "2026-11-18",
+      "evidenceAccess": "prior_phase_record"
+    },
+    {
+      "id": "s9",
+      "publisher": "HIMA",
+      "url": "https://hima.auto/xiangjie/s9/configuration/",
+      "scope": "China; configuration table observed 2026-11-18",
+      "observation": "S9 EVR hybrid and EV pure-electric columns are separate; EVR has a 1.5T range extender.",
+      "accessedAt": "2026-11-18",
+      "evidenceAccess": "prior_phase_record"
+    },
+    {
+      "id": "avatr12",
+      "publisher": "AVATR",
+      "url": "https://www.avatr.com/configuration?car=12",
+      "scope": "China; configuration table observed 2026-11-18",
+      "observation": "AVATR 12 configuration includes range-extended hybrid trims. This does not identify a particular 2023 vehicle.",
+      "accessedAt": "2026-11-18",
+      "evidenceAccess": "prior_phase_record"
+    },
+    {
+      "id": "spacetourer",
+      "publisher": "Stellantis / Citroen",
+      "url": "https://www.media.stellantis.com/uk-en/citroen/press/citroen-broadens-powertrain-choice-on-spacetourer-berlingo-with-introduction-of-petrol-diesel-variants",
+      "scope": "UK; current announcement, not every 2019+ generation",
+      "observation": "SpaceTourer diesel is announced alongside electric. Petrol in this article refers to Berlingo, not SpaceTourer.",
+      "accessedAt": "2026-11-18",
+      "evidenceAccess": "prior_phase_record"
+    },
+    {
+      "id": "zafira",
+      "publisher": "Stellantis / Opel",
+      "url": "https://www.media.stellantis.com/em-en/opel/press/powerful-mpv-opel-zafira-with-newly-developed-2-2-litre-diesel",
+      "scope": "2026 Zafira naming; historical Zafira Life name/2019+ coverage remains to verify",
+      "observation": "Zafira diesel and Zafira Electric alternatives are described. The exact historical Life variant still needs matching.",
+      "accessedAt": "2026-11-18",
+      "evidenceAccess": "prior_phase_record"
+    },
+    {
+      "id": "p2_octavia",
+      "url": "https://www.skoda-storyboard.com/en/press-releases/skoda-octavia-is-the-brands-first-model-with-a-full-hybrid-powertrain/",
+      "publisher": "Skoda",
+      "scope": "Current official hybrid release; incomplete year/generation/market coverage",
+      "observation": "Octavia is described with a petrol combustion engine and electric motors.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Skoda",
+          "model": "Octavia"
+        }
+      ]
+    },
+    {
+      "id": "p2_superb",
+      "url": "https://www.skoda-storyboard.com/en/press-releases/superb-hatch-version-receives-a-plug-in-hybrid-powertrain-with-200-kw-output/",
+      "publisher": "Skoda",
+      "scope": "2026 Superb release; incomplete year/generation/market coverage",
+      "observation": "A petrol plug-in hybrid Superb version is described.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Skoda",
+          "model": "Superb"
+        }
+      ]
+    },
+    {
+      "id": "p2_kodiaq",
+      "url": "https://cdn.skoda-storyboard.com/2024/04/The_all-new-_Skoda-_Kodiaq_Powertrains_5845e1c3.pdf",
+      "publisher": "Skoda",
+      "scope": "2024 Kodiaq powertrain sheet; incomplete year/generation/market coverage",
+      "observation": "The sheet lists petrol, diesel and hybrid powertrains.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Skoda",
+          "model": "Kodiaq"
+        }
+      ]
+    },
+    {
+      "id": "p2_toyota2022",
+      "url": "https://pressroom.toyota.com/whats-new-for-2022/",
+      "publisher": "Toyota USA",
+      "scope": "US MY2022 overview plus linked model sections; incomplete year/generation/market coverage",
+      "observation": "Camry, Corolla, RAV4 and Avalon hybrid variants are listed; individual trims and earlier CSV years still need matching.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Toyota",
+          "model": "Camry"
+        },
+        {
+          "brand": "Toyota",
+          "model": "Corolla"
+        },
+        {
+          "brand": "Toyota",
+          "model": "RAV4"
+        },
+        {
+          "brand": "Toyota",
+          "model": "Avalon"
+        }
+      ]
+    },
+    {
+      "id": "p2_alphard_vellfire",
+      "url": "https://global.toyota/en/newsroom/toyota/39287317.html",
+      "publisher": "Toyota",
+      "scope": "Japan 2023 launch; incomplete year/generation/market coverage",
+      "observation": "Gasoline and hybrid versions of Alphard and Vellfire were launched.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Toyota",
+          "model": "Alphard"
+        },
+        {
+          "brand": "Toyota",
+          "model": "Vellfire"
+        }
+      ]
+    },
+    {
+      "id": "p2_sienna",
+      "url": "https://pressroom.toyota.com/toyota-launches-all-new-2021-sienna-to-suit-a-variety-of-lifestyles/",
+      "publisher": "Toyota USA",
+      "scope": "US MY2021 launch; incomplete year/generation/market coverage",
+      "observation": "The MY2021 Sienna is described as hybrid; this does not cover the CSV minimum year 2020.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Toyota",
+          "model": "Sienna"
+        }
+      ]
+    },
+    {
+      "id": "p2_hiace",
+      "url": "https://global.toyota/en/newsroom/toyota/26538754.html",
+      "publisher": "Toyota",
+      "scope": "2019 overseas launch in Philippines; incomplete year/generation/market coverage",
+      "observation": "Hiace engine choices include diesel and gasoline. Passenger configuration and seat limit remain separate conditions.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Toyota",
+          "model": "Hiace"
+        }
+      ]
+    },
+    {
+      "id": "p2_honda",
+      "url": "https://global.honda/en/newsroom/news/2026/c261110beng.html?from=newslink_image",
+      "publisher": "Honda",
+      "scope": "US manufacturing release dated 2026-11-10; incomplete year/generation/market coverage",
+      "observation": "The release identifies the two-motor hybrid system used in Accord and CR-V; not every generation or engine is covered.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Honda",
+          "model": "Accord"
+        },
+        {
+          "brand": "Honda",
+          "model": "CR-V"
+        }
+      ]
+    },
+    {
+      "id": "p2_vw_petrol",
+      "url": "https://www.volkswagen-newsroom.com/en/press-releases/superior-towing-vehicles-tiguan-tayron-and-passat-with-all-wheel-drive-and-new-powerful-turbocharged-petrol-engines-19001",
+      "publisher": "Volkswagen",
+      "scope": "Current European high-output engine release; incomplete year/generation/market coverage",
+      "observation": "Passat and Tiguan are described with a turbocharged petrol engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Volkswagen",
+          "model": "Passat"
+        },
+        {
+          "brand": "Volkswagen",
+          "model": "Tiguan"
+        }
+      ]
+    },
+    {
+      "id": "p2_arteon",
+      "url": "https://www.volkswagen-newsroom.com/en/arteon-r-and-arteon-r-shooting-brake-test-drive-7003/technical-data-7015",
+      "publisher": "Volkswagen",
+      "scope": "Arteon R technical sheet; incomplete year/generation/market coverage",
+      "observation": "Arteon R has a turbocharged petrol engine; this is not approval of all body styles or a complete range review.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Volkswagen",
+          "model": "Arteon"
+        }
+      ]
+    },
+    {
+      "id": "p2_hyundai_hybrid",
+      "url": "https://www.hyundai.news/eu/articles/press-releases/hybrid-technology-enhanced-driving-experience-for-tucson-and-santa-fecustomers.html",
+      "publisher": "Hyundai Europe",
+      "scope": "European hybrid technology article; incomplete year/generation/market coverage",
+      "observation": "Tucson and Santa Fe hybrid systems combine a 1.6-litre combustion engine with an electric motor.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Hyundai",
+          "model": "Tucson"
+        },
+        {
+          "brand": "Hyundai",
+          "model": "Santa Fe"
+        }
+      ]
+    },
+    {
+      "id": "p2_sonata",
+      "url": "https://www.hyundai.com/contents/repn-car/html/homepage/price/sonata-hev-26_price.content",
+      "publisher": "Hyundai Korea",
+      "scope": "Korean MY2026 price/specification table; incomplete year/generation/market coverage",
+      "observation": "A gasoline 2.0 hybrid Sonata powertrain is listed.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Hyundai",
+          "model": "Sonata"
+        }
+      ]
+    },
+    {
+      "id": "p2_grandeur",
+      "url": "https://www.hyundai.com/content/dam/hyundai/kr/ko/data/vehicles/price/en/grandeur-hybrid-price-en.pdf",
+      "publisher": "Hyundai Korea",
+      "scope": "Korean MY2026 English specification PDF; incomplete year/generation/market coverage",
+      "observation": "Grandeur is listed with a gasoline 1.6 turbo hybrid engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Hyundai",
+          "model": "Grandeur"
+        }
+      ]
+    },
+    {
+      "id": "p2_univ",
+      "url": "https://changanauto.ru/about-us/news/obnovlennyi-changan-uni-v-vyxodit-na-rossiiskii-rynok__2",
+      "publisher": "Changan Russia",
+      "scope": "Updated Russian-market liftback release; incomplete year/generation/market coverage",
+      "observation": "The updated UNI-V has a petrol 2.0T engine; body naming does not decide the service tariff.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Changan",
+          "model": "UNI-V"
+        }
+      ]
+    },
+    {
+      "id": "p2_unis",
+      "url": "https://changanauto.ru/about-us/news/novyi-changan-uni-s-texnologicnyi-polnoprivodnyi-krossover-debiutiruet-v-rossii",
+      "publisher": "Changan Russia",
+      "scope": "2026 Russian-market generation announcement; incomplete year/generation/market coverage",
+      "observation": "The new UNI-S uses a 1.5-litre Blue Core turbo engine; earlier generations remain to check.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Changan",
+          "model": "UNI-S"
+        }
+      ]
+    },
+    {
+      "id": "p2_preface",
+      "url": "https://www.geely.com/en/news-test/2023/geely-riyadh-auto-show-highlights",
+      "publisher": "Geely",
+      "scope": "Riyadh Motor Show 2023; incomplete year/generation/market coverage",
+      "observation": "Preface is explicitly described as a new-generation gasoline vehicle.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Geely",
+          "model": "Preface"
+        }
+      ]
+    },
+    {
+      "id": "p2_atlas",
+      "url": "https://www.geely-motors.com/Atlas_pricelist%20011225_17193655612009718065.pdf",
+      "publisher": "Geely Russia",
+      "scope": "Russian price/specification sheet for 2024 production; incomplete year/generation/market coverage",
+      "observation": "Atlas is listed with a four-cylinder turbocharged gasoline engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Geely",
+          "model": "Atlas"
+        }
+      ]
+    },
+    {
+      "id": "p2_atlaspro",
+      "url": "https://www.geely-motors.com/model/geely-atlas-pro/",
+      "publisher": "Geely Russia",
+      "scope": "Russian current specification page; incomplete year/generation/market coverage",
+      "observation": "Atlas Pro is described with a 1.5-litre gasoline engine; presence or absence of mild hybrid equipment must be checked by trim.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Geely",
+          "model": "Atlas Pro"
+        }
+      ]
+    },
+    {
+      "id": "p2_haval",
+      "url": "https://haval.ru/about/articles/kak-vybrat-avtomobil-haval/",
+      "publisher": "HAVAL Russia",
+      "scope": "Official 2025 model-range overview table; incomplete year/generation/market coverage",
+      "observation": "The overview table identifies petrol engines for F7/F7x, Dargo and Jolion. Engine ratings are not imported into rules.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Haval",
+          "model": "F7"
+        },
+        {
+          "brand": "Haval",
+          "model": "F7x"
+        },
+        {
+          "brand": "Haval",
+          "model": "Dargo"
+        },
+        {
+          "brand": "Haval",
+          "model": "Jolion"
+        }
+      ]
+    },
+    {
+      "id": "p2_arrizo8",
+      "url": "https://www.chery.ru/chery/about/news/773/",
+      "publisher": "Chery Russia",
+      "scope": "Russian-market trim announcement; incomplete year/generation/market coverage",
+      "observation": "Arrizo 8 is described with a turbocharged gasoline 1.6TGDI engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Chery",
+          "model": "Arrizo 8"
+        }
+      ]
+    },
+    {
+      "id": "p2_tiggo7pro",
+      "url": "https://www.chery.ru/chery/about/news/482/",
+      "publisher": "Chery Russia",
+      "scope": "2021 Russian-market release; incomplete year/generation/market coverage",
+      "observation": "Tiggo 7 Pro is described with a gasoline 1.5 turbo engine; this earlier article alone does not verify every allowed 2022+ car.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Chery",
+          "model": "Tiggo 7 Pro"
+        }
+      ]
+    },
+    {
+      "id": "p2_tiggo7promax",
+      "url": "https://www.chery.ru/chery/about/news/761/",
+      "publisher": "Chery Russia",
+      "scope": "Updated Russian-market version announcement; incomplete year/generation/market coverage",
+      "observation": "Tiggo 7 Pro Max is described with a turbocharged gasoline 1.6T engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Chery",
+          "model": "Tiggo 7 Pro Max"
+        }
+      ]
+    },
+    {
+      "id": "p2_tiggo8promax",
+      "url": "https://www.chery.ru/chery/about/news/553/",
+      "publisher": "Chery Russia",
+      "scope": "Russian-market launch announcement; incomplete year/generation/market coverage",
+      "observation": "Tiggo 8 Pro Max is described with a gasoline 2.0TGDI engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Chery",
+          "model": "Tiggo 8 Pro Max"
+        }
+      ]
+    },
+    {
+      "id": "p2_bmw5",
+      "url": "https://www.press.bmwgroup.com/global/article/detail/T0416261EN/the-new-bmw-5-series-sedan",
+      "publisher": "BMW",
+      "scope": "Global G60 launch from October 2023; incomplete year/generation/market coverage",
+      "observation": "The 5 Series release covers combustion, hybrid and electric derivatives; the electric derivative is named i5.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "variantCaution": "The removed i5 rule is not restored and i5 is not made an alias of 5 Series.",
+      "appliesTo": [
+        {
+          "brand": "BMW",
+          "model": "5 Series"
+        }
+      ]
+    },
+    {
+      "id": "p2_bmw7",
+      "url": "https://www.press.bmwgroup.com/global/article/detail/T0380173EN/the-new-bmw-7-series?language=en",
+      "publisher": "BMW",
+      "scope": "G70 global launch; market-dependent choices; incomplete year/generation/market coverage",
+      "observation": "The 7 Series family is described with petrol mild hybrids and an all-electric variant; announced later PHEV availability is not delivery evidence.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "variantCaution": "The removed i7 rule is not restored or aliased to 7 Series.",
+      "appliesTo": [
+        {
+          "brand": "BMW",
+          "model": "7 Series"
+        }
+      ]
+    },
+    {
+      "id": "p2_eclass",
+      "url": "https://media.mercedes-benz.com/en/article/a19d8703-6e8e-4a24-aa87-1da9cef0dfd9",
+      "publisher": "Mercedes-Benz",
+      "scope": "2023 E-Class sales launch; incomplete year/generation/market coverage",
+      "observation": "Petrol, diesel and plug-in hybrid versions are described for saloon and estate; actual body constraints still apply.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Mercedes-Benz",
+          "model": "E-Class"
+        }
+      ]
+    },
+    {
+      "id": "p2_sclass",
+      "url": "https://media.mercedes-benz.com/en/press-kit/71dc2a9c-34c7-47e0-a264-d39d89b85d4c/article/8e671658-cf56-45c3-8ba7-15e997dee179",
+      "publisher": "Mercedes-Benz",
+      "scope": "Current S-Class press kit; incomplete year/generation/market coverage",
+      "observation": "The press kit lists petrol, diesel and plug-in hybrid engine options.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Mercedes-Benz",
+          "model": "S-Class"
+        }
+      ]
+    },
+    {
+      "id": "p2_maybach",
+      "url": "https://media.mercedes-benz.com/article/2974a623-30fb-4e39-9e05-88448e909aaf",
+      "publisher": "Mercedes-Benz",
+      "scope": "2023 Maybach S580e announcement; incomplete year/generation/market coverage",
+      "observation": "A plug-in hybrid Maybach S-Class is described.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Mercedes-Benz",
+          "model": "Maybach S-Class"
+        }
+      ]
+    },
+    {
+      "id": "p2_g80",
+      "url": "https://newsroom.genesis.com/231226-genesis-launches-newly-designed-g80-in-korea/",
+      "publisher": "Genesis",
+      "scope": "Korea 2023-12-26 refreshed G80 release; incomplete year/generation/market coverage",
+      "observation": "The release lists gasoline 2.5 turbo and 3.5 turbo engines. A differently named Electrified G80 must not be admitted through name matching.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Genesis",
+          "model": "G80"
+        }
+      ]
+    },
+    {
+      "id": "p2_g90",
+      "url": "https://www.genesis.com/worldwide/en/models/g90",
+      "publisher": "Genesis",
+      "scope": "Current global G90 specification; incomplete year/generation/market coverage",
+      "observation": "G90 is described with a gasoline 3.5 turbo V6 engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Genesis",
+          "model": "G90"
+        }
+      ]
+    },
+    {
+      "id": "p2_s90",
+      "url": "https://www.volvocars.com/intl/media/models/s90/2021/",
+      "publisher": "Volvo",
+      "scope": "MY2021 international media description; incomplete year/generation/market coverage",
+      "observation": "S90 is described with petrol, diesel and petrol plug-in hybrid powertrains.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Volvo",
+          "model": "S90"
+        }
+      ]
+    },
+    {
+      "id": "p2_h9",
+      "url": "https://www.hongqi-auto.com/pages/cartype/cartype_h9.html",
+      "publisher": "Hongqi",
+      "scope": "Current international H9 specification; incomplete year/generation/market coverage",
+      "observation": "The H9 technical table identifies a gasoline engine and mild-hybrid equipment; E-HS9 in navigation is a different model.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Hongqi",
+          "model": "H9"
+        }
+      ]
+    },
+    {
+      "id": "p2_kuga",
+      "url": "https://media.ford.com/content/fordmedia/feu/de/en/news/2020/02/20/Kuga-best-in-class-fuel-efficiency.html",
+      "publisher": "Ford Europe",
+      "scope": "European 2020 model release; incomplete year/generation/market coverage",
+      "observation": "Kuga is described with plug-in hybrid and diesel options; the page predates the CSV minimum year 2021.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Ford",
+          "model": "Kuga"
+        }
+      ]
+    },
+    {
+      "id": "p2_tourneo",
+      "url": "https://media.ford.com/content/dam/fordmedia/Europe/documents/en/2023/TourneoCustom/TourneoCustom_specsheet_EU_June2024_EU.pdf",
+      "publisher": "Ford Europe",
+      "scope": "June 2024 European specification PDF; incomplete year/generation/market coverage",
+      "observation": "The specification includes plug-in hybrid and EcoBlue diesel versions. Electric derivatives require separate exclusion.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Ford",
+          "model": "Tourneo Custom"
+        }
+      ]
+    },
+    {
+      "id": "p2_b70",
+      "url": "https://bestune.ru/B70_Price_01_11_2025_6557653825203732106.pdf",
+      "publisher": "BESTUNE Russia",
+      "scope": "Russian 2025 specification PDF; incomplete year/generation/market coverage",
+      "observation": "B70 is listed with turbocharged gasoline engines. The exact CSV pair FAW / Bestune B70 is preserved; no brand alias is created.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "FAW",
+          "model": "Bestune B70"
+        }
+      ]
+    },
+    {
+      "id": "p2_t90",
+      "url": "https://bestune.ru/models/new-bestune-t90/t90-tth/",
+      "publisher": "BESTUNE Russia",
+      "scope": "Russian current specification with 2024 production reference; incomplete year/generation/market coverage",
+      "observation": "T90 is listed with turbocharged gasoline engines. Bestune and FAW Bestune rows are not merged.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Bestune",
+          "model": "T90"
+        }
+      ]
+    },
+    {
+      "id": "p2_huge",
+      "url": "https://dongfengmotor.ru/models/huge",
+      "publisher": "Dongfeng Russia",
+      "scope": "Russian Aeolus Huge specification; incomplete year/generation/market coverage",
+      "observation": "Huge is listed with a turbocharged gasoline engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Dongfeng",
+          "model": "Huge"
+        }
+      ]
+    },
+    {
+      "id": "p2_t5evo",
+      "url": "https://forthing-egypt.com/brochure/T5-EVO-Brochure.pdf",
+      "publisher": "Forthing Egypt",
+      "scope": "Egyptian current T5 EVO brochure; incomplete year/generation/market coverage",
+      "observation": "The brochure identifies a turbocharged 1.5-litre gasoline engine; Russian 2023+ coverage is not established.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Forthing",
+          "model": "T5 EVO"
+        }
+      ]
+    },
+    {
+      "id": "p2_js6",
+      "url": "https://jac-motors.kz/storage/products/October2025/mDlX6TKdqOJzwSXqpauI.pdf",
+      "publisher": "JAC Kazakhstan",
+      "scope": "Kazakhstan 2024/2025 specification table; incomplete year/generation/market coverage",
+      "observation": "JS6 is described with a turbocharged gasoline engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "JAC",
+          "model": "JS6"
+        }
+      ]
+    },
+    {
+      "id": "p2_lynk08",
+      "url": "https://www.lynkco.com/en/cars/08/specifications",
+      "publisher": "Lynk & Co",
+      "scope": "Current European specification; incomplete year/generation/market coverage",
+      "observation": "08 is explicitly described as a plug-in hybrid; this is not every Chinese 2023 configuration.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Lynk & Co",
+          "model": "08"
+        }
+      ]
+    },
+    {
+      "id": "p2_tenett8",
+      "url": "https://tenet.ru/models/t8/",
+      "publisher": "TENET Russia",
+      "scope": "Current Russian model page; incomplete year/generation/market coverage",
+      "observation": "T8 is described with a 2.0-litre turbocharged combustion engine and fuel consumption; no inference about all production years.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "TENET",
+          "model": "T8"
+        }
+      ]
+    },
+    {
+      "id": "p2_li_l7",
+      "url": "https://ir.lixiang.com/news-releases/news-release-details/li-auto-inc-launches-li-l7-five-seat-flagship-family-suv/",
+      "publisher": "Li Auto",
+      "scope": "2023 L7 launch release; incomplete year/generation/market coverage",
+      "observation": "L7 uses a 1.5-litre turbocharged engine in its range-extension system. Approved business crossover exception is unchanged.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Li Auto",
+          "model": "L7"
+        }
+      ]
+    },
+    {
+      "id": "p2_li_series",
+      "url": "https://ir.lixiang.com/static-files/c1482713-c418-4338-9e05-0885b218598c",
+      "publisher": "Li Auto",
+      "scope": "Annual filing discussing 2024 L series; incomplete year/generation/market coverage",
+      "observation": "The filing describes L9 among the L-series range-extended vehicles using a 1.5-litre turbocharged engine; actual trim/year still needs proof.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Li Auto",
+          "model": "L9"
+        }
+      ]
+    },
+    {
+      "id": "p2_lexuses",
+      "url": "https://newsroom.lexus.eu/the-all-new-lexus-es-redefining-the-luxury-sedan/",
+      "publisher": "Lexus Europe",
+      "scope": "New-generation European ES release observed 2026-11-18; incomplete year/generation/market coverage",
+      "observation": "The release lists ES350e/500e BEV and ES300h/350h hybrid variants.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "variantCaution": "ES model name alone cannot establish a non-BEV powertrain.",
+      "appliesTo": [
+        {
+          "brand": "Lexus",
+          "model": "ES"
+        }
+      ]
+    },
+    {
+      "id": "p2_k5",
+      "url": "https://www.kiamedia.com/us/en/models/k5/2025/specifications",
+      "publisher": "Kia USA",
+      "scope": "US MY2025 technical table; incomplete year/generation/market coverage",
+      "observation": "K5 engine specifications explicitly identify gasoline direct-injection engines.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Kia",
+          "model": "K5"
+        }
+      ]
+    },
+    {
+      "id": "p2_optima",
+      "url": "https://www.kiamedia.com/us/en/models/optima/2020/specifications",
+      "publisher": "Kia USA",
+      "scope": "US MY2020 technical table; incomplete year/generation/market coverage",
+      "observation": "Optima gasoline engine variants are listed.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Kia",
+          "model": "Optima"
+        }
+      ]
+    },
+    {
+      "id": "p2_cerato",
+      "url": "https://www.kia.com/content/dam/kwcms/au/en/images/pdf/cerato/kia-cerato-brochure.pdf",
+      "publisher": "Kia Australia",
+      "scope": "Australian MY2024 brochure; incomplete year/generation/market coverage",
+      "observation": "Cerato is described with petrol 2.0 MPI and 1.6 T-GDI engines.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Kia",
+          "model": "Cerato"
+        }
+      ]
+    },
+    {
+      "id": "p2_kia_hev",
+      "url": "https://www.kia.com/au/cars/hybrid-cars.html",
+      "publisher": "Kia Australia",
+      "scope": "Current Australian hybrid range; incomplete year/generation/market coverage",
+      "observation": "The page identifies a petrol engine in the Sportage, Sorento and Carnival hybrid systems.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Kia",
+          "model": "Sportage"
+        },
+        {
+          "brand": "Kia",
+          "model": "Sorento"
+        },
+        {
+          "brand": "Kia",
+          "model": "Carnival"
+        }
+      ]
+    },
+    {
+      "id": "p2_k8",
+      "url": "https://www.kia.com/content/dam/kwcms/kw/en/pdf/brochure/K8-PE_Brochure_EN_REV3.pdf",
+      "publisher": "Kia Kuwait",
+      "scope": "Kuwait K8 specification brochure; incomplete year/generation/market coverage",
+      "observation": "The table lists gasoline 3.5 and 1.6 turbo hybrid versions.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Kia",
+          "model": "K8"
+        }
+      ]
+    },
+    {
+      "id": "p2_k9",
+      "url": "https://www.kia.com/content/dam/kwp/kr/ko/vehicles/pdf/en_brochure/en_catalog_k9.pdf",
+      "publisher": "Kia Korea",
+      "scope": "Korean brochure observed November 2026; incomplete year/generation/market coverage",
+      "observation": "The specification identifies a gasoline 3.8 engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Kia",
+          "model": "K9"
+        }
+      ]
+    },
+    {
+      "id": "p2_elantra",
+      "url": "https://www.hyundai.com/content/dam/hyundai/wallan/en/data/marketing/brochure/product/elantra-2024/ELANTRA_EN.pdf",
+      "publisher": "Hyundai / Wallan",
+      "scope": "Saudi Arabian 2024 Elantra brochure; incomplete year/generation/market coverage",
+      "observation": "A Smartstream G1.6 gasoline engine is identified.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Hyundai",
+          "model": "Elantra"
+        }
+      ]
+    },
+    {
+      "id": "p2_mazda6",
+      "url": "https://news.mazdausa.com/vehicles-2021-mazda6",
+      "publisher": "Mazda USA",
+      "scope": "US MY2021 model release; incomplete year/generation/market coverage",
+      "observation": "The release describes 2.5-litre naturally aspirated and turbo engines using octane-rated fuel.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Mazda",
+          "model": "6"
+        }
+      ]
+    },
+    {
+      "id": "p2_cx5",
+      "url": "https://news.mazdausa.com/vehicles-2021-cx-5",
+      "publisher": "Mazda USA",
+      "scope": "US MY2021 model release; incomplete year/generation/market coverage",
+      "observation": "The release describes 2.5-litre naturally aspirated and turbo engines using octane-rated fuel.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Mazda",
+          "model": "CX-5"
+        }
+      ]
+    },
+    {
+      "id": "p2_cx9",
+      "url": "https://news.mazdausa.com/vehicles-2021-cx-9",
+      "publisher": "Mazda USA",
+      "scope": "US MY2021 model release; incomplete year/generation/market coverage",
+      "observation": "CX-9 is described with a turbocharged 2.5-litre gasoline engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Mazda",
+          "model": "CX-9"
+        }
+      ]
+    },
+    {
+      "id": "p2_altima",
+      "url": "https://usa.nissannews.com/en-US/releases/2022-nissan-altima-press-kit",
+      "publisher": "Nissan USA",
+      "scope": "US MY2022 press kit; incomplete year/generation/market coverage",
+      "observation": "The Altima technical table specifies regular unleaded fuel for its engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Nissan",
+          "model": "Altima"
+        }
+      ]
+    },
+    {
+      "id": "p2_murano",
+      "url": "https://usa.nissannews.com/en-US/releases/2021-nissan-murano-press-kit",
+      "publisher": "Nissan USA",
+      "scope": "US MY2021 press kit; incomplete year/generation/market coverage",
+      "observation": "Murano has a 3.5-litre DOHC V6 engine; this is a bounded US configuration observation.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Nissan",
+          "model": "Murano"
+        }
+      ]
+    },
+    {
+      "id": "p2_epower",
+      "url": "https://uk.nissannews.com/en-GB/releases/nissan-qashqai-the-original-and-now-even-better",
+      "publisher": "Nissan UK",
+      "scope": "European release recalling e-POWER launch in September 2022; incomplete year/generation/market coverage",
+      "observation": "Qashqai and X-Trail e-POWER use a petrol engine to generate power for electric drive; electric wheel drive alone does not make them BEVs.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Nissan",
+          "model": "Qashqai"
+        },
+        {
+          "brand": "Nissan",
+          "model": "X-Trail"
+        }
+      ]
+    },
+    {
+      "id": "p2_teana",
+      "url": "https://global.nissannews.com/en/releases/251121-01-e",
+      "publisher": "Nissan",
+      "scope": "China 2025-11-21 Teana launch; incomplete year/generation/market coverage",
+      "observation": "Teana is explicitly named with a 2.0-litre VC-Turbo engine. Teana and Altima remain separate CSV rows.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Nissan",
+          "model": "Teana"
+        }
+      ]
+    },
+    {
+      "id": "p2_outlander",
+      "url": "https://www.mitsubishi-motors.com/en/newsroom/newsrelease/2024/20241002_1.html",
+      "publisher": "Mitsubishi Motors",
+      "scope": "European 2024 updated PHEV release; incomplete year/generation/market coverage",
+      "observation": "An Outlander PHEV variant is described; a later gasoline update was only planned at publication time.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Mitsubishi",
+          "model": "Outlander"
+        }
+      ]
+    },
+    {
+      "id": "p2_mondeo",
+      "url": "https://media.ford.com/content/dam/fordmedia/Europe/documents/productReleases/Mondeo/FordMondeo_Overview_EU.pdf",
+      "publisher": "Ford Europe",
+      "scope": "European Mondeo overview PDF; incomplete year/generation/market coverage",
+      "observation": "The four-door Mondeo Hybrid combines a petrol 2.0-litre engine with an electric motor.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Ford",
+          "model": "Mondeo"
+        }
+      ]
+    },
+    {
+      "id": "p2_monjaro",
+      "url": "https://www.geely-motors.com/Monjaro%20pricelist%20010126_16239672373997554566.pdf",
+      "publisher": "Geely Russia",
+      "scope": "Russian 2026 specification PDF; incomplete year/generation/market coverage",
+      "observation": "Monjaro is listed with a four-cylinder turbocharged gasoline engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Geely",
+          "model": "Monjaro"
+        }
+      ]
+    },
+    {
+      "id": "p2_okavango",
+      "url": "https://www.geely-motors.com/about-geely/news/geely-obyavlyaet-tseny-na-novyy-7-mestnyy-krossover-okavango-v-rossii/",
+      "publisher": "Geely Russia",
+      "scope": "Russian seven-seat launch release; incomplete year/generation/market coverage",
+      "observation": "Okavango is described with a turbocharged gasoline 2.0-litre engine; seven seats do not change the approved comfort tariff.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Geely",
+          "model": "Okavango"
+        }
+      ]
+    },
+    {
+      "id": "p2_tiggo8pro",
+      "url": "https://www.chery.ru/chery/about/news/490/",
+      "publisher": "Chery Russia",
+      "scope": "2021 Russian launch release; incomplete year/generation/market coverage",
+      "observation": "Tiggo 8 Pro is described with a gasoline 2.0 turbo engine; the release predates the CSV minimum year 2022.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Chery",
+          "model": "Tiggo 8 Pro"
+        }
+      ]
+    },
+    {
+      "id": "p2_tiggo9",
+      "url": "https://www.chery.ru/chery/about/news/738/",
+      "publisher": "Chery Russia",
+      "scope": "Beijing 2024 presentation of Tiggo 9 PHEV; incomplete year/generation/market coverage",
+      "observation": "A gasoline engine and electric motor are described. Announcement evidence is not proof of delivery or of every 2023+ configuration.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Chery",
+          "model": "Tiggo 9"
+        }
+      ]
+    },
+    {
+      "id": "p2_cs75",
+      "url": "https://changanauto.ru/storage/model/booklet/changan/2025/%D0%9B%D0%B8%D1%81%D1%82%D0%BE%D0%B2%D0%BA%D0%B0_CS75PLUS%202025-%D1%81%D0%B6%D0%B0%D1%82%D1%8B%D0%B9.pdf",
+      "publisher": "Changan Russia",
+      "scope": "Russian 2025 specification PDF; incomplete year/generation/market coverage",
+      "observation": "The CS75 PLUS table lists petrol fuel for its turbocharged engines.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Changan",
+          "model": "CS75 Plus"
+        }
+      ]
+    },
+    {
+      "id": "p2_unik",
+      "url": "https://changanauto.ru/models/uni-k/",
+      "publisher": "Changan Russia",
+      "scope": "Older indexed Changan model page; current URL redirects to UNI site; incomplete year/generation/market coverage",
+      "observation": "The indexed UNI-K page identifies a 2.0-litre engine. Current redirected specification was not fully readable; fuel/trim/year details remain unresolved.",
+      "evidenceAccess": "primary_indexed_excerpt_with_current_redirect",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Changan",
+          "model": "UNI-K"
+        }
+      ]
+    },
+    {
+      "id": "p2_txl",
+      "url": "https://exeed.kz/userdata/rubrics/rubrics_9/file_ru.pdf?1791203108=",
+      "publisher": "EXEED Kazakhstan",
+      "scope": "Kazakhstan November 2026 specification PDF; incomplete year/generation/market coverage",
+      "observation": "The TXL table identifies 1.6/2.0-litre turbocharged fuel-injection engines and octane-95 fuel.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "EXEED",
+          "model": "TXL"
+        }
+      ]
+    },
+    {
+      "id": "p2_vx",
+      "url": "https://exeed.kz/userdata/rubrics/rubrics_40/file_ru.pdf?1791203045=",
+      "publisher": "EXEED Kazakhstan",
+      "scope": "Kazakhstan November 2026 specification PDF; incomplete year/generation/market coverage",
+      "observation": "The VX table identifies a 2.0-litre turbocharged fuel-injection engine and octane-95 fuel.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "EXEED",
+          "model": "VX"
+        }
+      ]
+    },
+    {
+      "id": "p2_rx",
+      "url": "https://exeed.kz/userdata/rubrics/rubrics_36/file_ru.pdf?1761893137=",
+      "publisher": "EXEED Kazakhstan",
+      "scope": "Kazakhstan 2026 RX specification brochure; incomplete year/generation/market coverage",
+      "observation": "The table lists turbocharged engines including a petrol turbo plus electric motors in its PHEV configuration.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "EXEED",
+          "model": "RX"
+        }
+      ]
+    },
+    {
+      "id": "p2_lx",
+      "url": "https://exeed.ru/news/exeed-lx-worthy-of-excellence/",
+      "publisher": "EXEED Russia",
+      "scope": "Russian 2022 LX release; incomplete year/generation/market coverage",
+      "observation": "LX is explicitly described with a gasoline 1.5 turbo engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "EXEED",
+          "model": "LX"
+        }
+      ]
+    },
+    {
+      "id": "p2_omodac5",
+      "url": "https://files.omoda.ru/c5-brochure.pdf",
+      "publisher": "OMODA Russia",
+      "scope": "Russian C5 brochure; incomplete year/generation/market coverage",
+      "observation": "The brochure describes turbocharged fuel-injection engines, fuel consumption and a fuel tank; the C5 rule is not an alias for another electric model.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Omoda",
+          "model": "C5"
+        }
+      ]
+    },
+    {
+      "id": "p2_omodas5",
+      "url": "https://omoda.ru/omoda/brand/news/sedan-omoda-s5-gt-prohodit-finalnye-sertifikacionnye-ispytaniya-v-rossii/",
+      "publisher": "OMODA Russia",
+      "scope": "Russian certification announcement for S5 GT trim; incomplete year/generation/market coverage",
+      "observation": "S5 in GT version is described with a gasoline turbo engine; announcement and specific trim do not prove every base S5 or delivery date.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Omoda",
+          "model": "S5"
+        }
+      ]
+    },
+    {
+      "id": "p2_gs8",
+      "url": "https://gac.ru/media-link/gs8-new-pricelist",
+      "publisher": "GAC Russia",
+      "scope": "Russian 2025 GS8 specification sheet; incomplete year/generation/market coverage",
+      "observation": "GS8 is explicitly listed with a turbocharged gasoline 2.0-litre engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "GAC",
+          "model": "GS8"
+        }
+      ]
+    },
+    {
+      "id": "p2_m8",
+      "url": "https://gac.ru/models/m8",
+      "publisher": "GAC Russia",
+      "scope": "Russian current M8 specification; incomplete year/generation/market coverage",
+      "observation": "M8 is explicitly described with a gasoline 2.0T GDI engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "GAC",
+          "model": "M8"
+        }
+      ]
+    },
+    {
+      "id": "p2_x70",
+      "url": "https://belgee.ru/model/belgee-x70-facelift/",
+      "publisher": "Belgee Russia",
+      "scope": "Russian current facelift specification; incomplete year/generation/market coverage",
+      "observation": "X70 is listed with a turbocharged gasoline engine; earlier generation/year still needs matching.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Belgee",
+          "model": "X70"
+        }
+      ]
+    },
+    {
+      "id": "p2_t7",
+      "url": "https://tenet.ru/models/t7/",
+      "publisher": "TENET Russia",
+      "scope": "Current Russian T7 technical table; incomplete year/generation/market coverage",
+      "observation": "The T7 table identifies a turbocharged fuel-injection engine, fuel tank and octane-92 fuel.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "TENET",
+          "model": "T7"
+        }
+      ]
+    },
+    {
+      "id": "p2_j7",
+      "url": "https://files.jaecoo.ru/J7-liflet.pdf",
+      "publisher": "JAECOO Russia",
+      "scope": "Russian 1.6T 186hp specification leaflet; incomplete year/generation/market coverage",
+      "observation": "J7 is described with a turbocharged fuel-injection 1.6-litre engine. Other markets and trims remain separate.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Jaecoo",
+          "model": "J7"
+        }
+      ]
+    },
+    {
+      "id": "p2_j8",
+      "url": "https://files.jaecoo.ru/priceJ8.pdf",
+      "publisher": "JAECOO Russia",
+      "scope": "Russian 2025 2.0T price/specification leaflet; incomplete year/generation/market coverage",
+      "observation": "The J8 leaflet lists a 2.0T engine and fuel tank; it does not establish all earlier or hybrid variants.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Jaecoo",
+          "model": "J8"
+        }
+      ]
+    },
+    {
+      "id": "p2_x90plus",
+      "url": "https://jetour-ru.com/media/download/docs/qiotct__tehniceskie-harakteristiki-jetour-x90plus-09-01-2024.pdf",
+      "publisher": "Jetour Russia",
+      "scope": "Russian 2024 technical specification; incomplete year/generation/market coverage",
+      "observation": "X90 PLUS is listed with a turbocharged gasoline engine.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Jetour",
+          "model": "X90 Plus"
+        }
+      ]
+    },
+    {
+      "id": "p2_a6",
+      "url": "https://www.audi-mediacenter.com/en/the-audi-a6-until-2025-the-car-of-many-talents-in-the-business-class-10240/sportiness-10255",
+      "publisher": "Audi",
+      "scope": "A6 technical dossier covering the model until 2025; incomplete year/generation/market coverage",
+      "observation": "The technical dossier lists petrol TFSI and diesel TDI engines; no alias with A6 e-tron is created.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Audi",
+          "model": "A6"
+        }
+      ]
+    },
+    {
+      "id": "p2_a8",
+      "url": "https://www.audi-mediacenter.com/de/publikationen/preislisten/preisliste-audi-a8-a8-l-audi-a8-a8-l-tfsi-e-audi-s8-modelljahr-2026-800/download",
+      "publisher": "Audi",
+      "scope": "German MY2026 A8 price/specification sheet; incomplete year/generation/market coverage",
+      "observation": "The A8 table explicitly lists diesel versions; it does not cover every allowed 2020+ version.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Audi",
+          "model": "A8"
+        }
+      ]
+    },
+    {
+      "id": "p2_ls",
+      "url": "https://newsroom.lexus.eu/everyday-excellence--perfecting-performance-in-the-new-lexus-ls/",
+      "publisher": "Lexus Europe",
+      "scope": "2021 LS500h release; incomplete year/generation/market coverage",
+      "observation": "The LS500h multi-stage hybrid powertrain is described.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Lexus",
+          "model": "LS"
+        }
+      ]
+    },
+    {
+      "id": "p2_lm",
+      "url": "https://newsroom.lexus.eu/world-premiere-of-the-all-new-lexus-lm/",
+      "publisher": "Lexus Europe",
+      "scope": "European 2023 LM350h launch; incomplete year/generation/market coverage",
+      "observation": "LM350h is described with a self-charging 2.5-litre hybrid powertrain; this does not cover the CSV minimum year 2020.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Lexus",
+          "model": "LM"
+        }
+      ]
+    },
+    {
+      "id": "p2_h5",
+      "url": "https://hongqi.ru/models/h5/specification",
+      "publisher": "Hongqi Russia",
+      "scope": "Current Russian H5 technical specification; incomplete year/generation/market coverage",
+      "observation": "H5 is listed with a turbocharged gasoline engine. The approved second-generation/body/interior conditions remain to verify.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Hongqi",
+          "model": "H5"
+        }
+      ]
+    },
+    {
+      "id": "p2_hq9",
+      "url": "https://hongqi.ru/models/hq9/specification",
+      "publisher": "Hongqi Russia",
+      "scope": "Current Russian HQ9 specification; incomplete year/generation/market coverage",
+      "observation": "HQ9 is listed with a turbocharged gasoline engine; actual seating and hybrid configuration need checking.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Hongqi",
+          "model": "HQ9"
+        }
+      ]
+    },
+    {
+      "id": "p2_vclass",
+      "url": "https://media.mercedes-benz.com/en/article/33e42655-6865-486a-ae87-2416a8fa6706",
+      "publisher": "Mercedes-Benz",
+      "scope": "2024 V-Class/EQV release; incomplete year/generation/market coverage",
+      "observation": "V-Class has diesel engine options; the separate electric EQV name is not an alias for an allowed vehicle. A planned petrol variant is not confirmed delivered.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Mercedes-Benz",
+          "model": "V-Class"
+        }
+      ]
+    },
+    {
+      "id": "p2_vitotourer",
+      "url": "https://media.mercedes-benz.com/article/47866335-ad16-4a47-9240-daf01a926e73",
+      "publisher": "Mercedes-Benz",
+      "scope": "2020 Vito/eVito Tourer upgrade release; incomplete year/generation/market coverage",
+      "observation": "The release distinguishes diesel Vito engines from fully electric eVito Tourer. Passenger Vito Tourer still requires exact vehicle evidence.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Mercedes-Benz",
+          "model": "Vito Tourer"
+        }
+      ]
+    },
+    {
+      "id": "p2_caravelle",
+      "url": "https://www.volkswagen-vans.co.uk/idhub/content/dam/onehub_nfz/importers/gb/downloads/brochures/caravelle/caravelle-brochure.pdf",
+      "publisher": "Volkswagen UK",
+      "scope": "UK Caravelle technical brochure; incomplete year/generation/market coverage",
+      "observation": "The Caravelle SE table explicitly lists diesel fuel; the specific generation and seating configuration remain to match.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Volkswagen",
+          "model": "Caravelle"
+        }
+      ]
+    },
+    {
+      "id": "p2_multivan",
+      "url": "https://www.volkswagen-newsroom.com/en/the-new-id-buzz-and-id-buzz-cargo-international-media-drive-15144/overview-15145",
+      "publisher": "Volkswagen",
+      "scope": "2022 commercial-vehicle overview mentioning 2021 Multivan; incomplete year/generation/market coverage",
+      "observation": "The text separately describes Multivan as optionally plug-in hybrid; ID.Buzz discussed on the page is a different electric model, not an allowed alias.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Volkswagen",
+          "model": "Multivan"
+        }
+      ]
+    },
+    {
+      "id": "p2_staria",
+      "url": "https://www.hyundai.com/content/dam/hyundai/ma/fr/data/marketing/brochure/product/staria/FT-Hyundai-STARIA-2023.pdf",
+      "publisher": "Hyundai Morocco",
+      "scope": "Moroccan 2023 specification PDF; incomplete year/generation/market coverage",
+      "observation": "Staria is listed with a 2.2-litre CRDi diesel engine; actual passenger seating and 2021+ coverage remain to verify.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Hyundai",
+          "model": "Staria"
+        }
+      ]
+    },
+    {
+      "id": "p2_h1",
+      "url": "https://www.hyundai.com/csa/en/find-a-car/h-1-facelift/performance",
+      "publisher": "Hyundai",
+      "scope": "Central/South America H-1 facelift page; incomplete year/generation/market coverage",
+      "observation": "The H-1 performance page explicitly describes CRDi diesel engines.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Hyundai",
+          "model": "H-1"
+        }
+      ]
+    },
+    {
+      "id": "p2_granvia",
+      "url": "https://www.toyota.com.au/-/media/project/toyota/toyota/policies/de-class-action/toyota-diesel-emissions-class-action---notice-to-group-members.pdf?rev=08f4ae3b8ec84e349141267d917bdf30",
+      "publisher": "Toyota Australia",
+      "scope": "Official Australian document listing 2019+ vehicle/engine combinations; incomplete year/generation/market coverage",
+      "observation": "The document identifies Granvia from 2019 with the 2.8-litre 1GD-FTV diesel engine. No legal conclusion or passenger-seat approval is drawn.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Toyota",
+          "model": "Granvia"
+        }
+      ]
+    },
+    {
+      "id": "p2_traveller",
+      "url": "https://qtr.peugeot.com/en/our-models/traveller.html",
+      "publisher": "Peugeot Qatar",
+      "scope": "Current Qatari Traveller Business VIP page; incomplete year/generation/market coverage",
+      "observation": "The model page describes a BlueHDi diesel engine; not every market/generation is covered.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Peugeot",
+          "model": "Traveller"
+        }
+      ]
+    },
+    {
+      "id": "p2_pacifica",
+      "url": "https://www.media.stellantis.com/me-en/corporate/press/chrysler-turns-100-chrysler-brand-shares-1-500-plus-100th-birthday-group-photo-honoring-employees-announces-century-of-innovation-summer-celebration-events-as-it-looks-to-next-100-years",
+      "publisher": "Stellantis / Chrysler",
+      "scope": "Chrysler 2025 anniversary release; incomplete year/generation/market coverage",
+      "observation": "The release explicitly identifies Pacifica Plug-in Hybrid; actual model year and configuration still need evidence.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Chrysler",
+          "model": "Pacifica"
+        }
+      ]
+    },
+    {
+      "id": "p2_x7",
+      "url": "https://baic.md/baic-x7",
+      "publisher": "BAIC Moldova",
+      "scope": "Current Moldovan X7 specification page; incomplete year/generation/market coverage",
+      "observation": "X7 is explicitly described with a gasoline 1.5-litre turbo engine.",
+      "evidenceAccess": "primary_page",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "BAIC",
+          "model": "X7"
+        }
+      ]
+    },
+    {
+      "id": "p2_jetta",
+      "url": "https://www.vw.com/en/newsroom/discover-vw/updating-the-2022-jetta-and-jetta-gli.html",
+      "publisher": "Volkswagen USA",
+      "scope": "US MY2022 update; incomplete year/generation/market coverage",
+      "observation": "Jetta is described with a 1.5-litre turbocharged engine; engine details are not imported as rule conditions.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Volkswagen",
+          "model": "Jetta"
+        }
+      ]
+    },
+    {
+      "id": "p2_teramont",
+      "url": "https://www.volkswagen-newsroom.com/en/press-releases/suv-offensive-in-china-volkswagen-reveals-6-new-cars-at-auto-shanghai-including-3-world-premieres-7023",
+      "publisher": "Volkswagen",
+      "scope": "Auto Shanghai 2021 release; incomplete year/generation/market coverage",
+      "observation": "Teramont and Teramont X are explicitly named among internal-combustion cars. The separate Teramont X name is not made an alias.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Volkswagen",
+          "model": "Teramont"
+        }
+      ]
+    },
+    {
+      "id": "p2_tugella",
+      "url": "https://global.geely.com/en/news/2024/geely-tugella-rally-jameel",
+      "publisher": "Geely",
+      "scope": "2024 Saudi Rally Jameel release; incomplete year/generation/market coverage",
+      "observation": "Tugella is identified with a 2.0-litre four-cylinder fuel-injection turbocharged engine; a rally configuration is not every road trim.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Geely",
+          "model": "Tugella"
+        }
+      ]
+    },
+    {
+      "id": "p2_g10",
+      "url": "https://www.saicmaxus.com/uploads/month_202507/files/fab69a77c8e1571fba3c23f34a13c9f9.pdf",
+      "publisher": "SAIC MAXUS",
+      "scope": "China MY2025 G10 and G10 MAX specification table; incomplete year/generation/market coverage",
+      "observation": "The G10 table separately lists gasoline and diesel variants (as well as a CNG column). No LDV alias, G10 MAX alias, cargo admission or new fuel category is created.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Maxus",
+          "model": "G10"
+        }
+      ]
+    },
+    {
+      "id": "p2_unik_manual",
+      "url": "https://changan-auto.kz/userdata/items/items_1/file_ru.pdf?1664962438=",
+      "publisher": "Changan Kazakhstan",
+      "scope": "Official Kazakh-market UNI-K owner manual; incomplete year/generation/market coverage",
+      "observation": "The UNI-K refuelling table explicitly requires unleaded petrol for the specified configurations; it does not establish every year/trim.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Changan",
+          "model": "UNI-K"
+        }
+      ]
+    },
+    {
+      "id": "p2_corolla2022",
+      "url": "https://pressroom.toyota.com/corolla-hybrid-legendary-value-epic-mpg/",
+      "publisher": "Toyota USA",
+      "scope": "US MY2022 Corolla Hybrid release; incomplete year/generation/market coverage",
+      "observation": "The release explicitly describes Corolla Hybrid and the engine operating with an electric motor, removing reliance on a general range page.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Toyota",
+          "model": "Corolla"
+        }
+      ]
+    },
+    {
+      "id": "p2_zafiralife",
+      "url": "https://nocache.media.stellantis.com/uploads/it/news/mkt2025246listinipcopel_03_11_25-6909b20180c26.pdf",
+      "publisher": "Stellantis / Opel Italy",
+      "scope": "Italian 2025-11-03 passenger-car price list; incomplete year/generation/market coverage",
+      "observation": "The table explicitly names ZAFIRA LIFE diesel versions. This addresses the older source naming gap but not all 2019+ generations.",
+      "evidenceAccess": "primary_indexed_excerpt",
+      "accessedAt": "2026-11-18",
+      "appliesTo": [
+        {
+          "brand": "Opel",
+          "model": "Zafira Life"
+        }
+      ],
+      "retrievalLimitation": "The exact official PDF is indexed; direct fetch timed out. Full PDF review is not claimed."
+    }
+  ],
+  "rows": [
+    {
+      "rowNumber": 1,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Toyota",
+        "model": "Camry",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_toyota2022"
+      ]
+    },
+    {
+      "rowNumber": 2,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Toyota",
+        "model": "Corolla",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": "Комплектация с достаточным местом на заднем ряду"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_toyota2022",
+        "p2_corolla2022"
+      ]
+    },
+    {
+      "rowNumber": 3,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Toyota",
+        "model": "RAV4",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_toyota2022"
+      ]
+    },
+    {
+      "rowNumber": 4,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Toyota",
+        "model": "Avalon",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_toyota2022"
+      ]
+    },
+    {
+      "rowNumber": 5,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Kia",
+        "model": "K5",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_k5"
+      ]
+    },
+    {
+      "rowNumber": 6,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Kia",
+        "model": "Optima",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_optima"
+      ]
+    },
+    {
+      "rowNumber": 7,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Kia",
+        "model": "Cerato",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_cerato"
+      ]
+    },
+    {
+      "rowNumber": 8,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Kia",
+        "model": "Sportage",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_kia_hev"
+      ]
+    },
+    {
+      "rowNumber": 9,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Kia",
+        "model": "Sorento",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_kia_hev"
+      ]
+    },
+    {
+      "rowNumber": 10,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Kia",
+        "model": "K8",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_k8"
+      ]
+    },
+    {
+      "rowNumber": 11,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Hyundai",
+        "model": "Sonata",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_sonata"
+      ]
+    },
+    {
+      "rowNumber": 12,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Hyundai",
+        "model": "Elantra",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_elantra"
+      ]
+    },
+    {
+      "rowNumber": 13,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Hyundai",
+        "model": "Tucson",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_hyundai_hybrid"
+      ]
+    },
+    {
+      "rowNumber": 14,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Hyundai",
+        "model": "Santa Fe",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_hyundai_hybrid"
+      ]
+    },
+    {
+      "rowNumber": 15,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Hyundai",
+        "model": "Grandeur",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_grandeur"
+      ]
+    },
+    {
+      "rowNumber": 16,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Skoda",
+        "model": "Octavia",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_octavia"
+      ]
+    },
+    {
+      "rowNumber": 17,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Skoda",
+        "model": "Superb",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_superb"
+      ]
+    },
+    {
+      "rowNumber": 18,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Skoda",
+        "model": "Kodiaq",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_kodiaq"
+      ]
+    },
+    {
+      "rowNumber": 19,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Volkswagen",
+        "model": "Passat",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_vw_petrol"
+      ]
+    },
+    {
+      "rowNumber": 20,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Volkswagen",
+        "model": "Jetta",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_jetta"
+      ]
+    },
+    {
+      "rowNumber": 21,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Volkswagen",
+        "model": "Tiguan",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_vw_petrol"
+      ]
+    },
+    {
+      "rowNumber": 22,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Volkswagen",
+        "model": "Teramont",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_teramont"
+      ]
+    },
+    {
+      "rowNumber": 23,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Volkswagen",
+        "model": "Arteon",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_arteon"
+      ]
+    },
+    {
+      "rowNumber": 24,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Mazda",
+        "model": "6",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_mazda6"
+      ]
+    },
+    {
+      "rowNumber": 25,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Mazda",
+        "model": "CX-5",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_cx5"
+      ]
+    },
+    {
+      "rowNumber": 26,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Mazda",
+        "model": "CX-9",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_cx9"
+      ]
+    },
+    {
+      "rowNumber": 27,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Nissan",
+        "model": "Altima",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_altima"
+      ]
+    },
+    {
+      "rowNumber": 28,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Nissan",
+        "model": "Teana",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_teana"
+      ]
+    },
+    {
+      "rowNumber": 29,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Nissan",
+        "model": "X-Trail",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_epower"
+      ]
+    },
+    {
+      "rowNumber": 30,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Nissan",
+        "model": "Qashqai",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_epower"
+      ]
+    },
+    {
+      "rowNumber": 31,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Nissan",
+        "model": "Murano",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_murano"
+      ]
+    },
+    {
+      "rowNumber": 32,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Honda",
+        "model": "Accord",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_honda"
+      ]
+    },
+    {
+      "rowNumber": 33,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Honda",
+        "model": "CR-V",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_honda"
+      ]
+    },
+    {
+      "rowNumber": 34,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Mitsubishi",
+        "model": "Outlander",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_outlander"
+      ]
+    },
+    {
+      "rowNumber": 35,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Ford",
+        "model": "Mondeo",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_mondeo"
+      ]
+    },
+    {
+      "rowNumber": 36,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Ford",
+        "model": "Kuga",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_kuga"
+      ]
+    },
+    {
+      "rowNumber": 37,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Geely",
+        "model": "Preface",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_preface"
+      ]
+    },
+    {
+      "rowNumber": 38,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Geely",
+        "model": "Monjaro",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_monjaro"
+      ]
+    },
+    {
+      "rowNumber": 39,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Geely",
+        "model": "Atlas",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_atlas"
+      ]
+    },
+    {
+      "rowNumber": 40,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Geely",
+        "model": "Atlas Pro",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_atlaspro"
+      ]
+    },
+    {
+      "rowNumber": 41,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Geely",
+        "model": "Okavango",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_okavango"
+      ]
+    },
+    {
+      "rowNumber": 42,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Geely",
+        "model": "Tugella",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_tugella"
+      ]
+    },
+    {
+      "rowNumber": 43,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Chery",
+        "model": "Arrizo 8",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_arrizo8"
+      ]
+    },
+    {
+      "rowNumber": 44,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Chery",
+        "model": "Tiggo 7 Pro",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_tiggo7pro"
+      ]
+    },
+    {
+      "rowNumber": 45,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Chery",
+        "model": "Tiggo 7 Pro Max",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_tiggo7promax"
+      ]
+    },
+    {
+      "rowNumber": 46,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Chery",
+        "model": "Tiggo 8 Pro",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_tiggo8pro"
+      ]
+    },
+    {
+      "rowNumber": 47,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Chery",
+        "model": "Tiggo 8 Pro Max",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_tiggo8promax"
+      ]
+    },
+    {
+      "rowNumber": 48,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Chery",
+        "model": "Tiggo 9",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_tiggo9"
+      ]
+    },
+    {
+      "rowNumber": 49,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Haval",
+        "model": "F7",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_haval"
+      ]
+    },
+    {
+      "rowNumber": 50,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Haval",
+        "model": "F7x",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_haval"
+      ]
+    },
+    {
+      "rowNumber": 51,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Haval",
+        "model": "Dargo",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_haval"
+      ]
+    },
+    {
+      "rowNumber": 52,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Haval",
+        "model": "Jolion",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_haval"
+      ]
+    },
+    {
+      "rowNumber": 53,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Changan",
+        "model": "UNI-V",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_univ"
+      ]
+    },
+    {
+      "rowNumber": 54,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Changan",
+        "model": "UNI-K",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_unik",
+        "p2_unik_manual"
+      ]
+    },
+    {
+      "rowNumber": 55,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Changan",
+        "model": "CS75 Plus",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_cs75"
+      ]
+    },
+    {
+      "rowNumber": 56,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Changan",
+        "model": "UNI-S",
+        "min_year": "2024",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_unis"
+      ]
+    },
+    {
+      "rowNumber": 57,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "EXEED",
+        "model": "TXL",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_txl"
+      ]
+    },
+    {
+      "rowNumber": 58,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "EXEED",
+        "model": "RX",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_rx"
+      ]
+    },
+    {
+      "rowNumber": 59,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "EXEED",
+        "model": "VX",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_vx"
+      ]
+    },
+    {
+      "rowNumber": 60,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "EXEED",
+        "model": "LX",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_lx"
+      ]
+    },
+    {
+      "rowNumber": 61,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Omoda",
+        "model": "C5",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_omodac5"
+      ]
+    },
+    {
+      "rowNumber": 62,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Omoda",
+        "model": "S5",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_omodas5"
+      ]
+    },
+    {
+      "rowNumber": 63,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "GAC",
+        "model": "GS8",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_gs8"
+      ]
+    },
+    {
+      "rowNumber": 64,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Belgee",
+        "model": "X70",
+        "min_year": "2024",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_x70"
+      ]
+    },
+    {
+      "rowNumber": 65,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "TENET",
+        "model": "T7",
+        "min_year": "2025",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_t7"
+      ]
+    },
+    {
+      "rowNumber": 66,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "TENET",
+        "model": "T8",
+        "min_year": "2025",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_tenett8"
+      ]
+    },
+    {
+      "rowNumber": 67,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Jaecoo",
+        "model": "J7",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_j7"
+      ]
+    },
+    {
+      "rowNumber": 68,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Jaecoo",
+        "model": "J8",
+        "min_year": "2024",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_j8"
+      ]
+    },
+    {
+      "rowNumber": 69,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Jetour",
+        "model": "X90 Plus",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_x90plus"
+      ]
+    },
+    {
+      "rowNumber": 70,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "FAW",
+        "model": "Bestune B70",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_b70"
+      ]
+    },
+    {
+      "rowNumber": 71,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Mercedes-Benz",
+        "model": "E-Class",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": "Только седан; премиальный салон"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_eclass"
+      ]
+    },
+    {
+      "rowNumber": 72,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Mercedes-Benz",
+        "model": "S-Class",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_sclass"
+      ]
+    },
+    {
+      "rowNumber": 73,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Mercedes-Benz",
+        "model": "Maybach S-Class",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_maybach"
+      ]
+    },
+    {
+      "rowNumber": 74,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "BMW",
+        "model": "5 Series",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": "Только седан"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_bmw5"
+      ]
+    },
+    {
+      "rowNumber": 75,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "BMW",
+        "model": "7 Series",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_bmw7"
+      ]
+    },
+    {
+      "rowNumber": 76,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Audi",
+        "model": "A6",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": "Только седан"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_a6"
+      ]
+    },
+    {
+      "rowNumber": 77,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Audi",
+        "model": "A8",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_a8"
+      ]
+    },
+    {
+      "rowNumber": 78,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Lexus",
+        "model": "ES",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_lexuses"
+      ]
+    },
+    {
+      "rowNumber": 79,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Lexus",
+        "model": "LS",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_ls"
+      ]
+    },
+    {
+      "rowNumber": 80,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Genesis",
+        "model": "G80",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_g80"
+      ]
+    },
+    {
+      "rowNumber": 81,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Genesis",
+        "model": "G90",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_g90"
+      ]
+    },
+    {
+      "rowNumber": 82,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Volvo",
+        "model": "S90",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_s90"
+      ]
+    },
+    {
+      "rowNumber": 83,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Kia",
+        "model": "K9",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_k9"
+      ]
+    },
+    {
+      "rowNumber": 84,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Hongqi",
+        "model": "H9",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_h9"
+      ]
+    },
+    {
+      "rowNumber": 85,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Hongqi",
+        "model": "H5",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Только II поколение и премиальная комплектация"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_h5"
+      ]
+    },
+    {
+      "rowNumber": 86,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "BYD",
+        "model": "Han",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": "Проверить удобство задних сидений"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "han"
+      ]
+    },
+    {
+      "rowNumber": 87,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Voyah",
+        "model": "Passion",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "passion"
+      ]
+    },
+    {
+      "rowNumber": 88,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Li Auto",
+        "model": "L7",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Только комфортные комплектации; проверка салона"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_li_l7"
+      ]
+    },
+    {
+      "rowNumber": 89,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Li Auto",
+        "model": "L9",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Только комфортные комплектации; проверка салона"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_li_series"
+      ]
+    },
+    {
+      "rowNumber": 90,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Mercedes-Benz",
+        "model": "V-Class",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": "Только пассажирская версия"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_vclass"
+      ]
+    },
+    {
+      "rowNumber": 91,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Mercedes-Benz",
+        "model": "Vito Tourer",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": "Только пассажирская версия"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_vitotourer"
+      ]
+    },
+    {
+      "rowNumber": 92,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Volkswagen",
+        "model": "Caravelle",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_caravelle"
+      ]
+    },
+    {
+      "rowNumber": 93,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Volkswagen",
+        "model": "Multivan",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_multivan"
+      ]
+    },
+    {
+      "rowNumber": 94,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Hyundai",
+        "model": "Staria",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_staria"
+      ]
+    },
+    {
+      "rowNumber": 95,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Hyundai",
+        "model": "H-1",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_h1"
+      ]
+    },
+    {
+      "rowNumber": 96,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Kia",
+        "model": "Carnival",
+        "min_year": "2021",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_kia_hev"
+      ]
+    },
+    {
+      "rowNumber": 97,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Toyota",
+        "model": "Alphard",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_alphard_vellfire"
+      ]
+    },
+    {
+      "rowNumber": 98,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Toyota",
+        "model": "Vellfire",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_alphard_vellfire"
+      ]
+    },
+    {
+      "rowNumber": 99,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Toyota",
+        "model": "Sienna",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_sienna"
+      ]
+    },
+    {
+      "rowNumber": 100,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Toyota",
+        "model": "Hiace",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": "Только пассажирская версия до 8 пассажирских мест"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_hiace"
+      ]
+    },
+    {
+      "rowNumber": 101,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Toyota",
+        "model": "Granvia",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": "Только пассажирская версия до 8 пассажирских мест"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_granvia"
+      ]
+    },
+    {
+      "rowNumber": 102,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Peugeot",
+        "model": "Traveller",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_traveller"
+      ]
+    },
+    {
+      "rowNumber": 103,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Citroën",
+        "model": "SpaceTourer",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "spacetourer"
+      ]
+    },
+    {
+      "rowNumber": 104,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Opel",
+        "model": "Zafira Life",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "zafira",
+        "p2_zafiralife"
+      ]
+    },
+    {
+      "rowNumber": 105,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Ford",
+        "model": "Tourneo Custom",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_tourneo"
+      ]
+    },
+    {
+      "rowNumber": 106,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "GAC",
+        "model": "M8",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_m8"
+      ]
+    },
+    {
+      "rowNumber": 107,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Voyah",
+        "model": "Dream",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "dream"
+      ]
+    },
+    {
+      "rowNumber": 108,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Denza",
+        "model": "D9",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "d9"
+      ]
+    },
+    {
+      "rowNumber": 109,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Lexus",
+        "model": "LM",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_lm"
+      ]
+    },
+    {
+      "rowNumber": 110,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Hongqi",
+        "model": "HQ9",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_hq9"
+      ]
+    },
+    {
+      "rowNumber": 111,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Chrysler",
+        "model": "Pacifica",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_pacifica"
+      ]
+    },
+    {
+      "rowNumber": 112,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Maxus",
+        "model": "G10",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": "Только пассажирская версия"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_g10"
+      ]
+    },
+    {
+      "rowNumber": 113,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "BAIC",
+        "model": "X7",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Осмотреть второй ряд и проверить комплектацию; требуется проверка конкретного автомобиля"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_x7"
+      ]
+    },
+    {
+      "rowNumber": 114,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Dongfeng",
+        "model": "Huge",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Проверить второй ряд и оснащение конкретной версии; требуется проверка конкретного автомобиля"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_huge"
+      ]
+    },
+    {
+      "rowNumber": 115,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Forthing",
+        "model": "T5 EVO",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Проверить место для ног и головы пассажиров второго ряда; требуется проверка конкретного автомобиля"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_t5evo"
+      ]
+    },
+    {
+      "rowNumber": 116,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "JAC",
+        "model": "JS6",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Проверить поколение, комплектацию и второй ряд; требуется проверка конкретного автомобиля"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_js6"
+      ]
+    },
+    {
+      "rowNumber": 117,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Bestune",
+        "model": "T90",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Марку Bestune не объединять автоматически с FAW; требуется проверка конкретного автомобиля"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_t90"
+      ]
+    },
+    {
+      "rowNumber": 118,
+      "rule": {
+        "tariff": "Комфорт",
+        "brand": "Lynk & Co",
+        "model": "08",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Проверить комплектацию, второй ряд и готовность гибрида к маршруту; требуется проверка конкретного автомобиля"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "p2_lynk08"
+      ]
+    },
+    {
+      "rowNumber": 119,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Exlantix",
+        "model": "ES",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Проверить конкретную версию и оснащение второго ряда; требуется проверка конкретного автомобиля"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "es"
+      ]
+    },
+    {
+      "rowNumber": 120,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Stelato",
+        "model": "S9",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Проверить комплектацию, фактическое число мест и готовность автомобиля к маршруту; требуется проверка конкретного автомобиля"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "s9"
+      ]
+    },
+    {
+      "rowNumber": 121,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Avatr",
+        "model": "12",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Отдельно утвердить кузов; проверить посадку, второй ряд и фактическое число мест; требуется проверка конкретного автомобиля"
+      },
+      "reviewStatus": "partial_primary_evidence",
+      "sourceIds": [
+        "avatr12"
+      ]
+    }
+  ],
+  "revision": 2,
+  "previousLedgerSha256": "c251401f302e3aef72d2bc656cce63cc5b7ae091f2cb114550b18eb6d8eea11b",
+  "firstPassFamilySourceSearchCompleted": true,
+  "summary": {
+    "catalogueRows": 121,
+    "rowsWithPartialPrimaryEvidence": 121,
+    "rowsWithoutPrimaryFamilyEvidence": 0,
+    "rowsWithExhaustiveCoverage": 0,
+    "actualLegacyInventoryCompleted": false
+  },
+  "evidenceAccessDefinitions": {
+    "primary_page": "Relevant rendered page/PDF passage inspected; not a complete review of every page, trim or market.",
+    "primary_indexed_excerpt": "Official manufacturer/importer indexed passage inspected; complete original document retrieval is not claimed.",
+    "primary_indexed_excerpt_with_current_redirect": "Older primary indexed passage retained with an explicit current-redirect limitation; a second exact-model manual provides additional evidence.",
+    "prior_phase_record": "Retained revision-1 primary observation with its existing scope/limits; original access is not re-certified in this revision."
+  },
+  "bodyPolicyClarification": {
+    "status": "awaiting_owner_decision",
+    "tariff": "comfort",
+    "currentAllowedBodies": [
+      "sedan",
+      "crossover"
+    ],
+    "examples": [
+      {
+        "brand": "Changan",
+        "model": "UNI-V"
+      },
+      {
+        "brand": "FAW",
+        "model": "Bestune B70"
+      }
+    ],
+    "finding": "Manufacturer descriptions call these liftbacks. No approved equation of liftback with sedan was located in repository documents.",
+    "runtimeChanged": false,
+    "options": [
+      "Approve a distinct liftback body type for comfort only",
+      "Keep existing sedan/crossover restriction"
+    ]
+  },
+  "rejectedEvidenceExamples": [
+    {
+      "example": "LDV G10+ cargo price page",
+      "reason": "A differently named regional cargo vehicle does not prove passenger Maxus G10 or authorize an alias; replaced with exact SAIC G10 MY2025 specification."
+    },
+    {
+      "example": "Teana 2008/2013 engine releases",
+      "reason": "Too early to characterize the 2020+ range; added exact 2025 Teana primary release, keeping ranges incomplete."
+    },
+    {
+      "example": "Official-site mass-media reposts",
+      "reason": "A brand-hosted review is not automatically a primary technical statement; official technical documents/releases used instead."
+    },
+    {
+      "example": "Unrelated model names in navigation",
+      "reason": "H5/HS5, H9/E-HS9, C5/electric model, Vito/eVito, Multivan/ID.Buzz and brand aliases are not interchangeable."
+    }
+  ]
+}
