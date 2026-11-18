@@ -3900,3 +3900,25 @@ payload и затем целый plan превысили лимит вывода
 записи Android tree/ref. Повторная публикация читала файлы отдельно, большие
 журнал/план — parent+проверенный append; tree parity подтверждена. Обрезанные
 данные не публиковались. Никаких remote migration/merge/deploy/активации нет.
+
+
+## Liftback: backend CI после исправления snapshot PASS — 2026-11-18
+
+Source `b51176226a6f85eb01abb7dc56abec8450e1f713`, tree `f79751cdc2cd4e5903e20e589dbb28a6860199b5`, local `ea77c9a90ec3ddeef79238698cbb666a94c11d97`:
+CI44359299631/job134995931727 SUCCESS, все32 steps.80 npm,25 migrations,
+12 preflight,14 inventory,6 reference,16 native D1 workflows,6 protected actual
+Wrangler CLI cases,audit0,Worker dry-run PASS. Raw decoded log/head проверены.
+Native engine подтвердил actual OWNER/MFA/Dispatcher boundaries, comfort
+standard/explicit exception, отказ business/minivan-null/direct SQL, старый
+pin/implicit fallback, BEV/year/strict enum, отсутствие automatic approval/hold
+release. Populated24→25 сохраняет все проектные rows/rowid/immutable graph;
+failed upgrade rollback,FK/quick_check PASS,realCloudflareRequests0.
+
+Первый failed CI44358568865 сохранён и разобран; исправление только test snapshot
+scope, runtime/миграция после первого source не менялись. Backend receipt
+COMFORT_LIFTBACK_BACKEND_VERIFICATION_2026-11-18.json привязан к tested source;
+Android CI44358868461 и artifact review ещё pending, их PASS не заявлен.
+В canonical AGENTS добавлено утверждение владельца; canonical backend
+69dff6ed7937c704067b62dae93b08a80425e551, Android
+ df06d6fd35f6e724a84f742a6c0ee71502e7b1a8 (оба2 files/append-only,0 deletions).
+Нет production/remote migration/активации/seed/backfill/real sensitive data.
