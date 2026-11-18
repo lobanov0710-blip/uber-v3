@@ -3875,3 +3875,28 @@ Screenshots используют liftback в тех же synthetic states; ни�
 
 
 Локальный правильный `npm run test:admin-vehicle-rules` завершён:20 tests PASS. Новый liftback workflow повторён после добавления HTTP unknown-body отрицательного случая:2 tests PASS. Перед публикацией diff --check PASS; полные CI и Android JVM/native остаются pending.
+
+
+## Liftback: первый backend CI и ограничение snapshot проекта — 2026-11-18
+
+Первый source20c9f3b45823437ae78b2e04e0d1c70cd4193ef0/tree81f59a7f94407d5ade65337133f4ddcead4ed7f7
+в draft PR45: CI44358568865/job134993291607 FAILURE на новом native upgrade
+шаге. До него80 npm-команд,25 migrations,12 preflight,14 inventory,6 reference,
+audit0 и15 прежних native D1 workflows PASS. Ошибка тестового snapshot: общий
+перечень sqlite_master включал защищённую provider metadata table, которую D1
+запрещает читать. Миграция на native engine ещё не выполнялась в этом тесте;
+успех populated upgrade D1 пока не заявлен.
+
+Исправлен только тестовый snapshot: явный список всех проектных таблиц берётся
+из локальной schema фикстуры24, schema comparison ограничен ими и current view.
+Provider-private таблицы не читаются, разрешения не обходятся. Равенство всех
+проектных строк/rowid, schema rollback, immutable guards, FK/quick_check и новая
+HTTP/SQL матрица сохранены. После исправления2 локальных tests PASS; запускается
+новый полный CI. Runtime/migration/требования проверок не ослаблены.
+
+Публикация Android source56d2cc129b12ca52e4982933f4a37a025e654f2d/tree26e7c3c4217662224425c86a274e149d95c17f18
+в draft PR21 успешна, CI44358868461 выполняется. Сначала большой локальный
+payload и затем целый plan превысили лимит вывода; обе попытки остановились до
+записи Android tree/ref. Повторная публикация читала файлы отдельно, большие
+журнал/план — parent+проверенный append; tree parity подтверждена. Обрезанные
+данные не публиковались. Никаких remote migration/merge/deploy/активации нет.

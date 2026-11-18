@@ -31,17 +31,22 @@ export async function populatedLiftbackFixture(env,send){
   return {...s,body};
 }
 
-export async function verifyLiftbackUpgrade(env,fixture){
-  const names=(await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()).results.map(r=>r.name);
+export async function verifyLiftbackUpgrade(env,fixture,names){
+  // The migration fixture owns these tables. Never read provider-private data.
+  assert.ok(Array.isArray(names)&&names.length>0&&names.every(n=>/^[a-z][a-z0-9_]*$/.test(n)));
+  const schema=async()=>{
+    const objects=[...names,'vehicle_current_trusted_assessments'];
+    return(await env.DB.prepare("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' AND tbl_name IN ("+objects.map((_,i)=>'?'+(i+1)).join(',')+") ORDER BY type,name").bind(...objects).all()).results;
+  };
   const snapshot=async()=>{
     const result={};for(const name of names)result[name]=(await env.DB.prepare('SELECT rowid AS fixture_rowid,* FROM "'+name+'" ORDER BY rowid').all()).results;
     return result;
   };
-  const before=await snapshot(),schema=(await env.DB.prepare("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").all()).results;
+  const before=await snapshot(),beforeSchema=await schema();
   const statements=liftbackMigrationStatements();
   await assert.rejects(env.DB.batch([...statements.map(s=>env.DB.prepare(s)),env.DB.prepare('SELECT * FROM missing_liftback_rollback_fixture')]));
   assert.deepEqual(await snapshot(),before);
-  assert.deepEqual((await env.DB.prepare("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").all()).results,schema);
+  assert.deepEqual(await schema(),beforeSchema);
   await env.DB.batch(statements.map(s=>env.DB.prepare(s)));
   assert.deepEqual(await snapshot(),before);
   assert.equal((await env.DB.prepare("SELECT count(*) n FROM sqlite_master WHERE name LIKE '%liftback_migration%'").first()).n,0);

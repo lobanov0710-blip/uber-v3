@@ -16,7 +16,8 @@ try{
  const send=async(method,path,body,token,key)=>{const r=await mf.dispatchFetch('https://fixture.invalid'+path,{method,
   headers:{'Content-Type':'application/json','CF-Connecting-IP':'203.0.113.10',...(token?{Authorization:'Bearer '+token}:{}),...(key?{'Idempotency-Key':key}:{})},
   ...(body===undefined?{}:{body:JSON.stringify(body)})});assert.equal(r.headers.get('Cache-Control'),'no-store');return{status:r.status,body:await r.json()};};
- const fixture=await populatedLiftbackFixture(env,send),upgrade=await verifyLiftbackUpgrade(env,fixture),workflow=await comfortLiftbackWorkflow(env,send,fixture);
+ const names=local.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(r=>r.name);
+ const fixture=await populatedLiftbackFixture(env,send),upgrade=await verifyLiftbackUpgrade(env,fixture,names),workflow=await comfortLiftbackWorkflow(env,send,fixture);
  assert.equal((await DB.prepare('PRAGMA quick_check').first()).quick_check,'ok');
  console.log(JSON.stringify({engine:'native local workerd HTTP/D1',...upgrade,...workflow,foreignKeys:true,quickCheck:true,realCloudflareRequests:0}));
 }finally{local.sqlite.close();await mf.dispose();}

@@ -28,5 +28,6 @@ test('populated24 to25 preserves immutable graph, rolls back failures, and enfor
  const send=async(method,path,body,token,key)=>{const r=await router(new Request('https://fixture.invalid'+path,{method,
   headers:{'Content-Type':'application/json','CF-Connecting-IP':'203.0.113.10',...(token?{Authorization:'Bearer '+token}:{}),...(key?{'Idempotency-Key':key}:{})},
   ...(body===undefined?{}:{body:JSON.stringify(body)})}),env,{});return{status:r.status,body:await r.json()};};
- const fixture=await populatedLiftbackFixture(env,send);await verifyLiftbackUpgrade(env,fixture);await comfortLiftbackWorkflow(env,send,fixture);
+ const names=DB.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(r=>r.name);
+ const fixture=await populatedLiftbackFixture(env,send);await verifyLiftbackUpgrade(env,fixture,names);await comfortLiftbackWorkflow(env,send,fixture);
 });
