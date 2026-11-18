@@ -32,6 +32,15 @@ try {
   await DB.batch(statements.map(s=>DB.prepare(s)));
   assert.deepEqual(await snapshot(),before);
   assert.equal((await DB.prepare('SELECT count(*) n FROM vehicle_classification_rule_definitions').first()).n,0);
+  // Keep the populated21 ->22/rollback assertions above intact. The current
+  // trusted GET depends on the subsequently added assessment and hold schema.
+  for(const file of ['0023_trusted_vehicle_assessments.sql','0024_vehicle_reverification_holds.sql']){
+    const runtime=readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8');
+    const runtimeTriggers=[...runtime.matchAll(/^CREATE TRIGGER[\s\S]*?END;/gm)].map(m=>m[0]);
+    const runtimeObjects=runtime.replace(/^CREATE TRIGGER[\s\S]*?END;/gm,'').replace(/--[^\n]*/g,'').split(';').map(x=>x.trim()).filter(Boolean);
+    await DB.batch([...runtimeObjects,...runtimeTriggers].map(s=>DB.prepare(s)));
+  }
+  assert.equal((await DB.prepare('SELECT count(*) n FROM vehicle_trusted_assessments').first()).n,0);
   const send=async(method,path,body,token,key)=>{
     const response=await mf.dispatchFetch('https://fixture.invalid'+path,{method,
       headers:{'Content-Type':'application/json','CF-Connecting-IP':'203.0.113.10',...(token?{Authorization:'Bearer '+token}:{}),...(key?{'Idempotency-Key':key}:{})},
@@ -48,5 +57,5 @@ try {
   // D1 authorizes quick_check, not SQLite's unrestricted integrity_check.
   assert.equal((await DB.prepare('PRAGMA quick_check').first()).quick_check,'ok');
   console.log(JSON.stringify({engine:'native local workerd HTTP/D1',...result,populatedUpgradePreserved:true,
-    failedUpgradeRolledBack:true,noSeed:true,definitionImmutable:true,bodyConstraint:true,foreignKeys:true,quickCheck:true}));
+    failedUpgradeRolledBack:true,runtimeSchema24:true,noSeed:true,definitionImmutable:true,bodyConstraint:true,foreignKeys:true,quickCheck:true}));
 } finally {local.sqlite.close();await mf.dispose();}
