@@ -28,7 +28,8 @@ export async function trustedScenario(env,send){
 export async function trustedStorageWorkflow(env,send){
   const s=await trustedScenario(env,send),first=await s.capture();assert.equal(first.ok,true);assert.equal(first.classification.outcome,'candidate');
   assert.equal(first.classification.vehicleClass,'comfort');
-  assert.equal((await send('POST','/v1/admin/vehicles/'+s.vehicle.id+'/classification/review',s.body,s.ownerToken,'trusted-public-not-enabled')).status,404);
+  const publicReplay=await send('POST','/v1/admin/vehicles/'+s.vehicle.id+'/classification/review',s.body,s.token,'trusted-capture');
+  assert.equal(publicReplay.status,200);assert.equal(publicReplay.body.vehicleRevision,first.vehicleRevision);
   assert.deepEqual(await s.capture(),first);
   assert.equal((await s.capture({...s.body,reason:'Changed'},'trusted-capture')).status,409);
   const vehicle=await env.DB.prepare('SELECT class,status,revision FROM vehicles WHERE id=?1').bind(s.vehicle.id).first();

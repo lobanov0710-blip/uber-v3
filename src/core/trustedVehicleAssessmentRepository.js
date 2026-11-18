@@ -1,9 +1,9 @@
-// Server-internal atomic corrections and trusted review; public POST stays closed
-// until the remaining admission/read/UI orchestration is complete.
+// Atomic corrections and trusted review shared by the HTTP API and internal workflows.
 import { authorized, prepare, context } from './adminClassifierAccess.js';
 import { mapVehicleRule } from './adminVehicleRuleService.js';
 import { createMutationIdempotency } from './mutationIdempotency.js';
 import { decideTrustedVehicle } from './trustedVehicleDecision.js';
+import { APPROVED_VEHICLE_MAKES } from './approvedVehicleMakes.js';
 const positive=v=>Number.isSafeInteger(v)&&v>0;
 const text=(v,n=80)=>typeof v==='string'&&v===v.trim()&&v.length>0&&v.length<=n&&!/[\u0000-\u001f\u007f]/.test(v);
 const version=v=>text(v,128)&&/^[A-Za-z0-9_.:-]+$/.test(v);
@@ -15,7 +15,7 @@ function valid(body){
     ||!positive(body.expectedRevision)||(body.expectedInputRevision!==null&&!positive(body.expectedInputRevision))||(body.expectedRuleVersion!==null&&!version(body.expectedRuleVersion))
     ||!['standard','exception'].includes(body.mode)||!text(body.reason,1000))return false;
   const p=body.parameters;
-  if(!fields(p,['make','model','modelYear','powertrain','bodyType'])||!text(p.make)||!text(p.model)||!positive(p.modelYear)||p.modelYear>9999
+  if(!fields(p,['make','model','modelYear','powertrain','bodyType'])||!text(p.make)||!APPROVED_VEHICLE_MAKES.has(p.make)||!text(p.model)||!positive(p.modelYear)||p.modelYear>9999
     ||!['combustion','hybrid','battery_electric'].includes(p.powertrain)||!['sedan','crossover','minivan','other'].includes(p.bodyType))return false;
   if(!Array.isArray(body.evidence)||body.evidence.length<2||body.evidence.length>8
     ||body.evidence.some(e=>!fields(e,['documentId','expectedRevision'])||typeof e.documentId!=='string'||!/^[A-Za-z0-9_-]{8,120}$/.test(e.documentId)||!positive(e.expectedRevision))

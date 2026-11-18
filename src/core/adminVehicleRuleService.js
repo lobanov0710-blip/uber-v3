@@ -131,17 +131,38 @@ export async function createAdminVehicleRule(env,user,body,options={}){
 export async function readAdminVehicleClassification(env,user,id,params=new URLSearchParams(),options={}){
   const c=await context(env,user,'vehicles.verify',options);if(c.error)return c.error;
   if(!/^vehicle_[A-Za-z0-9_-]{8,100}$/.test(id))return fail(400,'invalid_vehicle_id');
-  if([...params.keys()].length)return fail(400,'invalid_query'); // No assessment-history cursor exists yet.
+  for(const key of params.keys())if(key!=='historyCursor'||params.getAll(key).length!==1)return fail(400,'invalid_query');
+  const scope=await sha256(JSON.stringify([id,user.id]));
+  const cursor=params.has('historyCursor')?decode(params.get('historyCursor')):null;
+  if(params.has('historyCursor')&&(!Array.isArray(cursor)||cursor.length!==5||cursor[0]!=='vehicle-classification-history.v1'
+    ||cursor[1]!==scope||!positive(cursor[2])||!Number.isSafeInteger(cursor[3])||cursor[3]<1
+    ||!positive(cursor[4])||cursor[4]>cursor[3]))return fail(400,'invalid_cursor');
   const r=await read(env,c,[{sql:`SELECT v.id,v.revision AS vehicle_revision,v.make AS actual_make,v.model AS actual_model,v.model_year,v.color,
-      b.input_revision,b.rule_version AS pinned_version,${projection}
+      b.input_revision,b.rule_version AS pinned_version,${projection},
+      COALESCE((SELECT MAX(sequence) FROM vehicle_trusted_assessments WHERE vehicle_id=v.id),0) AS assessment_generation
       FROM vehicles v LEFT JOIN vehicle_classification_bindings b ON b.vehicle_id=v.id
       AND b.input_revision=(SELECT MAX(input_revision) FROM vehicle_classification_bindings WHERE vehicle_id=v.id)
       LEFT JOIN vehicle_classification_rules r ON r.version=b.rule_version
-      LEFT JOIN vehicle_classification_rule_definitions d ON d.rule_version=r.version WHERE v.id=?7 AND ${authorized}`,args:[id]}],
+      LEFT JOIN vehicle_classification_rule_definitions d ON d.rule_version=r.version WHERE v.id=?7 AND ${authorized}`,args:[id]},
+    {sql:`SELECT a.make AS verified_make,a.model AS verified_model,a.model_year AS verified_year,a.powertrain,a.body_type,
+      a.evidence_json,a.outcome,a.class AS verified_class,a.rule_version AS effective_version,a.reason_codes_json,${projection}
+      FROM vehicle_current_trusted_assessments a LEFT JOIN vehicle_classification_rules r ON r.version=a.rule_version
+      LEFT JOIN vehicle_classification_rule_definitions d ON d.rule_version=r.version WHERE a.vehicle_id=?7 AND ${authorized}`,args:[id]},
+    {sql:`SELECT a.id,a.sequence,a.vehicle_revision,a.rule_version,a.outcome,a.created_at FROM vehicle_trusted_assessments a
+      WHERE a.vehicle_id=?7 AND ${authorized} AND (?8 IS NULL OR a.sequence<?8) ORDER BY a.sequence DESC LIMIT 51`,args:[id,cursor?.[4]??null]}],
     'admin.vehicle_classification_read',id);if(!r.ok)return r;const row=r.data[0][0];if(!row)return fail(404,'vehicle_not_found');
+  if(cursor&&(cursor[2]!==row.vehicle_revision||cursor[3]!==row.assessment_generation))return fail(409,'classification_cursor_stale');
+  const current=r.data[1][0],history=r.data[2].slice(0,50),last=history.at(-1);
   return {ok:true,vehicleId:id,vehicleRevision:row.vehicle_revision,inputRevision:row.input_revision??null,
     declaredParameters:{make:row.actual_make,model:row.actual_model,modelYear:row.model_year??null,color:row.color??null},
-    verifiedParameters:null,pinnedRuleVersion:row.pinned_version??null,classification:null,evidence:[],conditions:row.version?rule(row).conditions:[],history:[],nextHistoryCursor:null};
+    verifiedParameters:current?{make:current.verified_make,model:current.verified_model,modelYear:current.verified_year,
+      powertrain:current.powertrain,bodyType:current.body_type}:null,
+    pinnedRuleVersion:row.pinned_version??null,
+    classification:current?{outcome:current.outcome,vehicleClass:current.verified_class??null,
+      ruleVersion:current.effective_version??null,reasonCodes:JSON.parse(current.reason_codes_json)}:null,
+    evidence:current?JSON.parse(current.evidence_json):[],conditions:current?.version?rule(current).conditions:row.version?rule(row).conditions:[],
+    history:history.map(a=>({assessmentId:a.id,vehicleRevision:a.vehicle_revision,ruleVersion:a.rule_version??null,outcome:a.outcome,createdAt:a.created_at})),
+    nextHistoryCursor:r.data[2].length>50?encode(['vehicle-classification-history.v1',scope,row.vehicle_revision,row.assessment_generation,last.sequence]):null};
 }
 
 // Server-internal projection shared by trusted assessment storage.

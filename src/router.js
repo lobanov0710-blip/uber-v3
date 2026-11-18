@@ -1,6 +1,7 @@
 import { getAdminOrders, getAdminAssignmentOptions } from './core/adminAssignmentReadService.js';
 import { getAdminVehicles, getAdminVehiclePhotoChecks } from './core/adminVehicleReadService.js';
 import { listAdminVehicleRules,readAdminVehicleRule,createAdminVehicleRule,readAdminVehicleClassification } from './core/adminVehicleRuleService.js';
+import { recordTrustedVehicleAssessment } from './core/trustedVehicleAssessmentRepository.js';
 import { ownerPhoneTestEnabled } from './core/adminPhoneTestScope.js';
 import { startOwnerMfaEnrollment, confirmOwnerMfaEnrollment, verifyOwnerMfa } from './core/ownerMfaService.js';
 import { boundedAuthJson } from './core/ownerMfaTransport.js';
@@ -1862,21 +1863,27 @@ export default async function router(
 
   const ruleVersionMatch=path.match(/^\/v1\/admin\/vehicle-rules\/versions\/([^/]+)$/);
   const classificationReadMatch=path.match(/^\/v1\/admin\/vehicles\/([^/]+)\/classification$/);
-  if(path==='/v1/admin/vehicle-rules'||ruleVersionMatch||classificationReadMatch){
+  const classificationReviewMatch=path.match(/^\/v1\/admin\/vehicles\/([^/]+)\/classification\/review$/);
+  if(path==='/v1/admin/vehicle-rules'||ruleVersionMatch||classificationReadMatch||classificationReviewMatch){
     const requestId='req_'+crypto.randomUUID();
-    const allowed=path==='/v1/admin/vehicle-rules'?['GET','POST']:['GET'];
+    const allowed=classificationReviewMatch?['POST']:path==='/v1/admin/vehicle-rules'?['GET','POST']:['GET'];
     if(!allowed.includes(req.method))return json({ok:false,error:'method not allowed',code:'method_not_allowed',requestId},405,cors);
     try{
       const auth=await authenticateStaffRequest(req,env);
       if(auth?.ok!==true)return json({ok:false,error:'authorization required',code:'authorization_required',requestId},auth?.status||401,cors);
       if((req.method==='POST'||ruleVersionMatch)&&url.search)return json({ok:false,error:'invalid request',code:'invalid_query',requestId},400,cors);
-      let id;try{if(ruleVersionMatch||classificationReadMatch)id=decodeURIComponent((ruleVersionMatch??classificationReadMatch)[1]);}
+      let id;try{if(ruleVersionMatch||classificationReadMatch||classificationReviewMatch)id=decodeURIComponent((ruleVersionMatch??classificationReadMatch??classificationReviewMatch)[1]);}
       catch{return json({ok:false,error:'invalid request',code:'invalid_identifier',requestId},400,cors);}
       const options={requestId,mfa:auth.mfa,idempotencyKey:req.headers.get('Idempotency-Key')};
       const result=ruleVersionMatch?await readAdminVehicleRule(env,auth.user,id,options)
         :classificationReadMatch?await readAdminVehicleClassification(env,auth.user,id,url.searchParams,options)
+        :classificationReviewMatch?await recordTrustedVehicleAssessment(env,auth.user,id,await boundedAuthJson(req,16384),options)
         :req.method==='POST'?await createAdminVehicleRule(env,auth.user,await boundedAuthJson(req,16384),options)
         :await listAdminVehicleRules(env,auth.user,url.searchParams,options);
+      if(classificationReviewMatch&&result.ok){
+        const {vehicleId,vehicleRevision,inputRevision,classification,requiresDispatcherReassignment}=result;
+        return json({ok:true,vehicleId,vehicleRevision,inputRevision,classification,requiresDispatcherReassignment,requestId},200,cors);
+      }
       return json({...result,requestId},result.ok?(req.method==='POST'?201:200):result.status||500,cors);
     }catch{return json({ok:false,error:'vehicle rule operation failed',code:'vehicle_rule_operation_failed',requestId},500,cors);}
   }
