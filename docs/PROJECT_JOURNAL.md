@@ -3697,3 +3697,29 @@ powertrain обзор, реальная защищённая инвентари�
 Нет seed/backfill/remote migration/merge/deploy/нового APK/расширения OWNER-phone
 или dispatcher powers. G1paused,D4–D7pending. Android только docs, прежняя
 проверка PR19 сохраняется отдельно. CI/публикация фиксируются следующим checkpoint.
+
+
+## G2 readiness: совместимость inventory до миграций — 2026-11-18
+
+Первый source `8fbc3c3e4930c3efe11cc3e37a34a5b8799f8c04`, tree
+`7ee1245a91be11f0b6dcb6d750dffd05bda04024`, draft backend PR44: CI
+`44333828910` / job `134904994763` SUCCESS (все30 steps):79 npm commands,
+11 новых inventory tests,24 migrations,12 preflight,6 reference,15 native D1
+workflows,6 actual Wrangler CLI scenarios, audit0, Worker dry-run PASS.
+Raw logs проверены; real Cloudflare requests0 в CLI/новых classification scenarios.
+Android docs-only draft PR20 опубликован отдельно от проверенной сборки PR19.
+
+При сверке порядка внедрения найдено ограничение первого inventory: требовал
+новую схему0024, хотя legacy нужно оценивать до миграций. Исправлено: поддержка
+базовой Driver schema и последовательно отсутствующих слоёв классификатора,
+явные schemaCapabilities; частично сломанный уже существующий слой отклоняется.
+Год/доказательства/кандидаты не выдумываются. Ноль записанных BEV/holds при
+отсутствующем слое не является подтверждением отсутствия проблем. Пустой цвет
+включает Unicode whitespace по правилам trim. Добавлены реальные синтетические
+pre-classifier, broken trust и whitespace cases:14 tests PASS локально.
+
+Первая CI проверка11 tests сохранена как успешная предыдущая версия. Изменённый
+инструмент проходит новый полный CI; старый PASS ему не приписывается. Пределы
+121 audit/реальной inventory/активации и запреты публикации чувствительных данных,
+G1paused,D4–D7pending сохраняются. Ошибки patch context при обновлении отчёта не
+изменили файлов; контекст перечитан, документ обновлён. Бизнес-правила не менялись.

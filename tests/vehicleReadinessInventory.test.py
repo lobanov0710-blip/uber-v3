@@ -82,6 +82,10 @@ class InventoryTests(unittest.TestCase):
     def test_empty_snapshot_returns_zero_counts_without_writes(self):
         self.assertEqual(set(self.collect().values()), {0})
 
+    def test_required_color_with_only_unicode_whitespace_is_missing(self):
+        self.vehicle("blank_color", color="\u00a0\t \ufeff")
+        self.assertEqual(self.collect()["missing_color"], 1)
+
     def test_legacy_missing_fields_and_current_unknown_rule_are_separate(self):
         # A legacy row genuinely predates binding migration; no invented history.
         other = Path(self.temp.name) / "legacy.sqlite"
@@ -103,6 +107,33 @@ class InventoryTests(unittest.TestCase):
         self.db.execute("UPDATE vehicles SET model='Unknown' WHERE id='new_unknown'")
         metrics = self.collect()
         self.assertEqual((metrics["missing_binding"], metrics["binding_without_rule"]), (0, 1))
+
+    def test_pre_classifier_schema_is_read_without_fake_year_or_trust(self):
+        other = Path(self.temp.name) / "before-classifier.sqlite"
+        db = sqlite3.connect(other)
+        db.execute("PRAGMA foreign_keys=ON")
+        for migration in sorted((ROOT / "migrations").glob("*.sql")):
+            if migration.name.startswith("0019_"):
+                break
+            db.executescript(migration.read_text(encoding="utf-8-sig"))
+        for table in ("staff_accounts", "driver_profiles"):
+            for row in self.db.execute("SELECT * FROM " + table):
+                db.execute("INSERT INTO " + table + " VALUES(" + ",".join("?" for _ in row) + ")", row)
+        db.execute("INSERT INTO vehicles(id,driver_id,vin,plate,make,model,capacity,class,status,created_at,updated_at) VALUES('legacy','driver_fixture','SYNTHETICVIN00001','PRIVATE_PLATE','Toyota','Camry',4,'comfort','approved',1,1)")
+        db.commit()
+        db.close()
+        before = other.read_bytes()
+        report = module.inventory(other)
+        self.assertEqual(other.read_bytes(), before)
+        self.assertEqual(set(report["schemaCapabilities"].values()), {False})
+        metrics = report["metrics"]
+        self.assertEqual((metrics["vehicles"], metrics["missing_year"], metrics["missing_binding"], metrics["without_current_trusted_assessment"], metrics["current_candidate"]), (1, 1, 1, 1, 0))
+
+    def test_partial_trust_storage_fails_closed(self):
+        self.db.execute("DROP VIEW vehicle_current_trusted_assessments")
+        self.db.commit()
+        with self.assertRaises(ValueError):
+            module.inventory(self.path)
 
     def test_candidate_is_counted_without_claiming_admission(self):
         self.assessment("candidate")
