@@ -3138,3 +3138,42 @@ Local/remote trees совпали; VEHICLE_POWERTRAIN_EVIDENCE_VERIFICATION_2026
 Actual legacy inventory/исчерпывающий powertrain review/активация/live acceptance
 открыты. G1paused,D4–D7pending; нет real PII, seed/backfill/remote migration/merge/
 deploy/нового APK/расширения OWNER-phone или dispatcher powers.
+
+
+## G2: утверждён лифтбек только в Комфорте; backend проверен — 2026-11-18
+
+Ответ владельца на вопрос кузова: «Только в комфорте». В AGENTS сохранено
+явное утверждение: отдельный liftback разрешён только comfort, business/minivan
+(включая nullable policy/OWNER exception) запрещены. Li Auto L7/L9 crossover
+в Бизнесе сохранены. Старые definitions/pins не расширяются; новый comfort
+liftback требует явного правила, проверки документов/года/ДВС и отдельного
+одобрения. Dispatcher не получает новых прав. G1paused,D4–D7pending.
+
+[Draft backend PR45](https://github.com/lobanov0710-blip/uber-v3/pull/45):
+проверенный source `b51176226a6f85eb01abb7dc56abec8450e1f713`, tree
+`f79751cdc2cd4e5903e20e589dbb28a6860199b5`. CI44359299631 /
+job134995931727 SUCCESS:32 steps,80 npm-команд,25 migrations,12 preflight,
+14 inventory,6 reference,16 native D1 workflows,6 protected actual Wrangler CLI
+scenarios, dependency audit0, Worker dry-run PASS. Populated24→25 сохраняет
+полный immutable assessment/invalidation/hold graph, rowid/все значения/pins,
+FK/NOT NULL/CHECK и rollback. Никакого отключения FK или fake body alias.
+
+Первый source20c9f3b45823437ae78b2e04e0d1c70cd4193ef0, CI44358568865
+FAILURE: native snapshot попытался читать provider-private metadata table.
+Исправлена тестовая область: только все проектные таблицы из schema фикстуры24;
+provider-private данные не читаются, проверки rollback/data/FK не ослаблены.
+Предыдущие80 npm/15 native PASS сохранены как частичный результат первого CI.
+
+[Draft Android PR21](https://github.com/lobanov0710-blip/TransferDriver/pull/21):
+source `56d2cc129b12ca52e4982933f4a37a025e654f2d`, tree
+`26e7c3c4217662224425c86a274e149d95c17f18`. CI44358868461 пока выполняется,
+сборка/JVM/native/artifact не объявлены завершёнными. DTO/body selector/readonly
+label/OWNER checkbox/confirmation обновлены;3 JVM и2 native cases добавлены.
+Локально Android security8/5,runner5 PASS. Ошибки локального replay assertion,
+имени test file и лимита публикации исправлены/описаны в feature журналах.
+Сначала payload truncation блокировал публикацию до tree/ref; повторная
+публикация сохранила tree parity, обрезанные файлы не попадали в GitHub.
+
+Body decision не закрывает full powertrain ranges/actual legacy inventory/live
+acceptance/активацию. Нет real sensitive data, seed/backfill, remote migration,
+merge, deploy, OWNER-phone expansion или выпуска на действующие телефоны.
