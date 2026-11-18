@@ -1,3 +1,4 @@
+import { seedAdmissionReferenceD1,seedAdmissionProofD1 } from '../tests/helpers/admissionFixture.mjs';
 // Bundled Worker + native local D1, synthetic data only; no deployment or remote bindings.
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
@@ -11,9 +12,10 @@ try {
   for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all())await DB.prepare(row.sql).run();
   for(const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL").all())await DB.prepare(row.sql).run();
   for (const type of ['view','trigger']) for (const row of local.sqlite.prepare("SELECT sql FROM sqlite_master WHERE type=? AND sql IS NOT NULL ORDER BY rowid").all(type)) await DB.prepare(row.sql).run();
-  await seedModeration(DB);await DB.prepare('DELETE FROM staff_permissions').run();
+  await seedAdmissionReferenceD1(DB);await seedModeration(DB,{vehicleYear:2023,vehicleColor:'White'});await DB.prepare('DELETE FROM staff_permissions').run();
   for(const p of ['orders.read','orders.assign','drivers.read','vehicles.read'])await DB.prepare('INSERT INTO staff_permissions(account_id,permission,granted_by,created_at) VALUES(?1,?2,?1,1)').bind(moderator,p).run();
   await DB.prepare("UPDATE driver_profiles SET registration_status='approved',identity_status='verified'").run();await DB.prepare("UPDATE vehicles SET status='approved'").run();
+  await seedAdmissionProofD1(DB,'vehicle_fixture001');
   for(const id of ['order_native001','order_native002'])await DB.prepare(`INSERT INTO orders(id,name,phone,route,from_place,to_place,trip_date,status,created_at,updated_at)
     VALUES(?1,'SYNTHETIC_PASSENGER_PRIVATE','+79990000000','private route','Origin','Destination','2030-01-01','new',1,1)`).bind(id).run();
   const send=async(path,token,body)=>{

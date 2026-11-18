@@ -4,12 +4,12 @@ import { driverId,moderator,ruleBody } from './adminVehicleRuleScenario.mjs';
 import { changeDriverAssignmentPhase } from '../../src/core/driverTripOperationalService.js';
 import { transitionOrderTerminal } from '../../src/core/orderTerminalMutationService.js';
 import { advanceDriverOrder } from '../../src/core/orderRepository.js';
-export async function prepareVehicleApproval(env,vehicleId){
+export async function prepareVehicleApproval(env,vehicleId,photoPrefix='photo_atomic_'){
   await env.DB.prepare("UPDATE driver_profiles SET registration_status='under_review' WHERE staff_account_id=?1").bind(driverId).run();
   await env.DB.prepare("UPDATE vehicles SET status='pending_review' WHERE id=?1").bind(vehicleId).run();
   for(const kind of ['left','front','right','rear','open_trunk','rear_cabin','front_cabin'])await env.DB.prepare(
     "INSERT INTO vehicle_photos(id,vehicle_id,kind,private_object_key,status,created_at,updated_at) VALUES(?1,?2,?3,?1,'verified',1,1)")
-    .bind('photo_atomic_'+kind,vehicleId,kind).run();
+    .bind(photoPrefix+kind,vehicleId,kind).run();
 }
 export async function atomicVehicleReviewWorkflow(env,send){
   const s=await trustedScenario(env,send),path='/v1/admin/registrations/'+driverId+'/review/items/vehicle/'+s.vehicle.id;

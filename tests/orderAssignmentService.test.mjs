@@ -111,6 +111,7 @@ function dbFor({
                 VEHICLE_ID,
               vehicle_status:
                 vehicleStatus,
+              vehicle_classification_valid:1,
               photo_control_blocked:
                 photoControlBlocked ? 1 : 0,
               photo_control_grace:

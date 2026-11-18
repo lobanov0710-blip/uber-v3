@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { hashStaffPassword } from '../../src/core/staffAuthCrypto.js';
 export const moderator='staff_moderator123',driverId='staff_driver123',documentId='document_fixture001';
 export const fixturePassword='Synthetic-Moderator-Password-123!';
-export async function seedModeration(DB){
+export async function seedModeration(DB,{vehicleYear,vehicleColor}={}){
  const v=await hashStaffPassword(fixturePassword);
  for(const [id,role]of [[moderator,'admin'],[driverId,'driver']])await DB.prepare(`INSERT INTO staff_accounts
  (id,login,display_name,role,status,password_algorithm,password_iterations,password_salt,password_hash,password_changed_at,created_at,updated_at)
@@ -12,8 +12,8 @@ export async function seedModeration(DB){
  'INSERT INTO staff_permissions(account_id,permission,granted_by,created_at) VALUES(?1,?2,?1,1)').bind(moderator,permission).run();
  await DB.prepare(`INSERT INTO driver_profiles(staff_account_id,normalized_phone,full_name,region,registration_status,identity_status,created_at,updated_at)
  VALUES(?1,'+79990000000','Synthetic Driver','Test Region','submitted','pending',1,1)`).bind(driverId).run();
- await DB.prepare(`INSERT INTO vehicles(id,driver_id,vin,plate,make,model,class,capacity,status,usage_basis,created_at,updated_at)
- VALUES('vehicle_fixture001',?1,'TESTVIN0000000001','TEST','Test','Car','comfort',4,'pending_review','owner',1,1)`).bind(driverId).run();
+ await DB.prepare(`INSERT INTO vehicles(id,driver_id,vin,plate,make,model,class,capacity,status,usage_basis,created_at,updated_at${vehicleYear===undefined?'':',model_year,color'})
+ VALUES('vehicle_fixture001',?1,'TESTVIN0000000001','TEST','Test','Car','comfort',4,'pending_review','owner',1,1${vehicleYear===undefined?'':',?2,?3'})`).bind(...(vehicleYear===undefined?[driverId]:[driverId,vehicleYear,vehicleColor])).run();
  for(const [id,kind,status]of [[documentId,'passport_main','pending'],['document_fixture002','driver_license_front','verified']])await DB.prepare(
  `INSERT INTO document_resources(id,owner_driver_id,kind,private_object_key,status,created_at,updated_at) VALUES(?1,?2,?3,?1,?4,1,1)`)
  .bind(id,driverId,kind,status).run();

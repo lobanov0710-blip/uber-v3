@@ -1,3 +1,4 @@
+import { operationAudits } from './helpers/admissionFixture.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { startAdminRegistrationReview, reviewAdminRegistrationItem, completeAdminRegistrationReview } from '../src/core/adminItemModerationService.js';
@@ -34,7 +35,7 @@ async function assign(DB) {
     { driverId: driver.id, vehicleId: vehicle, reason: 'Test', expectedRevision: 1 },
     { idempotencyKey: 'assign-test-key', nowMs: time });
 }
-function auditCount(DB) { return DB.sqlite.prepare('SELECT count(*) AS n FROM audit_events').get().n; }
+function auditCount(DB) { return operationAudits(DB); }
 
 test('assign retries return the original acknowledgement without another audit', async t => {
   const DB = setup(t);
@@ -180,7 +181,7 @@ test('starting moderation writes one profile audit and replays exactly once', as
   const original = await run();
   assert.equal(original.ok, true);
   assert.equal(auditCount(DB), 1);
-  assert.equal(DB.sqlite.prepare('SELECT target_type FROM audit_events').get().target_type, 'driver_profile');
+  assert.equal(DB.sqlite.prepare("SELECT target_type FROM audit_events WHERE id NOT LIKE 'audit_fixture_admission_%'").get().target_type, 'driver_profile');
   assert.deepEqual(await run(), original);
   assert.equal(auditCount(DB), 1);
 });

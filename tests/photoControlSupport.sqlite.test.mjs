@@ -1,3 +1,4 @@
+import { operationAudits } from './helpers/admissionFixture.mjs';
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -94,6 +95,7 @@ function count(
   DB,
   table
 ) {
+  if(table==='audit_events')return operationAudits(DB);
   return Number(
     DB.sqlite.prepare(
       `SELECT count(*) AS n FROM ${table}`

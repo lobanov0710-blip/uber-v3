@@ -1,3 +1,4 @@
+import { seedAdmissionReference,seedAdmissionProof } from './admissionFixture.mjs';
 import { sqliteD1 } from './sqliteD1.mjs';
 export const driver = { id: 'staff_driver123', role: 'driver' };
 export const vehicle = 'vehicle_12345678';
@@ -15,11 +16,13 @@ export function fixture(t) {
   DB.sqlite.prepare(`INSERT INTO driver_profiles
     (staff_account_id,normalized_phone,registration_status,identity_status,created_at,updated_at)
     VALUES (?,?,'approved','verified',1,1)`).run(driver.id, '+79990000000');
+  seedAdmissionReference(DB);
   for (const id of [vehicle, otherVehicle]) {
     DB.sqlite.prepare(`INSERT INTO vehicles
-      (id,driver_id,vin,plate,make,model,class,capacity,status,created_at,updated_at)
-      VALUES (?,?,'TESTVIN0000000001','TEST','Test','Car','comfort',4,'approved',1,1)`)
+      (id,driver_id,vin,plate,make,model,class,capacity,status,model_year,color,created_at,updated_at)
+      VALUES (?,?,'TESTVIN0000000001','TEST','Test','Car','comfort',4,'approved',2023,'White',1,1)`)
       .run(id, driver.id);
+    seedAdmissionProof(DB,id);
   }
   DB.sqlite.prepare(`INSERT INTO driver_availability
     (driver_id,state,revision,updated_at) VALUES (?,'off_line',1,1)`).run(driver.id);

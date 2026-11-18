@@ -158,6 +158,7 @@ function createDb({
                 NEW_VEHICLE_ID,
               vehicle_status:
                 "approved",
+              vehicle_classification_valid:1,
               availability_state:
                 "off_line",
               active_vehicle_id:
