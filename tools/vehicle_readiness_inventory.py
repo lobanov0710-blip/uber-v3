@@ -48,11 +48,11 @@ SELECT COUNT(*) AS vehicles,
  COUNT(CASE WHEN powertrain='battery_electric' THEN 1 END) AS declared_battery_electric,
  COUNT(CASE WHEN status='approved' AND (trusted_outcome IS NOT 'candidate' OR class IS NOT trusted_class) THEN 1 END) AS approved_without_matching_candidate,
  (SELECT COUNT(*) FROM driver_availability WHERE state='on_line') AS online_drivers,
- (SELECT COUNT(*) FROM driver_availability d JOIN facts f ON f.id=d.active_vehicle_id
+ (SELECT COUNT(*) FROM driver_availability d LEFT JOIN facts f ON f.id=d.active_vehicle_id
   WHERE d.state='on_line' AND (f.trusted_outcome IS NOT 'candidate' OR f.class IS NOT f.trusted_class)) AS online_without_matching_candidate,
  (SELECT COUNT(*) FROM active_assignments) AS active_assignments,
  (SELECT COUNT(*) FROM active_assignments WHERE hold_id IS NOT NULL) AS active_assignments_with_hold,
- (SELECT COUNT(*) FROM active_assignments a JOIN facts f ON f.id=a.vehicle_id
+ (SELECT COUNT(*) FROM active_assignments a LEFT JOIN facts f ON f.id=a.vehicle_id
   WHERE f.trusted_outcome IS NOT 'candidate' OR f.class IS NOT f.trusted_class) AS active_assignments_without_matching_candidate
 FROM facts
 """

@@ -4243,3 +4243,24 @@ backend отдельный короткий PROJECT_PLAN_V1_0.md. До commit ф
 с только что созданным checkpoint и удалён. Единый утверждённый план остаётся
 в TransferDriver;backend обновляет свой журнал/ссылки,не создаёт параллельный план.
 Runtime/CSV/история не менялись; дальнейшая публикация docs-only [skip ci].
+
+
+## G2 continuation: ranges and orphan-safe legacy inventory — 2026-11-19
+
+После поручения продолжить сверены ТЗ,AGENTS,последний план/журнал и QA handoff.
+QA private signing/physical phone и права нового тестового аккаунта остаются
+pending владельца;независимая часть G2 — powertrain ranges/legacy readiness.
+Начаты первичные dated/market evidence;ни годы CSV,ни допуски не меняются.
+Владелец получил вопрос о наличии закрытого snapshot;реальная база не получена,
+remote export/read/credentials не использовались.
+
+В read-only tool воспроизведён дефект: INNER JOIN facts исключал orphan/NULL
+ссылки active vehicle из проблемных счётчиков online drivers/active assignments.
+Минимальный synthetic snapshot:0cars,1online,1active assignment давал0/0problem.
+Два новых regression tests до исправления FAIL(1 вместо3),прежние14PASS.
+Исправлены2 JOIN→LEFT JOIN:16inventory/6reference/25migrations/diffcheck PASS.
+Счётчики теперь учитывают отсутствие связанного автомобиля;прочие условия
+state/revoked_at,read-only/privacy/deny-write/deadline и admissionEvaluated=false
+сохранены. Snapshot bytes не меняются,частные значения/ID/пути в JSON не выходят.
+Это исправление инструмента аудита,не новых business rules/remote data changes.
+Полный backend CI следующего source ещё pending;G1paused,D4–D7pending.
