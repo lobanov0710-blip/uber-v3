@@ -4369,3 +4369,13 @@ Windows diagnostic повторно дал empty ACL enumeration, а не под
 protected inheritance. Windows CI переведён на рекомендуемый владельцу Node24.
 Интеграционный CLI шаг выполняется сразу после install/audit для ранней
 диагностики; остальные обязательные проверки сохранены. Реальное D1 не читалось.
+
+
+### Windows private ACL diagnosis remains fail-closed — 2026-11-19
+
+Run44605627092: все21 actual-Wrangler inventory сценария PASS (только synthetic
+loopback,0real Cloudflare). Windows protected DACL setup всё ещё отказал;
+закрытые данные не записывались и owner bundle не выдан. В native PowerShell
+добавлены только фиксированные stage names OWNER/DACL/APPLY/READ/ENUMERATE/
+COUNT/RIGHTS, без исключений/путей/идентификаторов. Native errors поглощаются;
+наружу выходит только безопасный stage. Это диагностика, не обход ACL guard.
