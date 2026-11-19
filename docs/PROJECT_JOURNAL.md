@@ -3177,3 +3177,51 @@ label/OWNER checkbox/confirmation обновлены;3 JVM и2 native cases до
 Body decision не закрывает full powertrain ranges/actual legacy inventory/live
 acceptance/активацию. Нет real sensitive data, seed/backfill, remote migration,
 merge, deploy, OWNER-phone expansion или выпуска на действующие телефоны.
+
+
+## G2 liftback: проверенная реализация и Android APK — 2026-11-19
+
+Утверждённое «Только в комфорте» реализовано: отдельный liftback только comfort,
+запрет business/minivan/OWNER exception/nullable bypass. Для liftback нужна явная
+rule definition. Старые versions/pins/implicit sedan-crossover не расширяются;
+candidate не approved/online/освобождение assignment hold, class определяет сервер.
+
+Backend draft PR45 sourceb51176226a6f85eb01abb7dc56abec8450e1f713, CI44359299631 SUCCESS:
+80 npm,25 migrations,16 native D1 workflows,6 protected actual Wrangler cases,
+audit0,dry-run PASS. Populated24→25 сохраняет graph/rows/rowids/pins; failed
+upgrade rollback,immutable guards,FK/quick_check PASS. Первый backend failure
+с provider-private snapshot сохранён; исправлен только scope проектных таблиц.
+
+Android draft PR21 sourced09d5f1e2d581a6c9c866c6c389f27d53a726c75, treee7c7a1b94990d4d932e866dc637e4f1d764080e2,
+local93691652d92594a756222aa0eb107256a399d770: CI44488353051 attempt1,
+job135437379379 SUCCESS.432 JVM/145 native без failure/error/skip;
+обе apps build/lint3 variants,security8/5,runner6,readiness15,endpoint/signing
+isolation/AppCheck policy PASS. HOME readiness реально PASS; действующие focus,
+gesture/privacy/MFA/CAS/original retry assertions и таймауты не ослаблены.
+
+Промежуточный green source1ad5e6f5 осмотром выявил пропуск liftback в подсказке;
+исправлена1 XML строка,новый source прошёл свой main CI. Ранее успешный probe
+использован только для4 неизменных gate/workflow hashes; acceptance app source
+подтверждён своим CI/APK,не перенесён с прежней версии.
+
+56 PNG сверены по source/archive digest/CRC/dimensions/hash;8 raw changed frames
+(assessment/rule-editor form+confirm в light/dark-large) осмотрены непосредственно.
+Остальные48 кадров заново визуально не принимались. Admin APK package/signature/
+certificate/hash проверены offline. Это synthetic debug/ephemeral CI key,
+без live phone/release/гарантии обновления установленного приложения.
+Exact source/artifacts/границы: COMFORT_LIFTBACK_VERIFICATION_2026-11-19.json.
+
+Прежние44358868461 attempts1/2 FAILURE48 native cases с launcher ANR сохранены;
+44368213906 — отдельная ошибка нового gate (windows вместо displays), исправлена.
+Readiness дополнительно исправлен по доказанному Settings.FallbackHome→NexusLauncher
+переходу:HOME переопределяется,стабильность сбрасывается,bootstrap не принимается.
+Короткий probe подтверждён отдельно; superseded CI44475128391 cancelled сохранён.
+Прерванные публикации/замены runtime и ошибки helper response parsing не скрыты;
+объекты проверялись перед повтором, tree parity/lease подтверждены. Последний
+PASS не доказывает исправление root cause системного launcher.
+
+CSV121/архив116/годы/условия сохранены; новых Dispatcher прав/phone scope нет.
+Full powertrain ranges121/actual legacy inventory/live acceptance открыты.
+Нет seed/backfill/remote migration/activation/merge/deploy. G1paused,D4–D7pending.
+
+Подробный receipt feature branch: https://github.com/lobanov0710-blip/uber-v3/blob/arch/g2-comfort-liftback/docs/COMFORT_LIFTBACK_VERIFICATION_2026-11-19.json
