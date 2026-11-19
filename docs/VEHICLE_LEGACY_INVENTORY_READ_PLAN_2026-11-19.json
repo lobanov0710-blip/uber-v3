@@ -1,6 +1,6 @@
 {
   "formatVersion": 1,
-  "status": "proposal_awaiting_owner_approval",
+  "status": "approved_variant_A",
   "preparedAt": "2026-11-19",
   "target": {
     "environment": "staging",
@@ -185,10 +185,11 @@
     }
   ],
   "realDataAccessed": false,
-  "remoteReadAuthorized": false,
+  "remoteReadAuthorized": true,
   "activationAuthorized": false,
   "admissionEvaluated": false,
   "remoteWriteAllowed": false,
   "publicReceiptContainsMetrics": false,
-  "publicReceiptContainsPrivateReportHash": false
+  "publicReceiptContainsPrivateReportHash": false,
+  "approvedAt": "2026-11-19"
 }

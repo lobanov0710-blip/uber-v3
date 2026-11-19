@@ -92,5 +92,44 @@ jobs:
         run: node tools/check_comfort_liftback_d1.mjs
       - name: Verify protected OWNER CLI with actual Wrangler import output
         run: python3 tools/check_owner_phone_provisioning.py
+      - name: Verify private inventory CLI with actual Wrangler and loopback D1
+        run: python3 tools/check_vehicle_inventory_cli.py
       - name: Bundle Worker without deploying
         run: npm exec -- wrangler deploy --dry-run --outdir /tmp/worker-audit-bundle
+      - name: Build pinned credential-free Windows inventory bundle
+        run: python3 tools/build_vehicle_inventory_bundle.py --output "${{ runner.temp }}/vehicle-inventory-readonly.zip"
+      - name: Upload private inventory setup bundle (no credentials or reports)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: vehicle-inventory-readonly
+          path: ${{ runner.temp }}/vehicle-inventory-readonly.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-inventory:
+    runs-on: windows-2025
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Verify policy and private ACL on actual Windows
+        run: node tests/vehicleInventoryRead.test.mjs
+      - name: Build bundle and verify minimal locked dependency installation
+        shell: pwsh
+        run: |
+          npm install --global npm@11.9.0 --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned npm installation failed.' }
+          python tools/build_vehicle_inventory_bundle.py --output "$env:RUNNER_TEMP\vehicle-inventory-readonly.zip"
+          if ($LASTEXITCODE -ne 0) { throw 'Bundle build failed.' }
+          Expand-Archive -LiteralPath "$env:RUNNER_TEMP\vehicle-inventory-readonly.zip" -DestinationPath "$env:RUNNER_TEMP\inventory-unpacked"
+          Set-Location "$env:RUNNER_TEMP\inventory-unpacked\vehicle-inventory-readonly"
+          npm ci --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { throw 'Minimal locked bundle install failed.' }
+          node .\scripts\vehicleInventoryRead.mjs --help
+          if ($LASTEXITCODE -ne 0) { throw 'Bundle command entry failed.' }

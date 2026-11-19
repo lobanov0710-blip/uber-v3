@@ -13,6 +13,7 @@ node_modules/
 # Owner-local phone test config and reports; no credentials in Git.
 .owner-phone/
 wrangler.admin-phone.staging.json
+wrangler.vehicle-inventory.staging.json
 
 # Python preflight test artifacts.
 __pycache__/

@@ -4304,3 +4304,37 @@ VEHICLE_RANGE_INVENTORY_VERIFICATION_2026-11-19.json. Новые тексты/SQ
 имеют свою local validation,не объявлены прошедшими прежний runtime CI.
 G1paused,D4–D7pending;нет seed/remote migration/activation/merge/deploy.
 QA Windows key/physical acceptance и права отдельного тестового аккаунта pending.
+
+
+## OWNER утвердил закрытое STAGING чтение, вариант A — 2026-11-19
+
+На план VEHICLE_LEGACY_INVENTORY_READ_PLAN_2026-11-19.md владелец ответил
+«Утверждают вариант А». Разрешены подготовка/проверка отдельного private CLI
+и последующее чтение владельцем на Windows:метаданные точного STAGING D1
+и один фиксированный SELECT с18агрегатами. JSON закрытый,public receipt без
+чисел/хеша private report/персональных данных/credentials/provider output.
+Согласование A пройдено;не запрашивать его повторно. Полный SQLite backup,
+новые аккаунты/права,remote writes/migrations/activation/merge/deploy не включены.
+Реальное чтение ещё не выполнено,авторизованный Cloudflare control plane
+остаётся у владельца. Рабочая ветка fix/private-vehicle-inventory-cli.
+G1paused,D4–D7pending;QA private signing/phone и роль test account прежниеpending.
+Первый exec runtime заменён при подготовке веток;после read-only проверки
+подтверждены локальные ветки/отсутствие remote refs,затем создание продолжено.
+
+
+### Private inventory implementation audit — 2026-11-19
+
+Source SDK Wrangler4.125.0 проверен до использования: d1 info добавляет GraphQL
+analytics,что не входит в18vehicle metrics. В новую утилиту эта команда не
+включена;используется d1 execute DB с временным private config,закреплёнными
+account/UUID/name и только allowlisted SQL. Никаких database list/analytics API.
+Runner запускает pinned wrangler-dist/cli.js напрямую,без wrapper grandchild,
+ограничивает stdout/stderr и время,ждёт завершения до удаления private logs.
+Windows outputs получают ACL только текущего SID и SYSTEM;source/query/package
+хеши проверяются до credentials/remote reads,новый report folder на каждый read.
+
+Первый local node --test не смог создать test child;прямой запуск дал8PASS,
+одинCLI subprocess case заблокирован sandbox EPERM(пустой stderr),не багCLI и
+не PASS полного набора. Никаких пропусков/ослаблений не добавлено,проверяется CI.
+Вспомогательная публикация approval была прервана во время npm --version;
+результат не принят за подтверждённый,canonical refs проверяются перед повтором.
