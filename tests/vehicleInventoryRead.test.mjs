@@ -70,9 +70,11 @@ test('private files are owner-only on POSIX and owner/SYSTEM only on actual Wind
  if(process.platform==='win32'){
   for(const target of [folder,path.join(folder,'metrics.private.json')]){
    const literal=target.replaceAll("'","''");
-   const command="$a=(Get-Acl -LiteralPath '"+literal+"').Access; [pscustomobject]@{ currentSid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value; values=@($a | ForEach-Object { $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value }) } | ConvertTo-Json -Compress";
+   const command="$a=Get-Acl -LiteralPath '"+literal+"'; [pscustomobject]@{ currentSid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value; protected=$a.AreAccessRulesProtected; values=@($a.Access | ForEach-Object { [pscustomobject]@{ sid=$_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value; allow=($_.AccessControlType -eq 'Allow'); full=(($_.FileSystemRights -band 2032127) -eq 2032127) } }) } | ConvertTo-Json -Depth 4 -Compress";
    const acl=await promisify(execFile)('powershell.exe',['-NoProfile','-Command',command]);
-   const v=JSON.parse(acl.stdout);assert.ok(Array.isArray(v.values)&&v.values.length===2&&v.values.includes('S-1-5-18')&&v.values.includes(v.currentSid));
+   const v=JSON.parse(acl.stdout),entries=v.values,ids=new Set(entries.map(e=>e.sid));
+   assert.ok(ids.size===2&&ids.has('S-1-5-18')&&ids.has(v.currentSid)&&entries.every(e=>e.allow&&e.full),JSON.stringify({target:target===folder?'folder':'file',entryCount:entries.length,principalCount:ids.size,hasOwner:ids.has(v.currentSid),hasSystem:ids.has('S-1-5-18'),otherPrincipal:[...ids].some(id=>![v.currentSid,'S-1-5-18'].includes(id)),allFull:entries.every(e=>e.allow&&e.full)}));
+   if(target===folder)assert.equal(v.protected,true);
   }
  }else{
   assert.equal((await stat(folder)).mode&0o777,0o700);assert.equal((await stat(path.join(folder,'metrics.private.json'))).mode&0o777,0o600);

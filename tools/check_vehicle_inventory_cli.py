@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 import pty
+import re
 import select
 import shutil
 import subprocess
@@ -82,7 +83,9 @@ def scenario(name, cutoff=18, action='read'):
         assert b'CONFIDENTIAL_' not in output and str(folder).encode() not in output, name + ': private value was printed'
         receipts = list((folder / 'private-home').rglob('receipt.public.json'))
         success = name in ['success', 'orphans', 'init_new', 'init_existing']
-        assert code == (0 if success else 1), name + ': unexpected CLI result; raw terminal output withheld'
+        phase = re.search(rb'VEHICLE INVENTORY FAILED at ([a-z_]+)\.', output)
+        diagnostic = dict(state, phase=phase[1].decode() if phase else 'unavailable')
+        assert code == (0 if success else 1), name + ': unexpected CLI result ' + json.dumps(diagnostic) + '; raw terminal output withheld'
         if action == 'init':
             assert state['requests'] == 0 and not receipts
             assert json.loads((folder / 'wrangler.vehicle-inventory.staging.json').read_text()) == config

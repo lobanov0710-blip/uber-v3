@@ -4338,3 +4338,19 @@ Windows outputs получают ACL только текущего SID и SYSTEM
 не PASS полного набора. Никаких пропусков/ослаблений не добавлено,проверяется CI.
 Вспомогательная публикация approval была прервана во время npm --version;
 результат не принят за подтверждённый,canonical refs проверяются перед повтором.
+
+
+### Первый private inventory CI: защитные проверки остановили пакет — 2026-11-19
+
+Source c800e196, run44604491232:81npm scripts/25migrations/12preflight/6reference/
+16inventory/16native D1/6protected OWNER CLI завершились успешно. Новый Linux
+CLI positive case и Windows ACL assertion FAILED; пакет не выдан. Добавлена
+диагностика только safe phase/synthetic request counts и ACL roles/counts,
+без сырых provider/SQL/SID/path значений. ACL проверяется по разрешённым
+уникальным principals и FullControl, дубли ACE сами по себе не означают
+другого получателя. Это диагностическое уточнение; успешная Windows защита
+ещё не заявляется. Merge/deploy/real STAGING read отсутствуют.
+Публикация через orchestration helper была прервана; ref оставался на base,
+затем опубликован вручную с проверкой каждого blob/tree и expected SHA.
+Первый вызов job logs с неверным именем параметра отклонён; исправлен на
+repo_full_name, результат получен read-only.
