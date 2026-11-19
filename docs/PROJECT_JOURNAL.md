@@ -4354,3 +4354,18 @@ CLI positive case и Windows ACL assertion FAILED; пакет не выдан. �
 затем опубликован вручную с проверкой каждого blob/tree и expected SHA.
 Первый вызов job logs с неверным именем параметра отклонён; исправлен на
 repo_full_name, результат получен read-only.
+
+
+### SDK JSON и Windows DACL: исправление до выдачи пакета — 2026-11-19
+
+Проверка SDK исходника выявила точную причину пустого JSON: d1 execute --json
+временно меняет logger level, затем восстанавливает его перед logger.log(JSON).
+Наше WRANGLER_LOG=error подавляло и результат. Изменено на log: stdout по-прежнему
+закрыт в pipe, не выводится; private log secured/удаляется, sanitization включена.
+Windows diagnostic повторно дал empty ACL enumeration, а не подтверждённую
+пару principals. Вместо предположения введён явный protected DACL через SDDL:
+только current SID/SYSTEM FullControl, затем runtime GetAccessRules verification.
+Тест независимо читает native GetAccessRules, проверяет principals/rights и
+protected inheritance. Windows CI переведён на рекомендуемый владельцу Node24.
+Интеграционный CLI шаг выполняется сразу после install/audit для ранней
+диагностики; остальные обязательные проверки сохранены. Реальное D1 не читалось.

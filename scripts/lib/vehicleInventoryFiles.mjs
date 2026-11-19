@@ -9,9 +9,9 @@ export async function privateDirectory(prefix,parent=homedir()){
  try{
   if(process.platform==='win32'){
    const system=path.join(process.env.SystemRoot||'C:\\Windows','System32');
-   const identity=await execute(path.join(system,'whoami.exe'),['/user','/fo','csv','/nh'],{windowsHide:true,timeout:10000});
-   const ids=identity.stdout.match(/S-1-[0-9-]+/g);if(ids?.length!==1)throw Error('Owner SID unavailable');
-   await execute(path.join(system,'icacls.exe'),[folder,'/inheritance:r','/grant:r','*'+ids[0]+':(OI)(CI)F','*S-1-5-18:(OI)(CI)F'],{windowsHide:true,timeout:10000});
+   const literal=folder.replaceAll("'","''");
+   const command="$ErrorActionPreference='Stop'; $p='"+literal+"'; $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User; $acl=New-Object System.Security.AccessControl.DirectorySecurity; $acl.SetOwner($sid); $acl.SetSecurityDescriptorSddlForm(('D:P(A;OICI;FA;;;'+$sid.Value+')(A;OICI;FA;;;SY)'),[System.Security.AccessControl.AccessControlSections]::Access); Set-Acl -LiteralPath $p -AclObject $acl; $actual=Get-Acl -LiteralPath $p; $rules=@($actual.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier])); if (!$actual.AreAccessRulesProtected -or $rules.Count -ne 2) { throw 'Private ACL rejected' }; foreach ($rule in $rules) { if ($rule.IdentityReference.Value -notin @($sid.Value,'S-1-5-18') -or $rule.AccessControlType -ne 'Allow' -or ($rule.FileSystemRights -band 2032127) -ne 2032127) { throw 'Private ACL rejected' } }";
+   await execute(path.join(system,'WindowsPowerShell','v1.0','powershell.exe'),['-NoProfile','-NonInteractive','-Command',command],{windowsHide:true,timeout:15000});
   }else await chmod(folder,0o700);
   return folder;
  }catch{await rm(folder,{recursive:true,force:true});throw Error('Private folder access could not be secured');}

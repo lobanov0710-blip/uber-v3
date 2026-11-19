@@ -16,7 +16,7 @@ export class VehicleInventoryWrangler{
   try{
    const configPath=path.join(temporary,'wrangler.json');await writeFile(configPath,JSON.stringify(this.config),{flag:'wx',mode:0o600});
    const output=await new Promise((resolve,reject)=>{
-    const child=spawn(process.execPath,[path.join(this.root,'node_modules/wrangler/wrangler-dist/cli.js'),...args,'--config',configPath],{cwd:this.root,shell:false,windowsHide:true,stdio:['ignore','pipe','pipe'],env:{...process.env,CLOUDFLARE_ACCOUNT_ID:this.config.account_id,WRANGLER_LOG_PATH:path.join(temporary,'private.log'),WRANGLER_LOG_SANITIZE:'true',WRANGLER_LOG:'error',WRANGLER_SEND_METRICS:'false',CI:'true'}});
+    const child=spawn(process.execPath,[path.join(this.root,'node_modules/wrangler/wrangler-dist/cli.js'),...args,'--config',configPath],{cwd:this.root,shell:false,windowsHide:true,stdio:['ignore','pipe','pipe'],env:{...process.env,CLOUDFLARE_ACCOUNT_ID:this.config.account_id,WRANGLER_LOG_PATH:path.join(temporary,'private.log'),WRANGLER_LOG_SANITIZE:'true',WRANGLER_LOG:'log',WRANGLER_SEND_METRICS:'false',CI:'true'}});
     let bytes=0,finished=false,failed=false,forceTimer;const chunks=[];
     const finish=(error,value)=>{if(finished)return;finished=true;clearTimeout(timer);clearTimeout(forceTimer);process.removeListener('SIGINT',abort);error?reject(Error('Private provider read failed')):resolve(value);};
     const abort=()=>{if(failed)return;failed=true;child.kill();forceTimer=setTimeout(()=>child.kill('SIGKILL'),1000);};const timer=setTimeout(abort,30000);process.once('SIGINT',abort);
