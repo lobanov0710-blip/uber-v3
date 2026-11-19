@@ -184,6 +184,42 @@ class InventoryTests(unittest.TestCase):
         metrics = self.collect()
         self.assertEqual((metrics["declared_battery_electric"], metrics["online_without_matching_candidate"]), (1, 1))
 
+    def broken_legacy_snapshot(self):
+        # Read-only inventory must report damaged/imported legacy references too.
+        # This minimal supported schema deliberately predates classification/FKs.
+        path = Path(self.temp.name) / "PRIVATE_legacy_orphans.sqlite"
+        db = sqlite3.connect(path)
+        try:
+            db.executescript("""CREATE TABLE vehicles(id,make,model,color,class,status);
+                CREATE TABLE driver_availability(active_vehicle_id,state);
+                CREATE TABLE order_assignments(id,vehicle_id,state,revoked_at);
+                INSERT INTO vehicles VALUES('PRIVATE_vehicle','Toyota','Camry','White','comfort','approved');""")
+            for target in ("PRIVATE_vehicle", "PRIVATE_missing", None):
+                db.execute("INSERT INTO driver_availability VALUES(?,'on_line')", (target,))
+                db.execute("INSERT INTO order_assignments VALUES(?,?,'active',NULL)", ("PRIVATE_assignment_" + str(target), target))
+            db.execute("INSERT INTO driver_availability VALUES('PRIVATE_offline_missing','off_line')")
+            db.execute("INSERT INTO order_assignments VALUES('PRIVATE_revoked','PRIVATE_missing','active',1)")
+            db.commit()
+        finally:
+            db.close()
+        before = path.read_bytes()
+        report = module.inventory(path)
+        self.assertEqual(path.read_bytes(), before)
+        self.assertNotIn("PRIVATE_", json.dumps(report))
+        self.assertFalse(report["activationAuthorized"])
+        self.assertFalse(report["admissionEvaluated"])
+        return report["metrics"]
+
+    def test_orphan_and_null_online_vehicle_references_are_not_healthy(self):
+        metrics = self.broken_legacy_snapshot()
+        self.assertEqual(metrics["online_drivers"], 3)
+        self.assertEqual(metrics["online_without_matching_candidate"], 3)
+
+    def test_orphan_and_null_active_assignments_are_not_healthy(self):
+        metrics = self.broken_legacy_snapshot()
+        self.assertEqual(metrics["active_assignments"], 3)
+        self.assertEqual(metrics["active_assignments_without_matching_candidate"], 3)
+
     def test_authorizer_denies_mutation_attach_and_extension_loading(self):
         self.db.set_authorizer(module.read_only_authorizer)
         for query in ("DELETE FROM vehicles", "PRAGMA query_only=OFF", "ATTACH ':memory:' AS extra", "SELECT load_extension('PRIVATE_PROVIDER')"):

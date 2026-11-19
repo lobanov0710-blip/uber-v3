@@ -4243,3 +4243,64 @@ backend отдельный короткий PROJECT_PLAN_V1_0.md. До commit ф
 с только что созданным checkpoint и удалён. Единый утверждённый план остаётся
 в TransferDriver;backend обновляет свой журнал/ссылки,не создаёт параллельный план.
 Runtime/CSV/история не менялись; дальнейшая публикация docs-only [skip ci].
+
+
+## G2 continuation: ranges and orphan-safe legacy inventory — 2026-11-19
+
+После поручения продолжить сверены ТЗ,AGENTS,последний план/журнал и QA handoff.
+QA private signing/physical phone и права нового тестового аккаунта остаются
+pending владельца;независимая часть G2 — powertrain ranges/legacy readiness.
+Начаты первичные dated/market evidence;ни годы CSV,ни допуски не меняются.
+Владелец получил вопрос о наличии закрытого snapshot;реальная база не получена,
+remote export/read/credentials не использовались.
+
+В read-only tool воспроизведён дефект: INNER JOIN facts исключал orphan/NULL
+ссылки active vehicle из проблемных счётчиков online drivers/active assignments.
+Минимальный synthetic snapshot:0cars,1online,1active assignment давал0/0problem.
+Два новых regression tests до исправления FAIL(1 вместо3),прежние14PASS.
+Исправлены2 JOIN→LEFT JOIN:16inventory/6reference/25migrations/diffcheck PASS.
+Счётчики теперь учитывают отсутствие связанного автомобиля;прочие условия
+state/revoked_at,read-only/privacy/deny-write/deadline и admissionEvaluated=false
+сохранены. Snapshot bytes не меняются,частные значения/ID/пути в JSON не выходят.
+Это исправление инструмента аудита,не новых business rules/remote data changes.
+Полный backend CI следующего source ещё pending;G1paused,D4–D7pending.
+
+
+## G2: orphan inventory / bounded powertrain ranges проверены — 2026-11-19
+
+Backend Draft PR46,source1882d622d8d983668c72856b103987d9bd97e773,localab3e7584fa4b4e243c059c84792f6a6ffc71958e,
+tree55daa643b4cbd996a4a7eef99338e1464606908a. CI44518440499/job135540483989 SUCCESS:
+80 npm scripts,16inventory,6reference,25migrations,12preflight,16native D1
+workflows,6protected actual-Wrangler CLI cases,audit0,dry-run. Два новых теста
+orphans/NULL сначала воспроизвелиFAIL1vs3; после2 LEFT JOIN всёPASS. Это private
+audit tool;Worker/Android/admission rules не менялись. Snapshot bytes/private
+output/deny-write guards сохранены;ошибочные ссылки не выдаются за здоровые.
+
+Продолжена проверка10 mixed-powertrain семейств:18первичных источников/20bounded
+наблюдений. Публикация/запуск/MY/год изготовления разделены;China PHEV и RU EVR
+Passion не сведены к одному году,Avatr12 dual-power имеет dated2024 launch,
+SpaceTourer/Opel учитывают рынок/тип заказа. Минимальные годы/классы/121строка
+и архив116 сохранены. Remaining111 ranges и exhaustive0 явно отражены в
+VEHICLE_POWERTRAIN_RANGES_2026-11-19.json;full readiness не объявляется.
+Прежний pending liftback исторический:теперьapproved толькоКомфорт,
+LiAutoL7/L9 business crossover exceptions и OWNER-only/MFA границы сохранены.
+
+Owner:готового SQLite snapshot нет,подготовить безопасный порядок для утверждения.
+Подготовлены MD+JSON plan и5полностью развёрнутых SELECT профилей,выполненных
+только на synthetic schemas18/20/22/23/25,каждый18counters. Предложение A —
+подсчёт внутри точного STAGING D1,закрытый JSON на Windows,public receipt без
+метрик/хеша закрытого отчёта/персональных данных/credentials. Full SQLite export
+не включён. Remote CLI ещё не реализован,доступ/выполнение требуют явного решения.
+Никаких remote reads/export/token requests/mutations сейчас не было.
+
+Evidence/proposal coherence PASS:точные original row fields/хеши,все ссылки
+claims/sources,полное разбиение10+111,5query hashes/одинаковые18columns иfalse
+activation/admission/realData flags. Первый git diff check вспомогательной
+сверки был ошибочно выполнен из/workspace и отклонён;с правильным cwd обеих
+веток повторно PASS. Web timeouts/404/menu-only и date conflicts сохранены,
+полное чтение всех PDF не заявлено. Служебные footer identifiers в проектные
+документы/артефакты не переносились. Точные SHA/границы —
+VEHICLE_RANGE_INVENTORY_VERIFICATION_2026-11-19.json. Новые тексты/SQL proposals
+имеют свою local validation,не объявлены прошедшими прежний runtime CI.
+G1paused,D4–D7pending;нет seed/remote migration/activation/merge/deploy.
+QA Windows key/physical acceptance и права отдельного тестового аккаунта pending.
