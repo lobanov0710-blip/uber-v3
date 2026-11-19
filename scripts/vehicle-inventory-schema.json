@@ -1,0 +1,552 @@
+{
+  "formatVersion": 1,
+  "migrations": [
+    "0001_transactional_core.sql",
+    "0002_staff_auth.sql",
+    "0003_staff_admin_audit.sql",
+    "0004_staff_push_devices.sql",
+    "0005_driver_platform_core.sql",
+    "0006_driver_firebase_auth.sql",
+    "0007_driver_exchange_rate_limits.sql",
+    "0008_driver_registration_details.sql",
+    "0009_driver_private_uploads.sql",
+    "0010_admin_moderation.sql",
+    "0011_mutation_idempotency.sql",
+    "0012_moderation_optimistic_locking.sql",
+    "0013_order_assignment_revision.sql",
+    "0014_assignment_operational_phases.sql",
+    "0015_order_terminal_mutation_guard.sql",
+    "0016_photo_control_support_hardening.sql",
+    "0017_photo_check_lifecycle.sql",
+    "0018_owner_totp_mfa.sql",
+    "0019_vehicle_classification_versions.sql",
+    "0020_vehicle_registration_classification_fields.sql",
+    "0021_vehicle_rule_bindings.sql",
+    "0022_vehicle_rule_definitions.sql",
+    "0023_trusted_vehicle_assessments.sql",
+    "0024_vehicle_reverification_holds.sql",
+    "0025_comfort_liftback.sql"
+  ],
+  "tableNames": [
+    "vehicles",
+    "vehicle_classification_bindings",
+    "vehicle_trusted_assessments",
+    "vehicle_current_trusted_assessments",
+    "vehicle_reverification_assignment_holds",
+    "driver_availability",
+    "order_assignments",
+    "d1_migrations"
+  ],
+  "contracts": [
+    {
+      "migrationCounts": [
+        18,
+        19
+      ],
+      "profile": "legacy",
+      "tables": {
+        "vehicles": {
+          "type": "table",
+          "columns": [
+            "baggage_capacity",
+            "capacity",
+            "class",
+            "color",
+            "created_at",
+            "driver_id",
+            "id",
+            "last_photo_check_passed_at",
+            "last_review_id",
+            "make",
+            "model",
+            "next_photo_check_due_at",
+            "plate",
+            "revision",
+            "status",
+            "updated_at",
+            "usage_basis",
+            "vin"
+          ]
+        },
+        "driver_availability": {
+          "type": "table",
+          "columns": [
+            "active_vehicle_id",
+            "driver_id",
+            "revision",
+            "state",
+            "updated_at"
+          ]
+        },
+        "order_assignments": {
+          "type": "table",
+          "columns": [
+            "assigned_by",
+            "created_at",
+            "driver_id",
+            "id",
+            "order_id",
+            "phase",
+            "phase_updated_at",
+            "reason",
+            "revision",
+            "revoked_at",
+            "state",
+            "vehicle_id",
+            "verification_session_id"
+          ]
+        },
+        "d1_migrations": {
+          "type": "table",
+          "columns": [
+            "applied_at",
+            "id",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "migrationCounts": [
+        20
+      ],
+      "profile": "registration",
+      "tables": {
+        "vehicles": {
+          "type": "table",
+          "columns": [
+            "baggage_capacity",
+            "capacity",
+            "class",
+            "color",
+            "created_at",
+            "driver_id",
+            "id",
+            "last_photo_check_passed_at",
+            "last_review_id",
+            "make",
+            "model",
+            "model_year",
+            "next_photo_check_due_at",
+            "plate",
+            "powertrain",
+            "revision",
+            "status",
+            "updated_at",
+            "usage_basis",
+            "vin"
+          ]
+        },
+        "driver_availability": {
+          "type": "table",
+          "columns": [
+            "active_vehicle_id",
+            "driver_id",
+            "revision",
+            "state",
+            "updated_at"
+          ]
+        },
+        "order_assignments": {
+          "type": "table",
+          "columns": [
+            "assigned_by",
+            "created_at",
+            "driver_id",
+            "id",
+            "order_id",
+            "phase",
+            "phase_updated_at",
+            "reason",
+            "revision",
+            "revoked_at",
+            "state",
+            "vehicle_id",
+            "verification_session_id"
+          ]
+        },
+        "d1_migrations": {
+          "type": "table",
+          "columns": [
+            "applied_at",
+            "id",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "migrationCounts": [
+        21,
+        22
+      ],
+      "profile": "bindings",
+      "tables": {
+        "vehicles": {
+          "type": "table",
+          "columns": [
+            "baggage_capacity",
+            "capacity",
+            "class",
+            "color",
+            "created_at",
+            "driver_id",
+            "id",
+            "last_photo_check_passed_at",
+            "last_review_id",
+            "make",
+            "model",
+            "model_year",
+            "next_photo_check_due_at",
+            "plate",
+            "powertrain",
+            "revision",
+            "status",
+            "updated_at",
+            "usage_basis",
+            "vin"
+          ]
+        },
+        "vehicle_classification_bindings": {
+          "type": "table",
+          "columns": [
+            "created_at",
+            "input_revision",
+            "make",
+            "model",
+            "model_year",
+            "rule_version",
+            "source_vehicle_revision",
+            "vehicle_id"
+          ]
+        },
+        "driver_availability": {
+          "type": "table",
+          "columns": [
+            "active_vehicle_id",
+            "driver_id",
+            "revision",
+            "state",
+            "updated_at"
+          ]
+        },
+        "order_assignments": {
+          "type": "table",
+          "columns": [
+            "assigned_by",
+            "created_at",
+            "driver_id",
+            "id",
+            "order_id",
+            "phase",
+            "phase_updated_at",
+            "reason",
+            "revision",
+            "revoked_at",
+            "state",
+            "vehicle_id",
+            "verification_session_id"
+          ]
+        },
+        "d1_migrations": {
+          "type": "table",
+          "columns": [
+            "applied_at",
+            "id",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "migrationCounts": [
+        23
+      ],
+      "profile": "trusted",
+      "tables": {
+        "vehicles": {
+          "type": "table",
+          "columns": [
+            "baggage_capacity",
+            "capacity",
+            "class",
+            "color",
+            "created_at",
+            "driver_id",
+            "id",
+            "last_photo_check_passed_at",
+            "last_review_id",
+            "make",
+            "model",
+            "model_year",
+            "next_photo_check_due_at",
+            "plate",
+            "powertrain",
+            "revision",
+            "status",
+            "updated_at",
+            "usage_basis",
+            "vin"
+          ]
+        },
+        "vehicle_classification_bindings": {
+          "type": "table",
+          "columns": [
+            "created_at",
+            "input_revision",
+            "make",
+            "model",
+            "model_year",
+            "rule_version",
+            "source_vehicle_revision",
+            "vehicle_id"
+          ]
+        },
+        "vehicle_trusted_assessments": {
+          "type": "table",
+          "columns": [
+            "actor_account_id",
+            "audit_event_id",
+            "body_type",
+            "class",
+            "conditions_json",
+            "created_at",
+            "declared_powertrain",
+            "evidence_json",
+            "exception_json",
+            "id",
+            "input_revision",
+            "make",
+            "mode",
+            "model",
+            "model_year",
+            "outcome",
+            "pinned_rule_version",
+            "powertrain",
+            "reason",
+            "reason_codes_json",
+            "rule_version",
+            "sequence",
+            "vehicle_id",
+            "vehicle_revision"
+          ]
+        },
+        "vehicle_current_trusted_assessments": {
+          "type": "view",
+          "columns": [
+            "actor_account_id",
+            "audit_event_id",
+            "body_type",
+            "class",
+            "conditions_json",
+            "created_at",
+            "declared_powertrain",
+            "evidence_json",
+            "exception_json",
+            "id",
+            "input_revision",
+            "make",
+            "mode",
+            "model",
+            "model_year",
+            "outcome",
+            "pinned_rule_version",
+            "powertrain",
+            "reason",
+            "reason_codes_json",
+            "rule_version",
+            "sequence",
+            "vehicle_id",
+            "vehicle_revision"
+          ]
+        },
+        "driver_availability": {
+          "type": "table",
+          "columns": [
+            "active_vehicle_id",
+            "driver_id",
+            "revision",
+            "state",
+            "updated_at"
+          ]
+        },
+        "order_assignments": {
+          "type": "table",
+          "columns": [
+            "assigned_by",
+            "created_at",
+            "driver_id",
+            "id",
+            "order_id",
+            "phase",
+            "phase_updated_at",
+            "reason",
+            "revision",
+            "revoked_at",
+            "state",
+            "vehicle_id",
+            "verification_session_id"
+          ]
+        },
+        "d1_migrations": {
+          "type": "table",
+          "columns": [
+            "applied_at",
+            "id",
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "migrationCounts": [
+        24,
+        25
+      ],
+      "profile": "holds",
+      "tables": {
+        "vehicles": {
+          "type": "table",
+          "columns": [
+            "baggage_capacity",
+            "capacity",
+            "class",
+            "color",
+            "created_at",
+            "driver_id",
+            "id",
+            "last_photo_check_passed_at",
+            "last_review_id",
+            "make",
+            "model",
+            "model_year",
+            "next_photo_check_due_at",
+            "plate",
+            "powertrain",
+            "revision",
+            "status",
+            "updated_at",
+            "usage_basis",
+            "vin"
+          ]
+        },
+        "vehicle_classification_bindings": {
+          "type": "table",
+          "columns": [
+            "created_at",
+            "input_revision",
+            "make",
+            "model",
+            "model_year",
+            "rule_version",
+            "source_vehicle_revision",
+            "vehicle_id"
+          ]
+        },
+        "vehicle_trusted_assessments": {
+          "type": "table",
+          "columns": [
+            "actor_account_id",
+            "audit_event_id",
+            "body_type",
+            "class",
+            "conditions_json",
+            "created_at",
+            "declared_powertrain",
+            "evidence_json",
+            "exception_json",
+            "id",
+            "input_revision",
+            "make",
+            "mode",
+            "model",
+            "model_year",
+            "outcome",
+            "pinned_rule_version",
+            "powertrain",
+            "reason",
+            "reason_codes_json",
+            "rule_version",
+            "sequence",
+            "vehicle_id",
+            "vehicle_revision"
+          ]
+        },
+        "vehicle_current_trusted_assessments": {
+          "type": "view",
+          "columns": [
+            "actor_account_id",
+            "audit_event_id",
+            "body_type",
+            "class",
+            "conditions_json",
+            "created_at",
+            "declared_powertrain",
+            "evidence_json",
+            "exception_json",
+            "id",
+            "input_revision",
+            "make",
+            "mode",
+            "model",
+            "model_year",
+            "outcome",
+            "pinned_rule_version",
+            "powertrain",
+            "reason",
+            "reason_codes_json",
+            "rule_version",
+            "sequence",
+            "vehicle_id",
+            "vehicle_revision"
+          ]
+        },
+        "vehicle_reverification_assignment_holds": {
+          "type": "table",
+          "columns": [
+            "assessment_id",
+            "assignment_id",
+            "created_at",
+            "vehicle_id"
+          ]
+        },
+        "driver_availability": {
+          "type": "table",
+          "columns": [
+            "active_vehicle_id",
+            "driver_id",
+            "revision",
+            "state",
+            "updated_at"
+          ]
+        },
+        "order_assignments": {
+          "type": "table",
+          "columns": [
+            "assigned_by",
+            "created_at",
+            "driver_id",
+            "id",
+            "order_id",
+            "phase",
+            "phase_updated_at",
+            "reason",
+            "revision",
+            "revoked_at",
+            "state",
+            "vehicle_id",
+            "verification_session_id"
+          ]
+        },
+        "d1_migrations": {
+          "type": "table",
+          "columns": [
+            "applied_at",
+            "id",
+            "name"
+          ]
+        }
+      }
+    }
+  ]
+}

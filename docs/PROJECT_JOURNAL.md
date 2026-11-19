@@ -4304,3 +4304,165 @@ VEHICLE_RANGE_INVENTORY_VERIFICATION_2026-11-19.json. Новые тексты/SQ
 имеют свою local validation,не объявлены прошедшими прежний runtime CI.
 G1paused,D4–D7pending;нет seed/remote migration/activation/merge/deploy.
 QA Windows key/physical acceptance и права отдельного тестового аккаунта pending.
+
+
+## OWNER утвердил закрытое STAGING чтение, вариант A — 2026-11-19
+
+На план VEHICLE_LEGACY_INVENTORY_READ_PLAN_2026-11-19.md владелец ответил
+«Утверждают вариант А». Разрешены подготовка/проверка отдельного private CLI
+и последующее чтение владельцем на Windows:метаданные точного STAGING D1
+и один фиксированный SELECT с18агрегатами. JSON закрытый,public receipt без
+чисел/хеша private report/персональных данных/credentials/provider output.
+Согласование A пройдено;не запрашивать его повторно. Полный SQLite backup,
+новые аккаунты/права,remote writes/migrations/activation/merge/deploy не включены.
+Реальное чтение ещё не выполнено,авторизованный Cloudflare control plane
+остаётся у владельца. Рабочая ветка fix/private-vehicle-inventory-cli.
+G1paused,D4–D7pending;QA private signing/phone и роль test account прежниеpending.
+Первый exec runtime заменён при подготовке веток;после read-only проверки
+подтверждены локальные ветки/отсутствие remote refs,затем создание продолжено.
+
+
+### Private inventory implementation audit — 2026-11-19
+
+Source SDK Wrangler4.125.0 проверен до использования: d1 info добавляет GraphQL
+analytics,что не входит в18vehicle metrics. В новую утилиту эта команда не
+включена;используется d1 execute DB с временным private config,закреплёнными
+account/UUID/name и только allowlisted SQL. Никаких database list/analytics API.
+Runner запускает pinned wrangler-dist/cli.js напрямую,без wrapper grandchild,
+ограничивает stdout/stderr и время,ждёт завершения до удаления private logs.
+Windows outputs получают ACL только текущего SID и SYSTEM;source/query/package
+хеши проверяются до credentials/remote reads,новый report folder на каждый read.
+
+Первый local node --test не смог создать test child;прямой запуск дал8PASS,
+одинCLI subprocess case заблокирован sandbox EPERM(пустой stderr),не багCLI и
+не PASS полного набора. Никаких пропусков/ослаблений не добавлено,проверяется CI.
+Вспомогательная публикация approval была прервана во время npm --version;
+результат не принят за подтверждённый,canonical refs проверяются перед повтором.
+
+
+### Первый private inventory CI: защитные проверки остановили пакет — 2026-11-19
+
+Source c800e196, run44604491232:81npm scripts/25migrations/12preflight/6reference/
+16inventory/16native D1/6protected OWNER CLI завершились успешно. Новый Linux
+CLI positive case и Windows ACL assertion FAILED; пакет не выдан. Добавлена
+диагностика только safe phase/synthetic request counts и ACL roles/counts,
+без сырых provider/SQL/SID/path значений. ACL проверяется по разрешённым
+уникальным principals и FullControl, дубли ACE сами по себе не означают
+другого получателя. Это диагностическое уточнение; успешная Windows защита
+ещё не заявляется. Merge/deploy/real STAGING read отсутствуют.
+Публикация через orchestration helper была прервана; ref оставался на base,
+затем опубликован вручную с проверкой каждого blob/tree и expected SHA.
+Первый вызов job logs с неверным именем параметра отклонён; исправлен на
+repo_full_name, результат получен read-only.
+
+
+### SDK JSON и Windows DACL: исправление до выдачи пакета — 2026-11-19
+
+Проверка SDK исходника выявила точную причину пустого JSON: d1 execute --json
+временно меняет logger level, затем восстанавливает его перед logger.log(JSON).
+Наше WRANGLER_LOG=error подавляло и результат. Изменено на log: stdout по-прежнему
+закрыт в pipe, не выводится; private log secured/удаляется, sanitization включена.
+Windows diagnostic повторно дал empty ACL enumeration, а не подтверждённую
+пару principals. Вместо предположения введён явный protected DACL через SDDL:
+только current SID/SYSTEM FullControl, затем runtime GetAccessRules verification.
+Тест независимо читает native GetAccessRules, проверяет principals/rights и
+protected inheritance. Windows CI переведён на рекомендуемый владельцу Node24.
+Интеграционный CLI шаг выполняется сразу после install/audit для ранней
+диагностики; остальные обязательные проверки сохранены. Реальное D1 не читалось.
+
+
+### Windows private ACL diagnosis remains fail-closed — 2026-11-19
+
+Run44605627092: все21 actual-Wrangler inventory сценария PASS (только synthetic
+loopback,0real Cloudflare). Windows protected DACL setup всё ещё отказал;
+закрытые данные не записывались и owner bundle не выдан. В native PowerShell
+добавлены только фиксированные stage names OWNER/DACL/APPLY/READ/ENUMERATE/
+COUNT/RIGHTS, без исключений/путей/идентификаторов. Native errors поглощаются;
+наружу выходит только безопасный stage. Это диагностика, не обход ACL guard.
+
+
+### Windows DACL apply compatibility and least privilege — 2026-11-19
+
+Run44606043947: native stage identified APPLY. Убрана попытка менять owner
+в новом DirectorySecurity: берётся существующий Get-Acl и заменяется только
+Access section protected DACL. Это сохраняет owner/group без запроса привилегий
+смены владельца; current SID/SYSTEM ACL и обязательная повторная проверка
+остаются. Диагностика разрешает только фиксированный class exception из
+allowlist, без raw errors. Guide использует уже действующую приватную
+авторизацию OWNER, а не новый OAuth login с default broad scopes Wrangler
+(его SDK не предлагает d1:read OAuth scope). Новые токены/права не запрашивались.
+
+
+### Windows PowerShell module isolation — 2026-11-19
+
+Run44606305771 Windows остановился на DACL/Get-Acl; попытка смены owner уже
+исключена и не объясняет весь сбой. Проверено различие среды: job запускается
+в pwsh7, а native helper — Windows PowerShell5.1. В child не передаётся
+PSModulePath host runtime: native PowerShell восстанавливает свои module paths.
+Тест использует тот же absolute trusted system executable и очищенное значение,
+остальные env сохранены. ACL проверка не ослаблена; hypothesis требует CI.
+Диагностика class name ограничена буквенным именем типа, без raw error messages.
+
+
+### Windows PASS / discovered PTY harness race — 2026-11-19
+
+Source20bdb841, run44606687536: Linux и Windows jobs SUCCESS. Windows Node24:
+9/9 policy/NTFS ACL cases, minimal bundle npmci--ignore-scripts/audit0/entry PASS.
+Это подтверждает исправление cross-runtime PSModulePath; execution policy и
+ACL requirements не обходились. Linux21 CLI/81npm/16native D1 и остальные gates
+также PASS. При сверке всех прошлых failures найден Linux run44606305771:
+wrong_counter reported timeout при общей длительности35s, меньше70s limit.
+Harness после PTY EOF сразу poll() проверял статус, до завершения waitpid.
+Исправлено ожидание process.wait в пределах того же исходного deadline,
+без retries/пропусков/ослабления assertions. CI повторяется на final source.
+Архив до этой проверки владельцу не выдан; real STAGING чтение не выполнялось.
+
+
+## G2: вариант A — проверенный пакет закрытой инвентаризации — 2026-11-19
+
+Утверждённый владельцем вариант A реализован в отдельной ветке
+fix/private-vehicle-inventory-cli, backend Draft PR47. Runtime source:
+6df1c9f051fc415f1152aa1e1bce7e7130f9e952; local cc6e5fa; tree
+8bd6908373445780ae7fc99dae68864baee9a6ef. Пакет читает согласованные метаданные
+точного STAGING D1 и один фиксированный SELECT с 18 счётчиками. Есть пять
+профилей для известных схем 18–25; неизвестная/частичная схема останавливает
+чтение. Повторная проверка метаданных, source/query hashes, строгие target/result
+checks, приватный ограниченный provider process, отдельная папка с проверенными
+Windows ACL current SID/SYSTEM. Public receipt не содержит чисел, private-report
+hash, account ID, персональных данных, credentials или provider output.
+
+CI44607369124 Linux/Windows SUCCESS: 21 actual-Wrangler synthetic CLI cases,
+81 npm test scripts, 25 migrations, 12 preflight, 6 reference, 16 inventory,
+16 native workerd/D1 workflows, 6 прежних protected OWNER CLI cases, audit0,
+Worker dry-run. Windows Server2025/Node24: 9 policy/реальных NTFS ACL cases,
+minimal locked npm ci --ignore-scripts, entry command PASS. Сам private read
+в CI запрещён; integration fixture использует только synthetic loopback D1,
+без реальных Cloudflare запросов. Локальный subprocess EPERM не выдавался за
+PASS; новые 9/21 проверки прошли в CI без skips/retries/ослабления guards.
+
+Исправлены подавление JSON SDK параметром WRANGLER_LOG, несовместимый
+PSModulePath между pwsh7 и native Windows PowerShell5.1, а также гонка PTY EOF /
+waitpid в тестовом помощнике (исходный deadline сохранён). Дубли ACE проверяются
+по уникальным разрешённым principals и FullControl. Предшествующие failures и
+cancelled runs сохранены в машинной квитанции и backend журнале; успешными
+не объявлены. D1 info исключён: его SDK дополнительно читает GraphQL analytics.
+Используется прежняя приватная Cloudflare авторизация, новые grants не запрашивались.
+
+Проверен архив vehicle-inventory-readonly.zip: 16 файлов / 15 protected hashes,
+CRC/пути, minimal lock, полное байтовое совпадение с независимой локальной и
+Windows сборками. SHA256:
+039625742f17d80712932e20b58a2f6bba50db8f518bb3a4a699d502aa3431c5.
+В пакете нет конфигурации доступа, credentials, отчётов, Worker/provisioning
+source, migrations DDL или test fixtures. Подробности —
+PRIVATE_VEHICLE_INVENTORY_VERIFICATION_2026-11-19.json и
+G2_PRIVATE_INVENTORY_HANDOFF_2026-11-19.md; Windows guide приложен.
+Android companion меняет только документы; новый APK не создавался, прежний
+QA source/ключи/аккаунты/MFA не изменялись.
+
+Реальное чтение на Windows владельца ещё не выполнено, actual metrics не
+получены и не подменены synthetic числами. Следующий шаг: владелец запускает
+пакет в новой папке и передаёт только receipt.public.json; metrics.private.json
+остаётся у владельца. Full classifier readiness/111 range followups и план
+обработки actual gaps остаются открытыми. G1 на паузе; D4–D7 pending.
+Нет remote writes, выгрузки SQLite, seed/backfill, migration apply, изменения
+автомобилей, активации классификатора, новых аккаунтов/прав, merge или deploy.
