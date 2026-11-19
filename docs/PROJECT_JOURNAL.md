@@ -4402,3 +4402,17 @@ PSModulePath host runtime: native PowerShell восстанавливает св
 Тест использует тот же absolute trusted system executable и очищенное значение,
 остальные env сохранены. ACL проверка не ослаблена; hypothesis требует CI.
 Диагностика class name ограничена буквенным именем типа, без raw error messages.
+
+
+### Windows PASS / discovered PTY harness race — 2026-11-19
+
+Source20bdb841, run44606687536: Linux и Windows jobs SUCCESS. Windows Node24:
+9/9 policy/NTFS ACL cases, minimal bundle npmci--ignore-scripts/audit0/entry PASS.
+Это подтверждает исправление cross-runtime PSModulePath; execution policy и
+ACL requirements не обходились. Linux21 CLI/81npm/16native D1 и остальные gates
+также PASS. При сверке всех прошлых failures найден Linux run44606305771:
+wrong_counter reported timeout при общей длительности35s, меньше70s limit.
+Harness после PTY EOF сразу poll() проверял статус, до завершения waitpid.
+Исправлено ожидание process.wait в пределах того же исходного deadline,
+без retries/пропусков/ослабления assertions. CI повторяется на final source.
+Архив до этой проверки владельцу не выдан; real STAGING чтение не выполнялось.

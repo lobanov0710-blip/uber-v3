@@ -67,10 +67,13 @@ def scenario(name, cutoff=18, action='read'):
                         confirmed = True
                 if process.poll() is not None:
                     break
-            if process.poll() is None:
+            try:
+                # PTY EOF can precede waitpid reporting the child's exit. Keep
+                # the original deadline; do not mislabel that race as timeout.
+                code = process.wait(timeout=max(0.001, deadline - time.monotonic()))
+            except subprocess.TimeoutExpired:
                 process.kill()
                 raise AssertionError(name + ': timeout; raw terminal output withheld')
-            code = process.wait(timeout=5)
         finally:
             if process.poll() is None:
                 process.kill()
