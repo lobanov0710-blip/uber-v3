@@ -3922,3 +3922,324 @@ Android CI44358868461 и artifact review ещё pending, их PASS не заяв
 69dff6ed7937c704067b62dae93b08a80425e551, Android
  df06d6fd35f6e724a84f742a6c0ee71502e7b1a8 (оба2 files/append-only,0 deletions).
 Нет production/remote migration/активации/seed/backfill/real sensitive data.
+
+
+## Liftback: Android attempt1 FAILURE, системный launcher ANR — 2026-11-18
+
+CI44358868461/job134994375409 source56d2cc129b12ca52e4982933f4a37a025e654f2d
+завершился FAILURE. Build/JVM/lint/API endpoint locks/signing isolation прошли;
+48 native UI cases не прошли (3 Driver availability,45 Admin). Safe diagnostic
+artifact14455626085 содержит `hostFocused=false lifecycle=RESUMED`,
+`mCurrentFocus=Application Not Responding: com.google.android.apps.nexuslauncher`,
+keyguard=false, screen awake. Для Driver причина потери focus подтверждена;
+Admin stack traces показывают последующие launch/focus waits. Артефакт
+не содержит APK/успешного набора screenshots; PASS instrumentation не заявлен.
+
+Запущен attempt2 того же source в новом runner/emulator. Runtime/test assertions,
+таймауты, privacy gates и набор обязательных тестов не ослаблены; системное ANR
+окно не обходилось принудительным закрытием. Первый failure сохранён, повторный
+PASS сам по себе не будет означать исправление emulator launcher. Итоговый
+APK/evidence review ожидается только после полностью успешного CI.
+
+
+## Liftback: второй Android FAILURE и readiness gate эмулятора — 2026-11-18
+
+Тот же source56d2cc129b12ca52e4982933f4a37a025e654f2d/CI44358868461 attempt2,
+job135012835848 FAILURE: снова3 Driver/45 Admin native failures. Новый artifact
+14456922082 повторно показывает RESUMED/awake/keyguard=false, но focus у ANR
+`com.google.android.apps.nexuslauncher`. Повтор не устранил внешнюю причину.
+APK/native evidence PASS не заявлены; исходные assertions/timeouts сохранены.
+
+Добавлен отдельный readiness gate перед suites: дождаться boot_completed,
+обычно запустить HOME через am start -W, потребовать3 последовательных focus
+наблюдения штатного launcher. ANR/неизвестный HOME/ошибка adb/таймаут — FAIL;
+нет force-stop/kill/кликов по ANR/изменения image/API/security settings. Это
+проверяемая гипотеза о незавершённом старте launcher и диагностическая защита,
+не доказанное исправление root cause. После native failure записываются только
+focus/process и категория причины ANR, без полного dumpsys/provider/SQL вывода.
+8 unit cases нового gate и6 runner flow checks (5 прежних+новый) PASS, security8/5,
+bash/diff PASS. Неготовая среда останавливает обе suites и удаляет stale markers.
+Запускается новый полный source CI; разрешение liftback/backend runtime не
+менялись. Если gate остановит CI, результат останется BLOCKED, не PASS.
+
+
+## Liftback: новый source CI с emulator readiness gate — 2026-11-18
+
+Android source5eb857497d84ff17d1a1034ed48f69ca6d349564/local
+b372aa3e654fa98504b5701c5fd1bf25af23032b/tree6df234f6232f99b3716d2ce329667304819cd94a,
+CI44368213906 выполняется. Draft PR21 обновлён с tree parity/branch lease;
+проверенная backend реализация b51176226a6f85eb01abb7dc56abec8450e1f713 неизменна.
+
+Docs-only publication helper сначала штатно отказал публиковать tools/workflow
+изменения; ref/tree тогда не записывались. Для нового source использован явный
+список7 изменённых файлов с теми же tree parity/lease и append-only journal.
+Краткий exec-server transport disconnected устранён повторным подключением;
+Cloud Environment status подтвердил ту же running/connected машину, local
+commit/чистое рабочее дерево проверены до публикации. Секреты не запрашивались.
+
+Сравнение с двумя прежними успешными OWNER-editor CI: emulator37.2.13.0,
+Google APIs35 x86_64/Pixel6 и2560MB совпадают. Доказательств смены image/emulator
+или исправления launcher пока нет; готовность HOME проверяется отдельно,
+платформа и обязательные native cases сохранены.
+
+
+## Liftback: CI44368213906 остановлен ошибкой нового gate — 2026-11-18
+
+Source5eb857497d84ff17d1a1034ed48f69ca6d349564/job135027592164 FAILURE:
+build/JVM/lint3 variants,security8/5,runner6/readiness8 PASS, но новый HOME
+readiness gate выдал FAIL через60 секунд до запуска обеих native suites.
+Artifact14457882609 содержал только пустую строку. Этот прогон НЕ подтверждает
+новое ANR/неисправность среды: найдена ошибка самой добавленной проверки.
+
+В Android15 WMS команда `dumpsys window windows` вызывает dumpWindowsLocked,
+тогда как mCurrentFocus/mFocusedApp печатает DisplayContent; нужная команда —
+`dumpsys window displays`. Проверено по AOSP android15-release:
+https://github.com/aosp-mirror/platform_frameworks_base/blob/android15-release/services/core/java/com/android/server/wm/WindowManagerService.java
+https://github.com/aosp-mirror/platform_frameworks_base/blob/android15-release/services/core/java/com/android/server/wm/DisplayContent.java
+Исправлена команда gate/diagnostic; фикстура теперь принимает только точную
+команду displays, а не любой dumpsys. Добавлены2 meaningful cases на diagnostic
+focus/редактирование ANR reason и явное отсутствие полей:10 tests PASS; runner6
+PASS. Ранее2 запуска44358868461 с реальными launcher ANR/48 native failures
+сохраняются. Не объявляется успешный APK/native evidence или исправленный ANR.
+Бизнес-правила/runtime apps не менялись, assertions/timeouts сохранены.
+
+
+## Liftback: публикация исправления gate прервана — 2026-11-19
+
+Исправленный local source0b5cd04279b386c54094627f6c945152b7593649 готов:
+Android15 display dump вместо windows,10 readiness tests/6 runner tests PASS.
+Публикация через GitHub create_tree была прервана, runtime заменён; последующая
+проверка ожидаемого tree4375da69b4c5f4d7dc313a2a9760731013f453ae дала404.
+Попытка загрузить отдельный code blob тоже прервана. Branch update/новый CI
+исправленного source не подтверждены. Последний подтверждённый remote head:
+5eb857497d84ff17d1a1034ed48f69ca6d349564.
+
+Текущий итог: backend b51176226a6f85eb01abb7dc56abec8450e1f713/CI44359299631
+SUCCESS. Android44358868461 attempt1/2 FAILURE с подтверждённым launcher ANR;
+44368213906 FAILURE до suites из-за ошибки нового gate, исправленной локально.
+Native145/PNG56/APK для новой версии НЕ объявлены PASS. Для завершения нужны
+успешная публикация подготовленного исправления, полный CI и проверка artifacts.
+Прерванные GitHub write операции не повторялись после последней отмены; состояние
+ветки повторно прочитано. Нет merge/deploy/remote migration/активации. G1paused.
+
+
+## Liftback: возобновление публикации исправления — 2026-11-19
+
+По указанию владельца «Продолжаем» среда восстановлена. Remote head повторно
+проверен:5eb857497d84ff17d1a1034ed48f69ca6d349564; прежние ожидаемые tree/code blob
+отсутствовали. Повторены10 readiness/6 runner tests:PASS; diff whitespace PASS.
+Повторная загрузка code blobs теперь отвечает: gate1b56e966438a19635065602619bc7f1bbffa1b80,
+fixture3549d8fe457ab5211b7735a6c3361ef27d2257ce. Исправлен разбор ответа
+вспомогательной публикации: create_blob возвращает structuredContent.sha напрямую,
+а fetch blob — декодированный текст, не JSON. Ошибки разбора ответа не меняли
+branch ref; созданные объекты проверены до продолжения. Рабочий runtime приложений
+и бизнес-правила не менялись. Готовится атомарный commit с tree parity/branch lease,
+затем полный Android CI; native/APK PASS до его окончания не заявляется.
+
+
+## Liftback: CI44473172878 gate FAIL и короткий emulator probe — 2026-11-19
+
+Source81fab1ffd22aa02e621aca60ed713173d7d2b4af/job135387301056 FAILURE до native
+suites:build/JVM/lint3 variants/security8/5/runner6/readiness10 PASS. Новый
+artifact14504843534 содержит фокус штатного NexusLauncher; ANR не зафиксирован.
+Точной причины несовпадения readiness пока нет: ожидаемый HOME и sample counters
+не записывались. Этот отказ не объявляется ошибкой runtime приложений/новым ANR.
+
+Добавлены безопасные stage/boot flag/expected system HOME package/focus counters
+в failure diagnostic и2 unit cases (итого12) для этих состояний. Секретные поля,
+raw command/provider/SQL output не выводятся. Добавлен отдельный короткий probe
+workflow на изменения gate:тот же API35/Google APIs/x86_64/Pixel6/animations off,
+без application builds. Это диагностика инфраструктуры, не замена обязательного
+полного Android CI/native/PNG/APK. Main workflow/gates/assertions/timeouts прежние.
+12 readiness/6 runner tests,YAML parse/diff PASS. В среде локально нет KVM/emulator;
+установка альтернативной платформы/обход focus/ANR не выполнялись. Полный результат
+остается BLOCKED до исправления причины и проверки артефактов нового source.
+
+
+## Liftback: причина readiness FAIL подтверждена probe — 2026-11-19
+
+Source98305cc7b02bdf9c5aaf9ed942af46952749ed8d, probe CI44475128578/job135393701100
+FAILURE,artifact14506386048:bootCompleted=True,homeStartOk=True,expected HOME
+com.android.settings,56 samples/1 matched/stable0; фактический focus NexusLauncher.
+Подтверждено зависание логики проверки на первом временном HOME, а не ошибка
+приложений. AOSP Android15 Settings FallbackHome регистрирует HOME с priority-1000
+и завершает себя после появления реального HOME:
+https://github.com/aosp-mirror/platform_packages_apps_settings/blob/android15-release/src/com/android/settings/FallbackHome.java
+https://github.com/aosp-mirror/platform_packages_apps_settings/blob/android15-release/AndroidManifest.xml
+
+Исправлено:обычный HOME start сохраняется; цель HOME разрешается заново при каждом
+наблюдении, смена package сбрасывает стабильность. Focused Settings.FallbackHome
+не принимается за готовую среду. Нужны3 последовательных совпадения реального HOME;
+ANR всё ещё немедленный FAIL, deadline60/adb15/native assertions не изменены.
+Добавлены3 regression cases:bootstrap→real HOME,persistent focused fallback,
+сброс трёх наблюдений при смене HOME.15 readiness/6 runner tests PASS,diff PASS.
+Main CI44475128391 того же диагностического source не является готовой сборкой;
+его итог/cancellation будет сохранён отдельно. Новый source должен пройти короткий
+probe и весь main CI; первоначальные2 реальных ANR root cause пока не закрыты.
+
+
+## Liftback: bootstrap fix source и superseded CI — 2026-11-19
+
+Опубликован source110b864897e69d31dfed07eeaa63cd08f7e15d71/local
+6582d574e110127ce0e99b4cc54dd62cb5d33f4f/tree245b80bb6d841423341bedacedfb34b89f6970aa
+(точный local SHA сверяется state file). Новый main CI44475834159 и probe44475834201
+выполняются. Main CI44475128391 диагностического source98305cc7 завершён cancelled
+автоматической concurrency после публикации исправления; complete native/APK
+PASS по нему не заявлен. Все неуспешные/отменённые попытки сохраняются в receipt.
+
+
+## Liftback: настоящий pre-suite launcher ANR и pin host Ubuntu24 — 2026-11-19
+
+Main CI44475834159/job135396046450 source110b8648 FAILURE до native suites;
+artifact14505419809:stage=anr,bootCompleted/homeStartOk=True,expected NexusLauncher,
+1 matched/stable sample; focus у Application Not Responding:NexusLauncher,
+ANR_REASON=input_dispatch_timeout. Bootstrap race уже исправлен; это реальный
+системный ANR,а не прежняя ошибка displays/FallbackHome. Probe44475834201 того же
+source SUCCESS (15 unit cases,HOME ready) не заменяет провал полного CI.
+
+Сопоставлены raw runner headers:latest main Ubuntu26 image20261116.202.1,
+probe/прежний green Ubuntu26 image20261111.196.1. Первый liftback ANR также был
+на196.1,поэтому смена image НЕ объявляется доказанной единственной причиной.
+Для воспроизводимой базовой среды оба Android workflows закреплены на
+поддерживаемом GitHub host ubuntu-24.04:
+https://github.com/actions/runner-images/blob/main/README.md
+Это контролируемая стабилизация CI,не доказанное устранение launcher root cause.
+Android35/Google APIs/x86_64/Pixel6/renderer/RAM и app code/таймауты/assertions
+сохранены; ANR всё ещё блокирует тесты. YAML parse/diff PASS; новый source должен
+пройти отдельный probe и полный main CI. Backend/runtime source не менялись.
+
+
+## Liftback: host24 probe PASS и сохранение технической истории — 2026-11-19
+
+Source1ad5e6f5cceaedae55ca019b85e112f9b99d3d79:probe44477348025/job135400991290
+SUCCESS наubuntu-24.04,15 readiness cases,actual HOME ready,transitions0/bootstrap
+observedFalse. Main44477347924/job135400991011 выполняется; probe не заменяет
+native/PNG/APK acceptance. Backend10 non-doc source hashes сверены без изменений.
+
+Для точности истории публикации:временный bundle helper ранее отказал на duplicate
+previousSha keyword после расширения state; объект результата заменён на update
+с явным overwrite. После замены exec runtime пропадал сохранённый V8 publisher
+helper; публикация остановилась до ref write, helper восстановлен из файлов.
+Отдельные ошибки JSON parsing ответа GitHub create_blob/fetch исправлены с
+проверкой созданных объектов. Это сбои tooling публикации,не скрытые тестовые
+PASS/production mutations. GitHub blobs/tree сверялись с локальными Git hashes;
+canonical/ref записи применяются только с ожидаемым parent SHA/force=false.
+
+
+## Liftback: состояние после прерванного ожидания CI — 2026-11-19 07:21 UTC
+
+Инструмент ожидания прерван; сам GitHub main CI44477347924/job135400991011
+(source1ad5e6f5cceaedae55ca019b85e112f9b99d3d79) не отменён. Повторное чтение:
+status=in_progress,Run Android security instrumentation tests; artifacts ещё нет.
+Build/JVM/lint3 variants выполнены,probe44477348025 SUCCESS наUbuntu24.04.
+Полный native145/PNG56/APK acceptance пока НЕ подтверждены; итоговый verified
+receipt не создавался и canonical checkpoint не закрывался. Далее получить
+завершённый CI,при PASS проверить bytes/source/digests/signature и raw frames,
+затем опубликовать итоговые docs/журналы с сохранением всей failed/cancelled истории.
+Нет merge/deploy/remote migration/activation; G1paused,D4–D7pending.
+
+
+## Liftback: main CI PASS и offline artifact validation — 2026-11-19
+
+Main44477347924/job135400991011 source1ad5e6f5cceaedae55ca019b85e112f9b99d3d79
+SUCCESS:432 JVM/145 native,оба приложения build/lint3 variants,security8/5,
+runner6/readiness15/actual HOME ready,variant endpoint/signing isolation/AppCheck
+PASS. Прежние failures/cancellation сохранены. Artifact14508325451 (56 PNG) и
+14507872500 (Admin APK) скачаны,archive digests/size/source и все56 PNG CRC/
+dimensions/hash совпали с actual CI log. Driver APK artifact14508525046 только
+metadata,не скачивался и не объявляется offline проверенным.
+
+Первый offline verifier остановился на `aapt dump badging`:не разрешён внешний
+системный android:icon reference0x01080042. Сам APK не изменён; чтение binary
+AndroidManifest через штатный `aapt dump xmltree` успешно. Проверены package
+ru.transferservis.admin,debuggable=true,allowBackup=false,usesCleartextTraffic=false.
+`apksigner verify --print-certs` PASS,один certificate SHA256. Manifest/icon/подпись
+не обходились изменением сборки. История метода сохранена в artifact receipt.
+Визуальный осмотр восьми changed raw frames ещё предстоит; полный checkpoint
+не закрывается до него. Нет release/phone acceptance/merge/deploy/activation.
+
+
+## Liftback: visual finding после green CI — 2026-11-19
+
+Непосредственно осмотрены8 raw frames source1ad5e6f5. Assessment form/confirmation
+и rule confirmation показывают реальный Лифтбек,класс серверный; layout/action
+кнопки читаемы вlight/dark-large. Найдено устаревшее пояснение rules_body_policy:
+перечисляло только sedan/crossover дляcomfort при корректном новом checkbox.
+Это visual finding,поэтому green CI/56 hashes не объявляются итоговой приёмкой.
+
+Исправлена одна строка Android XML:«Комфорт:седан,кроссовер или лифтбек».
+Бизнес/L7/L9/BEV и runtime restrictions не менялись. XML parse/diff PASS;
+новый APK должен быть собран и проверен своим полным CI/артефактами. Новые тесты,
+дублирующие текст строки,не добавлялись. Предыдущие successful CI44477347924,
+validated archives/manifest/signature и8 inspected frames сохранены как
+intermediate source с finding,не как итоговый APK. Probe44477348025 относится
+к неизменным gate/workflows;их4 source hashes зафиксированы для проверки reuse,
+а app acceptance нового source будет только из его полного main CI.
+
+
+## Liftback: guidance fix опубликован — 2026-11-19
+
+Source d09d5f1e2d581a6c9c866c6c389f27d53a726c75/local
+93691652d92594a756222aa0eb107256a399d770/treee7c7a1b94990d4d932e866dc637e4f1d764080e2
+(точный local source хранится в publication state):ровно1 XML string и append-only
+journal,tree parity/branch lease PASS. Первый GitHub create_commit вернул ошибку
+без сохранённого детального ответа; ref оставался1ad5e6f5,prepared tree проверен,
+повторное создание успешно и выбранный commit проверен до единственного ref update.
+Успех/точная причина первой ошибки не выдумываются. Новая APK-проверка ожидает CI.
+
+
+## G2 liftback: проверенная реализация и Android APK — 2026-11-19
+
+Утверждённое «Только в комфорте» реализовано: отдельный liftback только comfort,
+запрет business/minivan/OWNER exception/nullable bypass. Для liftback нужна явная
+rule definition. Старые versions/pins/implicit sedan-crossover не расширяются;
+candidate не approved/online/освобождение assignment hold, class определяет сервер.
+
+Backend draft PR45 sourceb51176226a6f85eb01abb7dc56abec8450e1f713, CI44359299631 SUCCESS:
+80 npm,25 migrations,16 native D1 workflows,6 protected actual Wrangler cases,
+audit0,dry-run PASS. Populated24→25 сохраняет graph/rows/rowids/pins; failed
+upgrade rollback,immutable guards,FK/quick_check PASS. Первый backend failure
+с provider-private snapshot сохранён; исправлен только scope проектных таблиц.
+
+Android draft PR21 sourced09d5f1e2d581a6c9c866c6c389f27d53a726c75, treee7c7a1b94990d4d932e866dc637e4f1d764080e2,
+local93691652d92594a756222aa0eb107256a399d770: CI44488353051 attempt1,
+job135437379379 SUCCESS.432 JVM/145 native без failure/error/skip;
+обе apps build/lint3 variants,security8/5,runner6,readiness15,endpoint/signing
+isolation/AppCheck policy PASS. HOME readiness реально PASS; действующие focus,
+gesture/privacy/MFA/CAS/original retry assertions и таймауты не ослаблены.
+
+Промежуточный green source1ad5e6f5 осмотром выявил пропуск liftback в подсказке;
+исправлена1 XML строка,новый source прошёл свой main CI. Ранее успешный probe
+использован только для4 неизменных gate/workflow hashes; acceptance app source
+подтверждён своим CI/APK,не перенесён с прежней версии.
+
+56 PNG сверены по source/archive digest/CRC/dimensions/hash;8 raw changed frames
+(assessment/rule-editor form+confirm в light/dark-large) осмотрены непосредственно.
+Остальные48 кадров заново визуально не принимались. Admin APK package/signature/
+certificate/hash проверены offline. Это synthetic debug/ephemeral CI key,
+без live phone/release/гарантии обновления установленного приложения.
+Exact source/artifacts/границы: COMFORT_LIFTBACK_VERIFICATION_2026-11-19.json.
+
+Прежние44358868461 attempts1/2 FAILURE48 native cases с launcher ANR сохранены;
+44368213906 — отдельная ошибка нового gate (windows вместо displays), исправлена.
+Readiness дополнительно исправлен по доказанному Settings.FallbackHome→NexusLauncher
+переходу:HOME переопределяется,стабильность сбрасывается,bootstrap не принимается.
+Короткий probe подтверждён отдельно; superseded CI44475128391 cancelled сохранён.
+Прерванные публикации/замены runtime и ошибки helper response parsing не скрыты;
+объекты проверялись перед повтором, tree parity/lease подтверждены. Последний
+PASS не доказывает исправление root cause системного launcher.
+
+CSV121/архив116/годы/условия сохранены; новых Dispatcher прав/phone scope нет.
+Full powertrain ranges121/actual legacy inventory/live acceptance открыты.
+Нет seed/backfill/remote migration/activation/merge/deploy. G1paused,D4–D7pending.
+
+
+## Проверка итоговых документов перед публикацией — 2026-11-19
+
+Оба final receipts побайтно совпадают,432 JVM/145 native/56 PNG/8 direct visual
+frames и новая подпись Admin APK привязаны к d09d5f1e/CI44488353051. При review
+документов обнаружена ошибка временного генератора:он создал отсутствовавший в
+backend отдельный короткий PROJECT_PLAN_V1_0.md. До commit файл сверён побайтно
+с только что созданным checkpoint и удалён. Единый утверждённый план остаётся
+в TransferDriver;backend обновляет свой журнал/ссылки,не создаёт параллельный план.
+Runtime/CSV/история не менялись; дальнейшая публикация docs-only [skip ci].

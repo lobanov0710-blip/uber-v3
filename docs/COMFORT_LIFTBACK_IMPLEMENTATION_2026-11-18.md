@@ -60,3 +60,8 @@ Native screenshots в прежних Light/Dark/large-font сценариях и
 Remote migration/merge/deploy/активация не выполнены. CSV121/архив116 и каталог
 полей/годов/условий сохранены; body approval не закрывает полный powertrain range
 review, actual legacy inventory и live acceptance. G1paused,D4–D7pending.
+
+
+Проверка завершена 2026-11-19: backend CI44359299631 и Android
+CI44488353051 SUCCESS. Exact source/artifacts/прежние failures и
+границы в [receipt](COMFORT_LIFTBACK_VERIFICATION_2026-11-19.json). Активация не выполнена.

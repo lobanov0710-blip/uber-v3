@@ -1,0 +1,624 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-19",
+  "status": "implementation-ci-and-artifacts-verified; not activated",
+  "approvedPolicy": {
+    "ownerReply": "Только в комфорте",
+    "bodyType": "liftback",
+    "allowedTariff": "comfort",
+    "businessAllowed": false,
+    "minivanAllowed": false,
+    "ownerExceptionBypass": false,
+    "nullableMinivanBypass": false,
+    "explicitRuleDefinitionRequired": true,
+    "legacyImplicitRulesExpanded": false,
+    "driverChoosesClass": false
+  },
+  "backend": {
+    "repository": "lobanov0710-blip/uber-v3",
+    "pullRequest": "https://github.com/lobanov0710-blip/uber-v3/pull/45",
+    "sourceCommit": "b51176226a6f85eb01abb7dc56abec8450e1f713",
+    "sourceTree": "f79751cdc2cd4e5903e20e589dbb28a6860199b5",
+    "ci": {
+      "runId": 44359299631,
+      "jobId": 134995931727,
+      "url": "https://github.com/lobanov0710-blip/uber-v3/actions/runs/44359299631",
+      "conclusion": "success",
+      "successfulSteps": 32,
+      "npmCommands": 80,
+      "migrations": 25,
+      "preflightTests": 12,
+      "inventoryTests": 14,
+      "referenceTests": 6,
+      "nativeWorkerdD1Workflows": 16,
+      "protectedActualWranglerCases": 6,
+      "dependencyAdvisories": 0,
+      "workerDryRun": "PASS"
+    },
+    "nativeResult": {
+      "populatedGraphPreserved": true,
+      "rowidsAndPinsPreserved": true,
+      "failedUpgradeRolledBack": true,
+      "historyImmutable": true,
+      "explicitRuleRequired": true,
+      "standardAndExplicitException": true,
+      "directSqlForgeryDenied": true,
+      "bevAndYearGuards": true,
+      "noAutomaticAdmission": true,
+      "heldTripNotResumed": true,
+      "foreignKeys": true,
+      "quickCheck": true,
+      "realCloudflareRequests": 0
+    },
+    "priorFailedRun": {
+      "sourceCommit": "20c9f3b45823437ae78b2e04e0d1c70cd4193ef0",
+      "runId": 44358568865,
+      "jobId": 134993291607,
+      "reason": "New fixture snapshot included provider-private metadata; changed only snapshot scope to all project tables; no provider permission bypass."
+    },
+    "historicalBackendReceipt": "COMFORT_LIFTBACK_BACKEND_VERIFICATION_2026-11-18.json"
+  },
+  "android": {
+    "repository": "lobanov0710-blip/TransferDriver",
+    "branch": "arch/g2-comfort-liftback",
+    "pullRequest": "https://github.com/lobanov0710-blip/TransferDriver/pull/21",
+    "sourceCommit": "d09d5f1e2d581a6c9c866c6c389f27d53a726c75",
+    "sourceTree": "e7c7a1b94990d4d932e866dc637e4f1d764080e2",
+    "localSourceCommit": "93691652d92594a756222aa0eb107256a399d770",
+    "runtimeTestWorkflowSha256": {
+      ".github/workflows/android-branch-tests.yml": "bd0f8db6799a42126ae1ad43c5c5ac3830cb7538f19782ff38d0afd05f3ddfb3",
+      ".github/workflows/android-emulator-readiness.yml": "7e188509cb5451fd2a8c8d29aa5a6809c2ed51c0847120da3c101ac497062f0e",
+      "AGENTS.md": "d7dc7d957d14267a67e69917f178c17d2e88bd8982dff09a103eb62689408b94",
+      "admin/src/androidTest/java/ru/transferservis/admin/data/AssessmentUiInstrumentationTest.java": "1e7ee9ea201498fa9b999928f8f0ee4138d206ea293979240402ee4bae6a08d6",
+      "admin/src/androidTest/java/ru/transferservis/admin/data/ClassificationServer.java": "b36b97ab36a592446210a178d7cd9f62024e07e729ef0c32bfea3c8e556b8e0d",
+      "admin/src/androidTest/java/ru/transferservis/admin/data/VehicleRuleUiInstrumentationTest.java": "0642ba57c6089a15035435a095c1a6c9cc0855e19894394ffa3d21d5a62ccea6",
+      "admin/src/main/java/ru/transferservis/admin/data/VehicleAssessment.java": "c72bd7a02a5bb9791e9971680a64cac002501233284e23ded4ce9f61d22b3d6b",
+      "admin/src/main/java/ru/transferservis/admin/data/VehicleClassification.java": "ca9b6b7d2219a2fdfbf8b3a3d094fc09cb6f3378e4987478add06cf157f7071b",
+      "admin/src/main/java/ru/transferservis/admin/data/VehicleRuleAction.java": "5541534aa352bd214b7c1dec4734823ac38ac3949e5d7293ee303463871944e2",
+      "admin/src/main/java/ru/transferservis/admin/ui/VehicleAssessmentActivity.java": "c7b7a07cd710e953da19935e7d1d582d4b18e9cf90d74bf4fa37825780a5bd02",
+      "admin/src/main/java/ru/transferservis/admin/ui/VehicleClassificationActivity.java": "7a0a6ba7b16a5129e762c93cf99e1c69270309068f0036d400dff16083aa1e9d",
+      "admin/src/main/java/ru/transferservis/admin/ui/VehicleRuleActivity.java": "7d3156721fd0f222a79004d6ade277150bc719af2892b267180e6aeb333e40f8",
+      "admin/src/main/res/layout/activity_vehicle_rules.xml": "163ff404bee9000d977c757c3d01819f0e14025a37c7a60fa98b27eafd490c3b",
+      "admin/src/main/res/values/assessment_strings.xml": "c311c03500bd647381f81fdbb60072e9cee236d0f0b03066a23a7ee213499d38",
+      "admin/src/main/res/values/classification_strings.xml": "7e9e1df5d1152bed00c2e4fdaa7348bf0a17f2561b0a3e4a3edb7a8775180482",
+      "admin/src/main/res/values/vehicle_rules_strings.xml": "2a626bd21491d5ca9fe1656c91d70d5577651554c2cba88806bd7ccd3a1f2645",
+      "admin/src/test/java/ru/transferservis/admin/data/VehicleAssessmentTest.java": "a313a27be6000098c9cc85cbcb1957c2efd6b3511ce1e5e7e3ca8da1a8454022",
+      "admin/src/test/java/ru/transferservis/admin/data/VehicleClassificationTest.java": "17e4e2ddb22a70a86ef5ea67b32593105f5b864b4daa0d786e5d8bccacc17a50",
+      "admin/src/test/java/ru/transferservis/admin/data/VehicleRuleActionTest.java": "0e1b468c2cab2af46733c769df70ccdc4eacd775a2d196233345fd0420867d28",
+      "tools/check_android_emulator_ready.py": "05635089e74910d8b045811462ce77ef61cfd516a6f5a40a02187c12a6c10f08",
+      "tools/run_android_native_tests.sh": "444e30fd3fb28611c968ca2cb2a4695e9a7a07185f1cd552229f377e9a4cd659",
+      "tools/test_android_emulator_ready.py": "191432a93c6342467e9a130485322e8fcf046146e597b6b9b5051766350ba9ac",
+      "tools/test_android_native_runner.py": "06506a5689fb1266a6bea2b4212ebce66f19ae83e40e08363998ee63eea8dc80"
+    },
+    "ci": {
+      "runId": 44488353051,
+      "attempt": 1,
+      "jobId": 135437379379,
+      "url": "https://github.com/lobanov0710-blip/TransferDriver/actions/runs/44488353051",
+      "conclusion": "success",
+      "testExecutions": {
+        "JVM": 51,
+        "STAGING_JVM": 51,
+        "RELEASE_JVM": 51,
+        "ANDROID": 41,
+        "ADMIN_DEBUG_JVM": 93,
+        "ADMIN_STAGING_JVM": 93,
+        "ADMIN_RELEASE_JVM": 93,
+        "ADMIN_ANDROID": 104
+      },
+      "totalJvmExecutions": 432,
+      "totalNativeExecutions": 145,
+      "buildAndLint": "Driver and Admin debug/staging/release PASS",
+      "securityConfiguration": "8 Driver / 5 Admin PASS",
+      "nativeRunnerTests": 6,
+      "emulatorReadinessTests": 15,
+      "emulatorReady": "PASS",
+      "hostImage": "ubuntu-24.04",
+      "emulatorVersion": "37.2.13.0",
+      "hostImageVersion": "20261111.127.1",
+      "endpointAndSigningIsolation": "PASS",
+      "requiredNamedTestsExecuted": true,
+      "decodedJobLogSha256": "f7790e43d9e368ac1c122703afc4b9b908303f64428a743d3fcc1aa2778017d8"
+    },
+    "previousUnsuccessfulRuns": [
+      {
+        "sourceCommit": "56d2cc129b12ca52e4982933f4a37a025e654f2d",
+        "runId": 44358868461,
+        "attempt": 1,
+        "jobId": 134994375409,
+        "diagnosticArtifactId": 14455626085,
+        "nativeFailures": 48,
+        "driverFailures": 3,
+        "adminFailures": 45,
+        "reason": "System nexuslauncher ANR held focus; safe Driver diagnostic confirmed it; subsequent Admin launch/focus waits failed.",
+        "conclusion": "failure"
+      },
+      {
+        "sourceCommit": "56d2cc129b12ca52e4982933f4a37a025e654f2d",
+        "runId": 44358868461,
+        "attempt": 2,
+        "jobId": 135012835848,
+        "diagnosticArtifactId": 14456922082,
+        "nativeFailures": 48,
+        "driverFailures": 3,
+        "adminFailures": 45,
+        "reason": "Same launcher ANR on a fresh runner with identical source and native assertions/timeouts.",
+        "conclusion": "failure"
+      },
+      {
+        "sourceCommit": "5eb857497d84ff17d1a1034ed48f69ca6d349564",
+        "runId": 44368213906,
+        "attempt": 1,
+        "jobId": 135027592164,
+        "diagnosticArtifactId": 14457882609,
+        "nativeSuitesExecuted": false,
+        "reason": "New readiness gate queried windows instead of displays and timed out. Corrected against AOSP Android15; strict command fixture and safe diagnostic tests added. This run does not prove environment failure.",
+        "conclusion": "failure"
+      },
+      {
+        "sourceCommit": "81fab1ffd22aa02e621aca60ed713173d7d2b4af",
+        "runId": 44473172878,
+        "attempt": 1,
+        "jobId": 135387301056,
+        "diagnosticArtifactId": 14504843534,
+        "nativeSuitesExecuted": false,
+        "reason": "Readiness gate timed out while post-failure snapshot showed NexusLauncher focused. Expected HOME/stability counters were missing; safe report and focused probe added before selecting a fix.",
+        "conclusion": "failure"
+      },
+      {
+        "sourceCommit": "98305cc7b02bdf9c5aaf9ed942af46952749ed8d",
+        "runId": 44475128578,
+        "jobId": 135393701100,
+        "diagnosticArtifactId": 14506386048,
+        "workflow": "Android emulator readiness probe",
+        "nativeSuitesExecuted": false,
+        "reason": "Expected HOME pinned com.android.settings FallbackHome before actual NexusLauncher took focus; 56 observations/1 match/0 stable. Re-resolve HOME each observation, exclude bootstrap, reset stability on package change; deadline and native assertions preserved.",
+        "conclusion": "failure"
+      },
+      {
+        "sourceCommit": "98305cc7b02bdf9c5aaf9ed942af46952749ed8d",
+        "runId": 44475128391,
+        "conclusion": "cancelled",
+        "workflow": "Android branch tests",
+        "reason": "Superseded by the published bootstrap HOME fix; automatic same-branch concurrency cancellation. No complete native/APK result claimed."
+      },
+      {
+        "sourceCommit": "110b864897e69d31dfed07eeaa63cd08f7e15d71",
+        "runId": 44475834159,
+        "jobId": 135396046450,
+        "diagnosticArtifactId": 14505419809,
+        "conclusion": "failure",
+        "nativeSuitesExecuted": false,
+        "reason": "Real NexusLauncher input-dispatch ANR before application tests; correct real HOME, one matched sample. Same-source probe passed. Host pinned to Ubuntu24.04 as a controlled stabilization, not proof of the ANR root cause."
+      }
+    ],
+    "emulatorProbe": {
+      "runId": 44477348025,
+      "jobId": 135400991290,
+      "sourceCommit": "1ad5e6f5cceaedae55ca019b85e112f9b99d3d79",
+      "url": "https://github.com/lobanov0710-blip/TransferDriver/actions/runs/44477348025",
+      "hostImage": "ubuntu-24.04",
+      "conclusion": "success",
+      "readinessTests": 15,
+      "emulatorReady": "PASS",
+      "homeTargetChanges": 0,
+      "bootstrapHomeObserved": false,
+      "applicationAcceptance": false,
+      "gateSourceSha256": {
+        "tools/check_android_emulator_ready.py": "05635089e74910d8b045811462ce77ef61cfd516a6f5a40a02187c12a6c10f08",
+        "tools/test_android_emulator_ready.py": "191432a93c6342467e9a130485322e8fcf046146e597b6b9b5051766350ba9ac",
+        ".github/workflows/android-emulator-readiness.yml": "7e188509cb5451fd2a8c8d29aa5a6809c2ed51c0847120da3c101ac497062f0e",
+        ".github/workflows/android-branch-tests.yml": "bd0f8db6799a42126ae1ad43c5c5ac3830cb7538f19782ff38d0afd05f3ddfb3"
+      },
+      "scope": "Unchanged emulator gate/workflows only; current application acceptance requires its own full main CI"
+    },
+    "intermediateVisualFinding": {
+      "sourceCommit": "1ad5e6f5cceaedae55ca019b85e112f9b99d3d79",
+      "runId": 44477347924,
+      "ciConclusion": "success",
+      "finding": "Rule-editor guidance omitted liftback; checkbox/confirmation were correct",
+      "fix": "One approved XML guidance string; current source retested by its own full main CI/artifact review"
+    },
+    "gateCorrections": {
+      "android15DisplayDump": true,
+      "bootstrapHomeTransition": true,
+      "focusedFallbackAllowed": false,
+      "nativeAssertionsWeakened": false,
+      "timeoutsChanged": false,
+      "hostLabelPinned": true
+    },
+    "artifactVerification": {
+      "sourceCommit": "d09d5f1e2d581a6c9c866c6c389f27d53a726c75",
+      "sourceTree": "e7c7a1b94990d4d932e866dc637e4f1d764080e2",
+      "ciRun": 44488353051,
+      "jobId": 135437379379,
+      "artifacts": [
+        {
+          "id": 14512871151,
+          "name": "admin-rule-editor-debug-apk",
+          "digest": "sha256:f9ba85c78b4745a59c6a195428b69b9d9fbad9f46db6d37e3ac90cb72d08d8fc",
+          "size_in_bytes": 6607931,
+          "sourceCommit": "d09d5f1e2d581a6c9c866c6c389f27d53a726c75",
+          "downloaded": true,
+          "archiveDigestMatched": true,
+          "workspacePath": "/workspace/verification/liftback-44488353051/apk"
+        },
+        {
+          "id": 14512474201,
+          "name": "registration-synthetic-native-evidence",
+          "digest": "sha256:cd2fe242fb8ae27d46a548e7488b2946845549593aada274f788c367437fc58b",
+          "size_in_bytes": 8465132,
+          "sourceCommit": "d09d5f1e2d581a6c9c866c6c389f27d53a726c75",
+          "downloaded": true,
+          "archiveDigestMatched": true,
+          "workspacePath": "/workspace/verification/liftback-44488353051/png"
+        },
+        {
+          "id": 14511899506,
+          "name": "driver-required-color-debug-apk",
+          "digest": "sha256:b258dc058c5c7ebe3b11939170825d75f1894efff28b61cfa51d7ee141dc269e",
+          "size_in_bytes": 9089983,
+          "sourceCommit": "d09d5f1e2d581a6c9c866c6c389f27d53a726c75",
+          "downloaded": false
+        }
+      ],
+      "testExecutions": {
+        "JVM": 51,
+        "STAGING_JVM": 51,
+        "RELEASE_JVM": 51,
+        "ANDROID": 41,
+        "ADMIN_DEBUG_JVM": 93,
+        "ADMIN_STAGING_JVM": 93,
+        "ADMIN_RELEASE_JVM": 93,
+        "ADMIN_ANDROID": 104
+      },
+      "totalJvmExecutions": 432,
+      "totalNativeExecutions": 145,
+      "nativePng": {
+        "profile-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "c34d1253f25fee5a25dc6f13ca18f2b77b27609280c5e579f5de08454409a2bd"
+        },
+        "profile-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "1212de908a204bce567e74b57604331dfbe026262f07832f9e0a101795bbcb47"
+        },
+        "vehicle-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "6375050d33f3f82045459a09d620af20f0a75dd80c60e28d4f0fa99669aef429"
+        },
+        "vehicle-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "b5420a85b47c51f855b1507343b9f0bc4168c32495687baf4f97585a8c37ed4c"
+        },
+        "vehicle-class-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "251ac2055907d08a6c6c099d4a287fb73aa05f7997a93c02f0bde526316cbdf1"
+        },
+        "vehicle-class-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "e6cc2f83768067cc7098095b79c54d88f79d28ec6fbf80cceeedfad7fd631a1e"
+        },
+        "availability-offline-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "3b3c25d2bb61a2baeb5109a9cd25d790659aad4845ddd6047c3058b524a30312"
+        },
+        "availability-online-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "1149a3cf12400f4ff57b85eabe745bbd1e5fe473bd5c88f3976292887340bc12"
+        },
+        "availability-offline-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "e49e9aab0204a307dfe0d5fcd27b528988639c1a746fa1e2f16d21225acc7ea2"
+        },
+        "availability-online-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "1da674f84cafe46c978996e428c78a90188a8c9b9313c9d766aa7a2ae362372c"
+        },
+        "assignment-orders-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "35e3eb573b5d0452e34918b0972d03cae5263a44928749c13bca19d7c921a01a"
+        },
+        "assignment-options-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "6a956ebe13121c613e46d44a7ce5eb27b9a629001b6425b8a9983a07196e2836"
+        },
+        "assignment-form-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "3e52b7bd44a19e697f675858cb00f6fc0346014c650b00bd829549d7eb39b2f0"
+        },
+        "assignment-confirm-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "22acbfa0bd4171435b3215422d9ba53cfade51b4b1bbd8b6e4b8dce166d7edb9"
+        },
+        "assignment-uncertain-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "c9aad1a9fc4e065f7c5412d2e6d7ef1faabe498771b88fe5883853af31537020"
+        },
+        "assignment-orders-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "eac814339091b38190ea37aed838e05c6e848cfe4641638d20408e1e1b9e1b46"
+        },
+        "assignment-options-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "1a6798ca5873c284e5ec5ebe3de8ad3c23692cd2337b23bac176cb238d5e4df9"
+        },
+        "assignment-form-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "c2af6837d8721b7a3d5d191babc9d131d52211b8b92ddbcfcdf958a07846b164"
+        },
+        "assignment-confirm-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "ca921075bd1c25e0cef622998cecf8571da8254472914fa3641d281db4db01fc"
+        },
+        "assignment-uncertain-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "b99512fd8196004894b393d6ae584a8569875adc2f8df450ae7ea36774f078cb"
+        },
+        "photo-vehicles-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "ebfc8eb9dd86b9e6381b802be72805f33d3dc6285f7c0900eb7cd8887ff02156"
+        },
+        "photo-checks-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "3271078d4ffee837b0128262dd194c7b98b390701ec27345bcb7c19d50280ad8"
+        },
+        "photo-form-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "eb6d279e60e85516993c56b48275ab82fde989ec6316b3efe5d3595a6f123ea1"
+        },
+        "photo-confirm-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "02c7be49d31351b05124f1cd57d2fa087c82f0af7f66b40c3fca90a42926c276"
+        },
+        "photo-uncertain-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "cc8c7d255d7ee3430396dd4030936fad8dbac21c1cd99a6d4c3d4926db1e46c4"
+        },
+        "photo-vehicles-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "4f4d1947f51efd484b1a870ebae795901caacf3014daaeabc9f586bd98cc15fc"
+        },
+        "photo-checks-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "d6891c60db31f5b56b82a0cffd2a3e0576d924c209ef1085ef4fee4acfc9cafd"
+        },
+        "photo-form-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "917b2fde30d96f574c1e95a3a24cd9e1c547a217f1077ed37e64237070272325"
+        },
+        "photo-confirm-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "e12dda7bfeaeba4628710730b5a6efe0e50b0bdf11cbbf87ec59c88639653cef"
+        },
+        "photo-uncertain-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "3abf587d4a2690d0cd5f4753f63f8ade483202460e197a56e09267a1ca2011e2"
+        },
+        "classification-current-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "aa71ca3d718a488b33608a8fe17f39085c04f401b749ca09530aac44cba4e7e9"
+        },
+        "classification-history-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "cc9b506e06d0ffb704ee9d35c9e7dd125b6012f9a4e1b2c1804000bda721e1a2"
+        },
+        "classification-unverified-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "e15797b17b874fd310919cb2bf5599ac3e74be24e2717f19698452b0b9c6a50a"
+        },
+        "classification-current-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "e1bb8394a155f46ceec6cf1076a110e6af7db358822523f3a48aad93316c6db1"
+        },
+        "classification-history-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "234d58912da5bf648dfb402a4ecc527c8a23e9e828397e8358ce59130d5ca263"
+        },
+        "classification-unverified-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "58a712b8e311c85a028d9552c8af9e39f3695d272e6080899e4fad7c2abd5f56"
+        },
+        "assessment-form-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "f3e864617d040d498e0184ad9104cdef16042a19a0dbc0630fe20bcb4bbe728e"
+        },
+        "assessment-conditions-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "f9317ce802bc2cecf4547c712fc23f3d37a7d1b5c21e6eb54e3e6789729612b9"
+        },
+        "assessment-confirm-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "0513268540bf37e4f0c04d86074fd16753f6e323e74c140ff6df44d3dc47ecdc"
+        },
+        "assessment-uncertain-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "afdc820fd37c38d1d307141cb7ec849623f99c8daad75d9c9cf0994aa232f67e"
+        },
+        "assessment-recorded-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "af2fcce0ca1308a9d2671e9c0e0e5241aa80830183af723c5a1f60c7d4cfc2c4"
+        },
+        "assessment-form-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "2a3b212fa1daf055b91d4b1aee46f61d70bd0fcadee67d2a8e94b8b6a61cdf2c"
+        },
+        "assessment-conditions-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "8d10927d728d03e762c983ff5fecbd14fb285937b512a01f10f2b812e3a1337a"
+        },
+        "assessment-confirm-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "1c110faafc5a6d87e83442c9c3b33086a3d4100f54b159228269e863fa0bceb5"
+        },
+        "assessment-uncertain-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "df342605e62368373f9297014dc793cf68741cd44642bb94ff55dd5f828bf493"
+        },
+        "assessment-recorded-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "5a972f15ea971d13a27b2bce715dca6f07e5f0aa5fbe692c93cd70c2a4d0f352"
+        },
+        "rule-editor-form-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "75f2de0d84ace38152a4040464f680c8c210077b0f55db3d9aa3934c204c95d2"
+        },
+        "rule-editor-conditions-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "d0796594f45a323518669d56476aecacae71bb396a769cc7476a0f05c910113e"
+        },
+        "rule-editor-confirm-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "671fe513ff8d93ce562cba6e2768e06c82f250280b3166a73a33f707f04f70f9"
+        },
+        "rule-editor-uncertain-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "e54fede4cd66e3aa0d2e90fd5d0325cc5bf208d70afa4ea8b5ba7da7e798e685"
+        },
+        "rule-editor-recorded-light": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "54cf116cdba17197fdf17ab22e4111965a684976677583aa37212396478f642f"
+        },
+        "rule-editor-form-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "0a166f5ca3863fe630565b86adc8143a4b6d70f6484cf119d940f9da19d2b0e2"
+        },
+        "rule-editor-conditions-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "0637cb57c7e4e03b48a8e555511b8f2d2820b059b9ca96c68b9cb5da330268e2"
+        },
+        "rule-editor-confirm-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "4491eb96fd63e8412a2a80169811fc209a21af3a4fc2db6935e4f60a714e6494"
+        },
+        "rule-editor-uncertain-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "9b6dd6244ff759958c4e36e703c3896fa38fdaffa2c0b858196d6d9412202f98"
+        },
+        "rule-editor-recorded-dark-large": {
+          "width": 1080,
+          "height": 2400,
+          "sha256": "03ba52487628c1af319e7538f800a1d867a517487837445731569fd8418b2501"
+        }
+      },
+      "apk": {
+        "package": "ru.transferservis.admin",
+        "debuggable": true,
+        "allowBackup": false,
+        "usesCleartextTraffic": false,
+        "manifestReadMethod": "aapt dump xmltree",
+        "signatureVerified": true,
+        "certificateSha256": "8068a87ffc8e3ab90144b578210259e9d25cfde8c03c4088cae72c3a01f8e586",
+        "sha256": "15d540051d161aba7850da05cf260234354cd5b2c468b461c1ee0478cb67e10e",
+        "workspacePath": "/workspace/verification/liftback-44488353051/apk/admin-debug.apk"
+      },
+      "verifierHistory": [
+        {
+          "sourceCommit": "1ad5e6f5cceaedae55ca019b85e112f9b99d3d79",
+          "ciRun": 44477347924,
+          "method": "aapt dump badging",
+          "result": "failed to resolve external Android framework icon reference",
+          "response": "Read binary manifest directly; no APK/source modification or weakened checks"
+        }
+      ],
+      "visuallyInspectedPngNames": [
+        "assessment-form-light",
+        "assessment-form-dark-large",
+        "assessment-confirm-light",
+        "assessment-confirm-dark-large",
+        "rule-editor-form-light",
+        "rule-editor-form-dark-large",
+        "rule-editor-confirm-light",
+        "rule-editor-confirm-dark-large"
+      ],
+      "visualAcceptance": true,
+      "visualFindings": []
+    }
+  },
+  "preserved": {
+    "catalogueRows": 121,
+    "archiveRows": 116,
+    "catalogueSha256": "553384af5b49252d3b3acbc3973ef6dae7fc40d348156debf4f0fab24c5ae880",
+    "archiveSha256": "3f8297f7b750816e13a3ceb82182e10f33bc42cdc308feb8e8ae2f1fa27ecc7d",
+    "historicalRowsAndRowids": true,
+    "rulePins": true,
+    "immutableGuards": true,
+    "noAutomaticApproval": true,
+    "heldTripNotResumed": true,
+    "dispatcherPowersExpanded": false,
+    "phoneScopeExpanded": false
+  },
+  "limits": {
+    "fullPowertrainRanges": false,
+    "actualLegacyInventory": false,
+    "livePhoneAcceptance": false,
+    "releaseSigning": false,
+    "productionReady": false,
+    "remoteMigration": false,
+    "seedOrBackfill": false,
+    "activation": false,
+    "merge": false,
+    "deploy": false,
+    "driverG1": "paused",
+    "D4toD7": "pending",
+    "launcherRootCauseFixed": false,
+    "emulator": "Normal HOME warmup/readiness added; both real ANR failures retained. A passing new-source run does not prove the launcher root cause fixed.",
+    "visualReview": "Eight changed form/confirmation raw frames directly inspected; all56 PNG bytes/dimensions/CRC/hashes verified. Other48 not newly visually accepted.",
+    "apk": "Synthetic debug APK signed with an ephemeral CI key; no release or phone upgrade certification."
+  }
+}

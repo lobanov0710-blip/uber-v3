@@ -127,3 +127,9 @@ URI с пробелами/?/#, исходы проверок, expiry без inva
 не означает, что реальный snapshot получен, инвентаризация выполнена или все
 данные годны к допуску. Тесты Android этого docs-only этапа не запускались;
 базовый PR19 сохраняет свою отдельную проверенную сборку.
+
+
+Поправка liftback проверена отдельным checkpoint 2026-11-19:
+[receipt](COMFORT_LIFTBACK_VERIFICATION_2026-11-19.json).432 JVM/145 native,56 PNG hashes/8 raw changed frames
+и debug APK проверены. Это не full powertrain ranges/actual inventory/live
+acceptance или активация; исторические docs-only checkpoints выше сохранены.
