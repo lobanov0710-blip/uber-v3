@@ -4416,3 +4416,53 @@ Harness после PTY EOF сразу poll() проверял статус, до
 Исправлено ожидание process.wait в пределах того же исходного deadline,
 без retries/пропусков/ослабления assertions. CI повторяется на final source.
 Архив до этой проверки владельцу не выдан; real STAGING чтение не выполнялось.
+
+
+## G2: вариант A — проверенный пакет закрытой инвентаризации — 2026-11-19
+
+Утверждённый владельцем вариант A реализован в отдельной ветке
+fix/private-vehicle-inventory-cli, backend Draft PR47. Runtime source:
+6df1c9f051fc415f1152aa1e1bce7e7130f9e952; local cc6e5fa; tree
+8bd6908373445780ae7fc99dae68864baee9a6ef. Пакет читает согласованные метаданные
+точного STAGING D1 и один фиксированный SELECT с 18 счётчиками. Есть пять
+профилей для известных схем 18–25; неизвестная/частичная схема останавливает
+чтение. Повторная проверка метаданных, source/query hashes, строгие target/result
+checks, приватный ограниченный provider process, отдельная папка с проверенными
+Windows ACL current SID/SYSTEM. Public receipt не содержит чисел, private-report
+hash, account ID, персональных данных, credentials или provider output.
+
+CI44607369124 Linux/Windows SUCCESS: 21 actual-Wrangler synthetic CLI cases,
+81 npm test scripts, 25 migrations, 12 preflight, 6 reference, 16 inventory,
+16 native workerd/D1 workflows, 6 прежних protected OWNER CLI cases, audit0,
+Worker dry-run. Windows Server2025/Node24: 9 policy/реальных NTFS ACL cases,
+minimal locked npm ci --ignore-scripts, entry command PASS. Сам private read
+в CI запрещён; integration fixture использует только synthetic loopback D1,
+без реальных Cloudflare запросов. Локальный subprocess EPERM не выдавался за
+PASS; новые 9/21 проверки прошли в CI без skips/retries/ослабления guards.
+
+Исправлены подавление JSON SDK параметром WRANGLER_LOG, несовместимый
+PSModulePath между pwsh7 и native Windows PowerShell5.1, а также гонка PTY EOF /
+waitpid в тестовом помощнике (исходный deadline сохранён). Дубли ACE проверяются
+по уникальным разрешённым principals и FullControl. Предшествующие failures и
+cancelled runs сохранены в машинной квитанции и backend журнале; успешными
+не объявлены. D1 info исключён: его SDK дополнительно читает GraphQL analytics.
+Используется прежняя приватная Cloudflare авторизация, новые grants не запрашивались.
+
+Проверен архив vehicle-inventory-readonly.zip: 16 файлов / 15 protected hashes,
+CRC/пути, minimal lock, полное байтовое совпадение с независимой локальной и
+Windows сборками. SHA256:
+039625742f17d80712932e20b58a2f6bba50db8f518bb3a4a699d502aa3431c5.
+В пакете нет конфигурации доступа, credentials, отчётов, Worker/provisioning
+source, migrations DDL или test fixtures. Подробности —
+PRIVATE_VEHICLE_INVENTORY_VERIFICATION_2026-11-19.json и
+G2_PRIVATE_INVENTORY_HANDOFF_2026-11-19.md; Windows guide приложен.
+Android companion меняет только документы; новый APK не создавался, прежний
+QA source/ключи/аккаунты/MFA не изменялись.
+
+Реальное чтение на Windows владельца ещё не выполнено, actual metrics не
+получены и не подменены synthetic числами. Следующий шаг: владелец запускает
+пакет в новой папке и передаёт только receipt.public.json; metrics.private.json
+остаётся у владельца. Full classifier readiness/111 range followups и план
+обработки actual gaps остаются открытыми. G1 на паузе; D4–D7 pending.
+Нет remote writes, выгрузки SQLite, seed/backfill, migration apply, изменения
+автомобилей, активации классификатора, новых аккаунтов/прав, merge или deploy.
