@@ -3506,8 +3506,8 @@
       ]
     }
   ],
-  "revision": 2,
-  "previousLedgerSha256": "c251401f302e3aef72d2bc656cce63cc5b7ae091f2cb114550b18eb6d8eea11b",
+  "revision": 3,
+  "previousLedgerSha256": "8df887adebca225eb9b6c3fc0b08351f384ad2623849ba11307538d0257883ff",
   "firstPassFamilySourceSearchCompleted": true,
   "summary": {
     "catalogueRows": 121,
@@ -3523,11 +3523,12 @@
     "prior_phase_record": "Retained revision-1 primary observation with its existing scope/limits; original access is not re-certified in this revision."
   },
   "bodyPolicyClarification": {
-    "status": "awaiting_owner_decision",
+    "status": "owner_approved",
     "tariff": "comfort",
     "currentAllowedBodies": [
       "sedan",
-      "crossover"
+      "crossover",
+      "liftback"
     ],
     "examples": [
       {
@@ -3540,11 +3541,15 @@
       }
     ],
     "finding": "Manufacturer descriptions call these liftbacks. No approved equation of liftback with sedan was located in repository documents.",
-    "runtimeChanged": false,
+    "runtimeChanged": true,
     "options": [
       "Approve a distinct liftback body type for comfort only",
       "Keep existing sedan/crossover restriction"
-    ]
+    ],
+    "ownerDecision": "Только в комфорте",
+    "implementationStatus": "implemented_ci_and_artifacts_verified_not_activated",
+    "activationAuthorized": false,
+    "verificationReceipt": "COMFORT_LIFTBACK_VERIFICATION_2026-11-19.json"
   },
   "rejectedEvidenceExamples": [
     {

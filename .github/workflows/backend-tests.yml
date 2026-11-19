@@ -17,6 +17,7 @@ on:
       - 'arch/g2-vehicle-admission-guard'
       - 'arch/g2-admin-classification-review'
       - 'arch/g2-classifier-readiness-audit'
+      - 'arch/g2-comfort-liftback'
   pull_request:
     branches:
       - main
@@ -87,6 +88,8 @@ jobs:
         run: node tools/check_vehicle_admission_d1.mjs
       - name: Verify public classification review and trusted history with native D1
         run: node tools/check_admin_classification_review_d1.mjs
+      - name: Verify comfort-only liftback upgrade and immutable history with native D1
+        run: node tools/check_comfort_liftback_d1.mjs
       - name: Verify protected OWNER CLI with actual Wrangler import output
         run: python3 tools/check_owner_phone_provisioning.py
       - name: Bundle Worker without deploying

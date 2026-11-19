@@ -6,7 +6,7 @@ const fail=(status,code)=>({ok:false,status,error:status===403?'forbidden':statu
 const text=(v,max=80)=>typeof v==='string'&&v===v.trim()&&v.length>0&&v.length<=max&&!/[\u0000-\u001f\u007f]/.test(v);
 const version=v=>text(v,128)&&/^[A-Za-z0-9_.:-]+$/.test(v);
 const positive=v=>Number.isSafeInteger(v)&&v>0;
-const types=['sedan','crossover','minivan','other'];
+const types=['sedan','crossover','liftback','minivan','other'];
 function rows(result){if(result?.success!==true||!Array.isArray(result.results))throw Error('Vehicle rule read failed');return result.results;}
 const projection=`r.version,r.make,r.model,r.revision,r.min_year,r.class,r.notes,d.allowed_body_types,d.conditions_json`;
 function rule(row){
@@ -19,7 +19,8 @@ function rule(row){
   if(!version(row.version)||!text(row.make)||!text(row.model)||!positive(row.revision)||!positive(row.min_year)
     ||row.min_year>9999||!['comfort','business','minivan'].includes(row.class)
     ||!Array.isArray(conditions)||conditions.length>32||conditions.some(x=>!text(x,1000))
-    ||(allowed!==null&&(!Array.isArray(allowed)||!allowed.length||allowed.some(x=>!types.includes(x)))))throw Error('Invalid vehicle rule data');
+    ||(allowed!==null&&(!Array.isArray(allowed)||!allowed.length||allowed.some(x=>!types.includes(x))))
+    ||(row.class!=='comfort'&&allowed?.includes('liftback')))throw Error('Invalid vehicle rule data');
   return {version:row.version,make:row.make,model:row.model,revision:row.revision,minYear:row.min_year,
     vehicleClass:row.class,allowedBodyTypes:allowed,conditions:conditions.map((value,i)=>({id:row.version+':'+(i+1),text:value}))};
 }
@@ -83,7 +84,8 @@ function validWrite(body){
     ||!Array.isArray(body.conditions)||body.conditions.length>32||body.conditions.some(x=>!text(x,1000))||new Set(body.conditions).size!==body.conditions.length)return false;
   const a=body.allowedBodyTypes;
   if(a!==null&&(!Array.isArray(a)||a.length<1||a.length>4||a.some(x=>!types.includes(x))||new Set(a).size!==a.length))return false;
-  if(body.vehicleClass==='comfort'&&(a===null||a.some(x=>!['sedan','crossover'].includes(x))))return false;
+  if(body.vehicleClass==='comfort'&&(a===null||a.some(x=>!['sedan','crossover','liftback'].includes(x))))return false;
+  if(body.vehicleClass!=='comfort'&&a?.includes('liftback'))return false;
   if(body.vehicleClass==='business'&&(a===null||a.some(x=>x!==(body.make==='Li Auto'&&['L7','L9'].includes(body.model)?'crossover':'sedan'))))return false;
   return true;
 }

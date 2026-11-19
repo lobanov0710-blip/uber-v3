@@ -16,7 +16,7 @@ function valid(body){
     ||!['standard','exception'].includes(body.mode)||!text(body.reason,1000))return false;
   const p=body.parameters;
   if(!fields(p,['make','model','modelYear','powertrain','bodyType'])||!text(p.make)||!APPROVED_VEHICLE_MAKES.has(p.make)||!text(p.model)||!positive(p.modelYear)||p.modelYear>9999
-    ||!['combustion','hybrid','battery_electric'].includes(p.powertrain)||!['sedan','crossover','minivan','other'].includes(p.bodyType))return false;
+    ||!['combustion','hybrid','battery_electric'].includes(p.powertrain)||!['sedan','crossover','liftback','minivan','other'].includes(p.bodyType))return false;
   if(!Array.isArray(body.evidence)||body.evidence.length<2||body.evidence.length>8
     ||body.evidence.some(e=>!fields(e,['documentId','expectedRevision'])||typeof e.documentId!=='string'||!/^[A-Za-z0-9_-]{8,120}$/.test(e.documentId)||!positive(e.expectedRevision))
     ||new Set(body.evidence.map(e=>e.documentId)).size!==body.evidence.length)return false;
