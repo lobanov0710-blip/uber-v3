@@ -1,51 +1,66 @@
 import router from "./router.js";
+import { json } from "./core/utils.js";
 
+import {
+  runMonthlyPhotoControlDueGeneration
+} from "./core/vehiclePhotoControlService.js";
+
+import {
+  runSupportChatRetention
+} from "./core/supportCaseLifecycleService.js";
 
 export default {
+  async fetch(req, env, ctx) {
+    try {
+      return await router(req, env, ctx);
+    } catch {
+      // Error objects may contain SQL parameters, request bodies or credentials.
+      console.error("FATAL WORKER ERROR");
+      return json({ ok: false, error: "worker crash" }, 500);
+    }
+  },
 
-  async fetch(
-    req,
+  async scheduled(
+    _event,
     env,
     ctx
   ) {
+    const task =
+      Promise.all([
+        runMonthlyPhotoControlDueGeneration(
+          env
+        )
+          .catch(
+            () => {
+              console.error(
+                "PHOTO CONTROL DUE GENERATION ERROR"
+              );
+            }
+          ),
 
-    try {
+        runSupportChatRetention(
+          env
+        )
+          .catch(
+            () => {
+              console.error(
+                "SUPPORT CHAT RETENTION ERROR"
+              );
+            }
+          )
+      ]);
 
-      return await router(
-        req,
-        env,
-        ctx
-      );
-
-    } catch (
-      error
+    if (
+      ctx &&
+      typeof ctx.waitUntil ===
+        "function"
     ) {
-
-      console.error(
-        "FATAL WORKER ERROR:",
-        error
+      ctx.waitUntil(
+        task
       );
-
-      return new Response(
-        JSON.stringify(
-          {
-            ok: false,
-            error:
-              "worker crash"
-          }
-        ),
-        {
-          status: 500,
-
-          headers: {
-            "Content-Type":
-              "application/json; charset=utf-8",
-
-            "Access-Control-Allow-Origin":
-              "*"
-          }
-        }
-      );
+      return;
     }
+
+    await task;
   }
 };

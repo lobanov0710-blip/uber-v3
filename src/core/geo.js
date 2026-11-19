@@ -1155,8 +1155,7 @@ async function geocode(
       "GEOCODE REQUEST ERROR:",
       {
         name:
-          error?.name ||
-          null,
+          error?.name === "AbortError" ? "AbortError" : "Error",
 
         message:
           error?.name ===
@@ -1478,8 +1477,7 @@ async function requestMapboxRoute(
       "DIRECTIONS REQUEST ERROR:",
       {
         name:
-          error?.name ||
-          null,
+          error?.name === "AbortError" ? "AbortError" : "Error",
 
         message:
           error?.name ===

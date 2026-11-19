@@ -1,23 +1,23 @@
 import { isStagingEnvironment } from "./deploymentEnvironment.js";
 
 // =========================================
-// STAFF PUSH NOTIFICATION SERVICE
+// TARGETED DRIVER PUSH NOTIFICATIONS
 // =========================================
 //
-// New-order push delivery.
+// Assignment-only delivery.
 //
 // Security rules:
-// - D1 push row alone is not authorization.
-// - Repository selects only active driver
-//   accounts with an active session in the
-//   registered session family.
-// - FCM payload contains only event type
-//   and order UUID. No passenger PII.
+// - no broadcast selector exists here;
+// - target account is explicit and is still
+//   checked against active Driver account +
+//   active registered session family in D1;
+// - payload contains only opaque routing/state
+//   metadata, never passenger PII;
 // - FCM tokens are never logged.
 // =========================================
 
 import {
-  listActiveDriverPushTargets
+  listActiveDriverPushTargetsForAccount
 } from "./staffPushDeliveryRepository.js";
 
 import {
@@ -30,62 +30,194 @@ import {
 } from "./firebaseMessaging.js";
 
 
-const ORDER_ID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const EVENT_TYPES =
+  new Set([
+    "order_assigned",
+    "order_assignment_revoked"
+  ]);
 
 
-function cleanOrderId(
-  value
+function cleanText(
+  value,
+  maxLength
 ) {
 
-  const orderId =
+  const text =
     String(
       value ?? ""
     )
-      .trim()
-      .toLowerCase();
+      .trim();
 
 
-  return ORDER_ID_PATTERN.test(
-    orderId
-  )
-    ? orderId
-    : "";
+  if (
+    !text
+    ||
+    text.length >
+      maxLength
+    ||
+    /[\u0000-\u001F\u007F]/.test(
+      text
+    )
+  ) {
+
+    return "";
+  }
+
+
+  return text;
 }
 
 
-export async function notifyActiveDriversOfNewOrder(
-  env,
-  orderId
+function normalizeEvent(
+  input
 ) {
 
-  const normalizedOrderId =
-    cleanOrderId(
-      orderId
+  if (
+    !input
+    ||
+    typeof input !==
+      "object"
+    ||
+    Array.isArray(
+      input
+    )
+  ) {
+
+    return null;
+  }
+
+
+  const type =
+    cleanText(
+      input.type,
+      80
     );
 
 
-  if (!normalizedOrderId) {
+  const accountId =
+    cleanText(
+      input.accountId,
+      100
+    );
+
+
+  const orderId =
+    cleanText(
+      input.orderId,
+      120
+    );
+
+
+  const assignmentId =
+    input.assignmentId == null
+      ? null
+      : cleanText(
+          input.assignmentId,
+          120
+        );
+
+
+  const orderRevision =
+    Number(
+      input.orderRevision
+    );
+
+
+  if (
+    !EVENT_TYPES.has(
+      type
+    )
+    ||
+    !accountId
+    ||
+    !orderId
+    ||
+    !Number.isSafeInteger(
+      orderRevision
+    )
+    ||
+    orderRevision < 1
+  ) {
+
+    return null;
+  }
+
+
+  if (
+    type === "order_assigned"
+    &&
+    !assignmentId
+  ) {
+
+    return null;
+  }
+
+
+  return {
+    type,
+    accountId,
+    orderId,
+    assignmentId,
+    orderRevision
+  };
+}
+
+
+export async function notifyDriverAssignmentEvent(
+  env,
+  input
+) {
+
+  const event =
+    normalizeEvent(
+      input
+    );
+
+
+  if (!event) {
 
     throw new Error(
-      "Invalid order id for push delivery"
+      "Invalid driver assignment push event"
     );
   }
 
 
-  // Do not query registered devices or send Firebase push in staging.
-  if (isStagingEnvironment(env)) {
-    return { ok: true, attempted: 0, delivered: 0, removed: 0, skipped: true };
+  if (
+    isStagingEnvironment(
+      env
+    )
+  ) {
+
+    return {
+      ok:
+        true,
+
+      attempted:
+        0,
+
+      delivered:
+        0,
+
+      removed:
+        0,
+
+      skipped:
+        true
+    };
   }
 
+
   const targets =
-    await listActiveDriverPushTargets(
+    await listActiveDriverPushTargetsForAccount(
       env,
+      event.accountId,
       Date.now()
     );
 
 
-  if (targets.length === 0) {
+  if (
+    targets.length === 0
+  ) {
 
     return {
       ok:
@@ -109,6 +241,29 @@ export async function notifyActiveDriversOfNewOrder(
     );
 
 
+  const data = {
+    type:
+      event.type,
+
+    orderId:
+      event.orderId,
+
+    orderRevision:
+      String(
+        event.orderRevision
+      )
+  };
+
+
+  if (
+    event.assignmentId
+  ) {
+
+    data.assignmentId =
+      event.assignmentId;
+  }
+
+
   const outcomes =
     await Promise.all(
       targets.map(
@@ -121,17 +276,13 @@ export async function notifyActiveDriversOfNewOrder(
                 env,
                 accessToken,
                 target.fcmToken,
-                {
-                  type:
-                    "new_order",
-
-                  orderId:
-                    normalizedOrderId
-                }
+                data
               );
 
 
-            if (result.ok) {
+            if (
+              result.ok
+            ) {
 
               return {
                 delivered:
@@ -165,9 +316,7 @@ export async function notifyActiveDriversOfNewOrder(
                     true
                 };
 
-              } catch (
-                error
-              ) {
+              } catch {
 
                 console.error(
                   "STAFF PUSH STALE TOKEN CLEANUP ERROR"
@@ -197,9 +346,7 @@ export async function notifyActiveDriversOfNewOrder(
                 false
             };
 
-          } catch (
-            error
-          ) {
+          } catch {
 
             console.error(
               "STAFF PUSH SEND ERROR"
@@ -219,22 +366,6 @@ export async function notifyActiveDriversOfNewOrder(
     );
 
 
-  const delivered =
-    outcomes.filter(
-      outcome =>
-        outcome.delivered
-    )
-      .length;
-
-
-  const removed =
-    outcomes.filter(
-      outcome =>
-        outcome.removed
-    )
-      .length;
-
-
   return {
     ok:
       true,
@@ -242,8 +373,18 @@ export async function notifyActiveDriversOfNewOrder(
     attempted:
       targets.length,
 
-    delivered,
+    delivered:
+      outcomes.filter(
+        outcome =>
+          outcome.delivered
+      )
+        .length,
 
-    removed
+    removed:
+      outcomes.filter(
+        outcome =>
+          outcome.removed
+      )
+        .length
   };
 }

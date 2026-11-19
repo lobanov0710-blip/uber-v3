@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { tgSend } from "../src/core/telegram.js";
-import { notifyActiveDriversOfNewOrder } from "../src/core/staffPushNotificationService.js";
+import { notifyDriverAssignmentEvent } from "../src/core/staffPushNotificationService.js";
 import { isStagingEnvironment } from "../src/core/deploymentEnvironment.js";
 
 const ORDER_ID = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
@@ -70,7 +70,16 @@ try {
     },
     FIREBASE_PROJECT_ID: "production-project"
   };
-  const push = await notifyActiveDriversOfNewOrder(env, ORDER_ID);
+  const push = await notifyDriverAssignmentEvent(
+    env,
+    {
+      type: "order_assigned",
+      accountId: "staff_driver123",
+      orderId: ORDER_ID,
+      assignmentId: "assignment_opaque123",
+      orderRevision: 2
+    }
+  );
   assert.deepEqual(push, {
     ok: true,
     attempted: 0,
@@ -141,10 +150,19 @@ await assert.rejects(
   /TG_BOT_TOKEN is missing/
 );
 await assert.rejects(
-  () => notifyActiveDriversOfNewOrder({ APP_ENV: "production" }, "invalid-order-id"),
-  /Invalid order id/
+  () => notifyDriverAssignmentEvent(
+    { APP_ENV: "production" },
+    {
+      type: "order_assigned",
+      accountId: "",
+      orderId: "invalid-order-id",
+      assignmentId: "assignment_opaque123",
+      orderRevision: 2
+    }
+  ),
+  /Invalid driver assignment push event/
 );
 
 console.log("✓ staging Telegram disabled by default and fail-closed without test credentials");
 console.log("✓ opt-in staging Telegram uses dedicated test bot and marked message");
-console.log("✓ staging FCM remains disabled, production notification behavior unchanged");
+console.log("✓ staging FCM remains disabled for targeted assignment events");

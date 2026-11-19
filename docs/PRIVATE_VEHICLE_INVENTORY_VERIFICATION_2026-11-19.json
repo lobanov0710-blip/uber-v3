@@ -1,0 +1,511 @@
+{
+  "formatVersion": 1,
+  "date": "2026-11-19",
+  "scope": "approved_variant_A_private_inventory_tool",
+  "ownerApproval": "Утверждают вариант А",
+  "source": {
+    "sha": "6df1c9f051fc415f1152aa1e1bce7e7130f9e952",
+    "localCommit": "cc6e5faf0e854668120273e7cf7b9b3bacef9fe9",
+    "tree": "8bd6908373445780ae7fc99dae68864baee9a6ef"
+  },
+  "pullRequest": "https://github.com/lobanov0710-blip/uber-v3/pull/47",
+  "target": {
+    "environment": "staging",
+    "worker": "uber-v3-staging",
+    "databaseName": "transfer-servis52-staging",
+    "databaseId": "66474481-a123-47f9-81b4-12af7565ec8d",
+    "privateControlPlane": "Owner Windows PowerShell"
+  },
+  "fixedQueries": [
+    {
+      "profile": "legacy",
+      "sha256": "c9b81787b758ee7be64282331ffec5be4bd05f7d0e87113b7b6c781028377cc3"
+    },
+    {
+      "profile": "registration",
+      "sha256": "f9e3ace4ad1c7ec5f892eea581e8c17e4881270e4d9d6e94b32ec3f278f24c28"
+    },
+    {
+      "profile": "bindings",
+      "sha256": "d67aa20c66d8358b5246fa4485905423faaec6c5ff201075dcdb25e9b8ef8a91"
+    },
+    {
+      "profile": "trusted",
+      "sha256": "51d7768239a32f61423bde97d9943919221f385b4d32f372c2b5eb44622b5ac3"
+    },
+    {
+      "profile": "holds",
+      "sha256": "eb416f1a28d71f1642dfe6b920ec339ca1f83d6c62f550090f27e3e18252a8d6"
+    }
+  ],
+  "runtime": {
+    "workflowRunId": 44607369124,
+    "workflowRunUrl": "https://github.com/lobanov0710-blip/uber-v3/actions/runs/44607369124",
+    "windowsJobId": 135854543436,
+    "linuxJobId": 135854542914,
+    "overallConclusion": "success",
+    "windowsPolicyAndAclCases": 9,
+    "windowsBundleMinimalInstall": "PASS",
+    "windowsNode": "24.22.2",
+    "npm": "11.9.0",
+    "linuxNode": "22.23.5",
+    "privateCliScenarios": [
+      {
+        "scenario": "success",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "success",
+        "schemaCutoff": 20,
+        "result": "PASS"
+      },
+      {
+        "scenario": "success",
+        "schemaCutoff": 22,
+        "result": "PASS"
+      },
+      {
+        "scenario": "success",
+        "schemaCutoff": 23,
+        "result": "PASS"
+      },
+      {
+        "scenario": "success",
+        "schemaCutoff": 25,
+        "result": "PASS"
+      },
+      {
+        "scenario": "orphans",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "wrong_target",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "tampered_query",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "endpoint_override",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "newer_chain",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "unknown_column",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "declined",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "auth_error",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "folder_error",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "extra_column",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "wrong_counter",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "schema_changed",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "timeout",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "malformed",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "init_new",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      },
+      {
+        "scenario": "init_existing",
+        "schemaCutoff": 18,
+        "result": "PASS"
+      }
+    ],
+    "backendNpmTestScripts": 81,
+    "migrations": 25,
+    "preflightCases": 12,
+    "referenceCases": 6,
+    "offlineInventoryCases": 16,
+    "nativeWorkerdD1Workflows": 16,
+    "priorProtectedOwnerCliCases": 6,
+    "dependencyAdvisories": 0,
+    "workerDryRun": "PASS",
+    "windowsPolicyAndAcl": "PASS",
+    "steps": [
+      {
+        "id": 135854542914,
+        "name": "test",
+        "conclusion": "success",
+        "allSteps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Checkout",
+            "conclusion": "success"
+          },
+          {
+            "name": "Set up Node",
+            "conclusion": "success"
+          },
+          {
+            "name": "Use the verified npm version for scoped overrides",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install locked development dependencies without lifecycle scripts",
+            "conclusion": "success"
+          },
+          {
+            "name": "Check dependency advisories",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify private inventory CLI with actual Wrangler and loopback D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Validate D1 migrations offline",
+            "conclusion": "success"
+          },
+          {
+            "name": "Validate fail-closed D3 staging preflight",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify approved vehicle reference invariants",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify private read-only vehicle inventory",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run backend unit and router tests",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify audit transaction with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify OWNER MFA transactions with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify Admin moderation workflow with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify approved assignment read APIs with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify approved vehicle/photo-check read with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify OWNER-only phone scope with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify classification version storage with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify populated registration schema upgrade with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify Driver system-class registration contract with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify pinned rule history and OWNER-only powers with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify OWNER rule APIs and populated upgrade with local workerd and D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify trusted assessment storage and permanent invalidation with native D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify atomic corrections, legacy approval guard and held trips with native D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify shared vehicle admission and time-only evidence expiry with native D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify public classification review and trusted history with native D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify comfort-only liftback upgrade and immutable history with native D1",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify protected OWNER CLI with actual Wrangler import output",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bundle Worker without deploying",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build pinned credential-free Windows inventory bundle",
+            "conclusion": "success"
+          },
+          {
+            "name": "Upload private inventory setup bundle (no credentials or reports)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Set up Node",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Checkout",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "id": 135854543436,
+        "name": "windows-inventory",
+        "conclusion": "success",
+        "allSteps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Checkout",
+            "conclusion": "success"
+          },
+          {
+            "name": "Set up Node",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify policy and private ACL on actual Windows",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build bundle and verify minimal locked dependency installation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Set up Node",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Checkout",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  "limits": {
+    "realDataAccessed": false,
+    "realCloudflareRequests": 0,
+    "remoteWritesPerformed": false,
+    "fullDatabaseExportIncluded": false,
+    "activationAuthorized": false,
+    "admissionEvaluated": false,
+    "newAccountsOrGrants": false,
+    "mergeOrDeployPerformed": false,
+    "ownerWindowsExecution": "pending",
+    "classifierFullReadiness": "not_established",
+    "G1": "paused",
+    "D4-D7": "pending"
+  },
+  "artifact": {
+    "name": "vehicle-inventory-readonly.zip",
+    "sha256": "039625742f17d80712932e20b58a2f6bba50db8f518bb3a4a699d502aa3431c5",
+    "bytes": 31954,
+    "fileCount": 16,
+    "protectedFileHashes": 15,
+    "downloadVerified": true,
+    "localReproduction": "PASS",
+    "artifactId": 14572125480,
+    "outerSha256": "c01a7eb1d1e0a2791ca795951e458d95b85f7c03cac45ccd367dd7d7405f32f6",
+    "windowsReproduction": "PASS",
+    "archivePathsAndCrc": "PASS",
+    "minimalLockMatches": true,
+    "credentialsOrPrivateReportsIncluded": false
+  },
+  "priorRuns": [
+    {
+      "runId": 44604491232,
+      "jobs": [
+        {
+          "id": 135844423313,
+          "name": "windows-inventory",
+          "conclusion": "failure",
+          "failedSteps": [
+            "Verify policy and private ACL on actual Windows"
+          ]
+        },
+        {
+          "id": 135844424194,
+          "name": "test",
+          "conclusion": "failure",
+          "failedSteps": [
+            "Verify private inventory CLI with actual Wrangler and loopback D1"
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 44605153405,
+      "jobs": [
+        {
+          "id": 135846750642,
+          "name": "test",
+          "conclusion": "failure",
+          "failedSteps": [
+            "Verify private inventory CLI with actual Wrangler and loopback D1"
+          ]
+        },
+        {
+          "id": 135846751416,
+          "name": "windows-inventory",
+          "conclusion": "failure",
+          "failedSteps": [
+            "Verify policy and private ACL on actual Windows"
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 44605627092,
+      "jobs": [
+        {
+          "id": 135848418651,
+          "name": "windows-inventory",
+          "conclusion": "failure",
+          "failedSteps": [
+            "Verify policy and private ACL on actual Windows"
+          ]
+        },
+        {
+          "id": 135848419212,
+          "name": "test",
+          "conclusion": "cancelled",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 44606043947,
+      "jobs": [
+        {
+          "id": 135849908517,
+          "name": "windows-inventory",
+          "conclusion": "failure",
+          "failedSteps": [
+            "Verify policy and private ACL on actual Windows"
+          ]
+        },
+        {
+          "id": 135849909040,
+          "name": "test",
+          "conclusion": "cancelled",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 44606305771,
+      "jobs": [
+        {
+          "id": 135850962597,
+          "name": "windows-inventory",
+          "conclusion": "failure",
+          "failedSteps": [
+            "Verify policy and private ACL on actual Windows"
+          ]
+        },
+        {
+          "id": 135850963285,
+          "name": "test",
+          "conclusion": "failure",
+          "failedSteps": [
+            "Verify private inventory CLI with actual Wrangler and loopback D1"
+          ]
+        }
+      ]
+    }
+  ],
+  "previousSuccessfulRuntime": {
+    "source": "20bdb841524dd0c94225aea7b3ff5332dab2d8c7",
+    "runId": 44606687536,
+    "result": "success_before_harness_fix"
+  },
+  "scopeNotes": [
+    "Only synthetic loopback D1 was used by integration tests. No private metrics were collected.",
+    "Bundle source files are pinned to the tested source commit; later documentation commits do not change that provenance.",
+    "Android changes in this companion are documentation only. No new APK or physical-phone acceptance is claimed.",
+    "Full classifier readiness, activation and range coverage are not established by these checks."
+  ],
+  "localValidation": {
+    "offlineInventoryCases": 16,
+    "referenceCases": 6,
+    "syntaxAndDiff": "PASS",
+    "nodeDirectCases": {
+      "passed": 8,
+      "total": 9,
+      "subprocessCase": "blocked by local sandbox EPERM; passed in Linux and Windows CI"
+    }
+  }
+}
