@@ -3269,3 +3269,19 @@ QA Windows key/physical acceptance и права отдельного тесто
 Документы review: backend commit30b720ad,Android docs commit7ab83277.
 https://github.com/lobanov0710-blip/uber-v3/blob/30b720ad0a48c9a368c66dcf07e56d8cd6ebfadb/docs/VEHICLE_LEGACY_INVENTORY_READ_PLAN_2026-11-19.md
 https://github.com/lobanov0710-blip/TransferDriver/pull/23
+
+
+## OWNER утвердил закрытое STAGING чтение, вариант A — 2026-11-19
+
+На план VEHICLE_LEGACY_INVENTORY_READ_PLAN_2026-11-19.md владелец ответил
+«Утверждают вариант А». Разрешены подготовка/проверка отдельного private CLI
+и последующее чтение владельцем на Windows:метаданные точного STAGING D1
+и один фиксированный SELECT с18агрегатами. JSON закрытый,public receipt без
+чисел/хеша private report/персональных данных/credentials/provider output.
+Согласование A пройдено;не запрашивать его повторно. Полный SQLite backup,
+новые аккаунты/права,remote writes/migrations/activation/merge/deploy не включены.
+Реальное чтение ещё не выполнено,авторизованный Cloudflare control plane
+остаётся у владельца. Рабочая ветка fix/private-vehicle-inventory-cli.
+G1paused,D4–D7pending;QA private signing/phone и роль test account прежниеpending.
+Первый exec runtime заменён при подготовке веток;после read-only проверки
+подтверждены локальные ветки/отсутствие remote refs,затем создание продолжено.
