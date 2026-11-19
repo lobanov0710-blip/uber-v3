@@ -71,7 +71,9 @@ test('private files are owner-only on POSIX and owner/SYSTEM only on actual Wind
   for(const target of [folder,path.join(folder,'metrics.private.json')]){
    const literal=target.replaceAll("'","''");
    const command="$ErrorActionPreference='Stop'; $a=Get-Acl -LiteralPath '"+literal+"'; [pscustomobject]@{ currentSid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value; protected=$a.AreAccessRulesProtected; values=@($a.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier]) | ForEach-Object { [pscustomobject]@{ sid=$_.IdentityReference.Value; allow=($_.AccessControlType -eq 'Allow'); full=(($_.FileSystemRights -band 2032127) -eq 2032127) } }) } | ConvertTo-Json -Depth 4 -Compress";
-   const acl=await promisify(execFile)('powershell.exe',['-NoProfile','-Command',command]);
+   const nativeEnvironment=Object.fromEntries(Object.entries(process.env).filter(([name])=>name.toUpperCase()!=='PSMODULEPATH'));
+   const executable=path.join(process.env.SystemRoot,'System32','WindowsPowerShell','v1.0','powershell.exe');
+   const acl=await promisify(execFile)(executable,['-NoProfile','-NonInteractive','-Command',command],{env:nativeEnvironment});
    const v=JSON.parse(acl.stdout),entries=v.values,ids=new Set(entries.map(e=>e.sid));
    assert.ok(ids.size===2&&ids.has('S-1-5-18')&&ids.has(v.currentSid)&&entries.every(e=>e.allow&&e.full),JSON.stringify({target:target===folder?'folder':'file',entryCount:entries.length,principalCount:ids.size,hasOwner:ids.has(v.currentSid),hasSystem:ids.has('S-1-5-18'),otherPrincipal:[...ids].some(id=>![v.currentSid,'S-1-5-18'].includes(id)),allFull:entries.every(e=>e.allow&&e.full)}));
    if(target===folder)assert.equal(v.protected,true);

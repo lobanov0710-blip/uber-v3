@@ -4391,3 +4391,14 @@ Access section protected DACL. Это сохраняет owner/group без за
 allowlist, без raw errors. Guide использует уже действующую приватную
 авторизацию OWNER, а не новый OAuth login с default broad scopes Wrangler
 (его SDK не предлагает d1:read OAuth scope). Новые токены/права не запрашивались.
+
+
+### Windows PowerShell module isolation — 2026-11-19
+
+Run44606305771 Windows остановился на DACL/Get-Acl; попытка смены owner уже
+исключена и не объясняет весь сбой. Проверено различие среды: job запускается
+в pwsh7, а native helper — Windows PowerShell5.1. В child не передаётся
+PSModulePath host runtime: native PowerShell восстанавливает свои module paths.
+Тест использует тот же absolute trusted system executable и очищенное значение,
+остальные env сохранены. ACL проверка не ослаблена; hypothesis требует CI.
+Диагностика class name ограничена буквенным именем типа, без raw error messages.

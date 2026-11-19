@@ -22,8 +22,9 @@ export async function privateDirectory(prefix,parent=homedir()){
     "$stage='RIGHTS'; foreach ($rule in $rules) { if ($rule.IdentityReference.Value -notin @($sid.Value,'S-1-5-18') -or $rule.AccessControlType -ne 'Allow' -or ($rule.FileSystemRights -band 2032127) -ne 2032127) { throw 'Rejected' } }",
     "} catch { [Console]::Error.WriteLine('PRIVATE_ACL_'+$stage+'_'+$_.Exception.GetType().Name); exit 1 }"
    ].join(' ');
-   try{await execute(path.join(system,'WindowsPowerShell','v1.0','powershell.exe'),['-NoProfile','-NonInteractive','-Command',command],{windowsHide:true,timeout:15000});}
-   catch(error){safeFailure=error.stderr?.match(/PRIVATE_ACL_(?:OWNER|DACL|APPLY|READ|ENUMERATE|COUNT|RIGHTS)(?:_(?:UnauthorizedAccessException|PrivilegeNotHeldException|ArgumentException|InvalidOperationException|ParameterBindingException))?/)?.[0]??'PRIVATE_ACL_EXECUTION';throw error;}
+   const nativeEnvironment=Object.fromEntries(Object.entries(process.env).filter(([name])=>name.toUpperCase()!=='PSMODULEPATH'));
+   try{await execute(path.join(system,'WindowsPowerShell','v1.0','powershell.exe'),['-NoProfile','-NonInteractive','-Command',command],{windowsHide:true,timeout:15000,env:nativeEnvironment});}
+   catch(error){safeFailure=error.stderr?.match(/PRIVATE_ACL_(?:OWNER|DACL|APPLY|READ|ENUMERATE|COUNT|RIGHTS)(?:_[A-Za-z]{1,80})?/)?.[0]??'PRIVATE_ACL_EXECUTION';throw error;}
   }else await chmod(folder,0o700);
   return folder;
  }catch{await rm(folder,{recursive:true,force:true});throw Error('Private folder access could not be secured: '+safeFailure);}
