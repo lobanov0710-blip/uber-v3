@@ -25,7 +25,7 @@ try{
   else{
    const config=makeConfig(await ask('Cloudflare Account ID (32 lowercase hex; NOT a token): '));checkEnvironment(process.env,config.account_id);
    await writeFile(configPath,JSON.stringify(config,null,2)+'\n',{flag:'wx',mode:0o600});
-   console.log('LOCAL_CONFIG_READY. Next: private Cloudflare login, then read.');
+   console.log('LOCAL_CONFIG_READY. Next: read using existing private Cloudflare authorization.');
   }
  }else{
   phase='config';

@@ -14,16 +14,16 @@ export async function privateDirectory(prefix,parent=homedir()){
    const command=[
     "$ErrorActionPreference='Stop'; $stage='OWNER'; try {",
     "$p='"+literal+"'; $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User;",
-    "$stage='DACL'; $acl=New-Object System.Security.AccessControl.DirectorySecurity; $acl.SetOwner($sid);",
+    "$stage='DACL'; $acl=Get-Acl -LiteralPath $p;",
     "$acl.SetSecurityDescriptorSddlForm(('D:P(A;OICI;FA;;;'+$sid.Value+')(A;OICI;FA;;;SY)'),[System.Security.AccessControl.AccessControlSections]::Access);",
     "$stage='APPLY'; Set-Acl -LiteralPath $p -AclObject $acl; $stage='READ'; $actual=Get-Acl -LiteralPath $p;",
     "$stage='ENUMERATE'; $rules=@($actual.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier]));",
     "$stage='COUNT'; if (!$actual.AreAccessRulesProtected -or $rules.Count -ne 2) { throw 'Rejected' };",
     "$stage='RIGHTS'; foreach ($rule in $rules) { if ($rule.IdentityReference.Value -notin @($sid.Value,'S-1-5-18') -or $rule.AccessControlType -ne 'Allow' -or ($rule.FileSystemRights -band 2032127) -ne 2032127) { throw 'Rejected' } }",
-    "} catch { [Console]::Error.WriteLine('PRIVATE_ACL_'+$stage); exit 1 }"
+    "} catch { [Console]::Error.WriteLine('PRIVATE_ACL_'+$stage+'_'+$_.Exception.GetType().Name); exit 1 }"
    ].join(' ');
    try{await execute(path.join(system,'WindowsPowerShell','v1.0','powershell.exe'),['-NoProfile','-NonInteractive','-Command',command],{windowsHide:true,timeout:15000});}
-   catch(error){safeFailure=error.stderr?.match(/PRIVATE_ACL_(?:OWNER|DACL|APPLY|READ|ENUMERATE|COUNT|RIGHTS)/)?.[0]??'PRIVATE_ACL_EXECUTION';throw error;}
+   catch(error){safeFailure=error.stderr?.match(/PRIVATE_ACL_(?:OWNER|DACL|APPLY|READ|ENUMERATE|COUNT|RIGHTS)(?:_(?:UnauthorizedAccessException|PrivilegeNotHeldException|ArgumentException|InvalidOperationException|ParameterBindingException))?/)?.[0]??'PRIVATE_ACL_EXECUTION';throw error;}
   }else await chmod(folder,0o700);
   return folder;
  }catch{await rm(folder,{recursive:true,force:true});throw Error('Private folder access could not be secured: '+safeFailure);}

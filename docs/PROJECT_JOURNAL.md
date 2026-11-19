@@ -4379,3 +4379,15 @@ loopback,0real Cloudflare). Windows protected DACL setup всё ещё отка�
 добавлены только фиксированные stage names OWNER/DACL/APPLY/READ/ENUMERATE/
 COUNT/RIGHTS, без исключений/путей/идентификаторов. Native errors поглощаются;
 наружу выходит только безопасный stage. Это диагностика, не обход ACL guard.
+
+
+### Windows DACL apply compatibility and least privilege — 2026-11-19
+
+Run44606043947: native stage identified APPLY. Убрана попытка менять owner
+в новом DirectorySecurity: берётся существующий Get-Acl и заменяется только
+Access section protected DACL. Это сохраняет owner/group без запроса привилегий
+смены владельца; current SID/SYSTEM ACL и обязательная повторная проверка
+остаются. Диагностика разрешает только фиксированный class exception из
+allowlist, без raw errors. Guide использует уже действующую приватную
+авторизацию OWNER, а не новый OAuth login с default broad scopes Wrangler
+(его SDK не предлагает d1:read OAuth scope). Новые токены/права не запрашивались.
