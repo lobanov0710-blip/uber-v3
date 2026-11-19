@@ -1,0 +1,851 @@
+{
+  "formatVersion": 1,
+  "reviewedAt": "2026-11-19",
+  "scope": "Dated and market-specific follow-up for ten mixed-powertrain catalogue families; remaining 111 retain revision-2 first-pass status.",
+  "sourceCatalogue": "docs/vehicle-classifier-v2-proposed.csv",
+  "sourceCatalogueSha256": "553384af5b49252d3b3acbc3973ef6dae7fc40d348156debf4f0fab24c5ae880",
+  "baselineLedger": {
+    "path": "docs/VEHICLE_POWERTRAIN_AUDIT_2026-11-18.json",
+    "revision": 2,
+    "sha256": "cb12572f89c657aa2891a10f8ec8ee152740b486f38b062ddcb5cc98647b7c05"
+  },
+  "exhaustivePowertrainReviewCompleted": false,
+  "actualLegacyInventoryCompleted": false,
+  "activationAuthorized": false,
+  "proposedRuleChanges": [],
+  "sources": [
+    {
+      "id": "changan2024",
+      "publisher": "Changan issuer disclosure / CNINFO",
+      "url": "https://static.cninfo.com.cn/finalpage/2024-11-15/1221742345.PDF",
+      "publishedDate": "2024-11-15",
+      "observedAt": "2026-11-19",
+      "access": "primary_pdf_excerpt",
+      "locator": "PDF page 2, product paragraph",
+      "limitations": "A launch event is not a manufacturing-year certificate or proof of earlier variants."
+    },
+    {
+      "id": "avatrCurrent",
+      "publisher": "AVATR",
+      "url": "https://www.avatr.com/configuration?car=12",
+      "publishedDate": null,
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "Selected car=12 table, trim headers and energy-type section",
+      "limitations": "Current configuration has no complete historical production range; navigation models are excluded."
+    },
+    {
+      "id": "baicS9",
+      "publisher": "BAIC Group",
+      "url": "https://www.baicgroup.com.cn/baicgroup/News/NewsShort/2026/1/I1457793774959722496.html",
+      "publishedDate": "2025-04-16",
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "Article headline/date",
+      "limitations": "Rendered publisher date is 2025-04-16 despite /2026/1/ URL. Infographic internals not relied on."
+    },
+    {
+      "id": "himaS9",
+      "publisher": "HIMA",
+      "url": "https://hima.auto/xiangjie/s9/configuration/",
+      "publishedDate": null,
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "S9 trim headings and energy-type rows",
+      "limitations": "Current EVR/EV columns do not establish earlier manufacturing years; load-bearing construction is not the sedan body enum."
+    },
+    {
+      "id": "exeedRu",
+      "publisher": "EXEED Russia",
+      "url": "https://exeed.ru/news/exeed-exlantix-es-is-available-for-pre-orders/",
+      "publishedDate": "2025-07-17",
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "Dated ES headline/main article",
+      "limitations": "Pre-orders and marketing four-door coupe wording do not establish first manufacture date or certified body."
+    },
+    {
+      "id": "exeedKz",
+      "publisher": "EXEED Kazakhstan",
+      "url": "https://exeed.kz/ru/news/131/",
+      "publishedDate": "2025-04-30",
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "ES BEV and ES REEV paragraphs",
+      "limitations": "Shanghai presentation and Kazakhstan plans; ET paragraphs must not be assigned to ES."
+    },
+    {
+      "id": "passionRuHybrid",
+      "publisher": "VOYAH Russia",
+      "url": "https://voyah.ru/news/voyah-obuyavlyaet-specifikacii-na-novyj-gibridnyj-sedan-s-uvelichennym-zapasom-hoda-voyah-passion-evr",
+      "publishedDate": "2025-06-27",
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "Article date and powertrain paragraphs",
+      "limitations": "Russian EVR launch plans do not establish Chinese PHEV introduction or every 2023 car."
+    },
+    {
+      "id": "passionName",
+      "publisher": "VOYAH Russia",
+      "url": "https://voyah.ru/news/voyah-predstavlyaet-novyj-premialnyj-elektrosedan-passion",
+      "publishedDate": "2023-04-18",
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "Date and Zhuiguang / Passion identity paragraph",
+      "limitations": "Evidence association only, no runtime alias or transfer of regional certification."
+    },
+    {
+      "id": "passionChina",
+      "publisher": "Dongfeng Motor",
+      "url": "https://www.dfmc.com.cn/news/company/news_20231207_1516.html",
+      "publishedDate": "2023-12-07",
+      "observedAt": "2026-11-19",
+      "access": "primary_indexed_excerpt",
+      "locator": "Indexed headline/first paragraph: 5 December 2023 PHEV launch",
+      "limitations": "Direct page retrieval timed out twice; full original-page review is not claimed."
+    },
+    {
+      "id": "dreamChina",
+      "publisher": "Dongfeng Motor",
+      "url": "https://www.dfmc.com.cn/news/company/news_20220509_1048.html",
+      "publishedDate": "2022-05-09",
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "7 May launch and dual-powertrain paragraph",
+      "limitations": "China: low-carbon version has 1.5T engine; zero-carbon version is BEV. All 2022+ markets not enumerated."
+    },
+    {
+      "id": "byd2022",
+      "publisher": "BYD issuer CSR report / HKEX",
+      "url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2023/0328/2023032801987.pdf",
+      "publishedDate": "2023-03-28",
+      "observedAt": "2026-11-19",
+      "access": "primary_pdf_excerpt",
+      "locator": "Reporting scope page 2; D9 launch page 13; Han hybrid pages 77-78; Chile HAN EV page 14",
+      "limitations": "Report covers 2022. D9 launch date alone does not identify its powertrain."
+    },
+    {
+      "id": "denzaEurope",
+      "publisher": "BYD / DENZA",
+      "url": "https://media.byd.com/denza-brings-super-hybrid-tech-to-mpv-segment-with-d9-dm-i-475599/?lang=eng",
+      "publishedDate": null,
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "Article headline, dated opening paragraph and engine section",
+      "limitations": "Page header says 2026/06/02; body says 09 April 2026. Preserve both; no exact publication date selected. UK specifications marked provisional. Service footer excluded."
+    },
+    {
+      "id": "citroen2022",
+      "publisher": "Citroen / Stellantis",
+      "url": "https://www.media.stellantis.com/em-en/citroen/press/citroen-focuses-its-passenger-car-offer-on-e-berlingo-and-e-spacetourer-to-accelerate-the-electrification-of-its-range",
+      "publishedDate": null,
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "January 2022 new-order policy and market exceptions",
+      "limitations": "Applies to European private new orders; utility versions/outside-Europe offers are exceptions, not automatic eligible passenger conversions."
+    },
+    {
+      "id": "citroen2025",
+      "publisher": "Citroen UK / Stellantis",
+      "url": "https://www.media.stellantis.com/uk-en/citroen/press/citroen-broadens-powertrain-choice-on-spacetourer-berlingo-with-introduction-of-petrol-diesel-variants",
+      "publishedDate": "2025-08-29",
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "Date and SpaceTourer diesel paragraphs",
+      "limitations": "Autumn offer announcement, not manufacture certificate. Petrol refers to Berlingo, not SpaceTourer."
+    },
+    {
+      "id": "opel2022",
+      "publisher": "Opel / Stellantis",
+      "url": "https://www.media.stellantis.com/em-en/opel/press/e-for-emissions-free-opel-with-consistent-focus-on-electrification",
+      "publishedDate": "2022-01-06",
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "Zafira Life order policy paragraphs",
+      "limitations": "Announcement context Europe/Germany; not proof that every global 2022 vehicle was BEV."
+    },
+    {
+      "id": "opelItaly",
+      "publisher": "Opel Italy",
+      "url": "https://www.opel.it/content/dam/opel/italia/pdf/Listino_Zafira_giugno_2025.pdf",
+      "publishedDate": "2025-06-20",
+      "observedAt": "2026-11-19",
+      "access": "primary_pdf_excerpt",
+      "locator": "PDF pages 1-2: exact ZAFIRA LIFE/MY24-K0 and DIESEL/FULL ELECTRIC table",
+      "limitations": "MY24 label and 2025 publication date are not the manufacture year. Business Edition is a trim name, not our Business tariff."
+    },
+    {
+      "id": "lexus2020",
+      "publisher": "Lexus France / Toyota France",
+      "url": "https://media.lexus.fr/download/919569/1-tariflexusndeg1087au01septembre2020.pdf",
+      "publishedDate": "2020-09-01",
+      "observedAt": "2026-11-19",
+      "access": "primary_pdf_excerpt",
+      "locator": "PDF page 5: ES 300h, MY20/MY21 blocks",
+      "limitations": "Price-list/model-year evidence only, no inference of an individual manufacture date."
+    },
+    {
+      "id": "lexus2026",
+      "publisher": "Lexus Europe",
+      "url": "https://newsroom.lexus.eu/the-all-new-lexus-es-redefining-the-luxury-sedan/",
+      "publishedDate": "2026-05-27",
+      "observedAt": "2026-11-19",
+      "access": "primary_page_excerpt",
+      "locator": "Date, eighth-generation headline and powertrain list",
+      "limitations": "Dynamic page observed on review date; eighth-generation variants do not replace earlier-generation evidence."
+    }
+  ],
+  "claims": [
+    {
+      "id": "avatrLaunch",
+      "sourceId": "changan2024",
+      "market": "China",
+      "kind": "launch_event",
+      "eventDate": "2024-11-02",
+      "powertrains": [
+        "hybrid",
+        "battery_electric"
+      ],
+      "observation": "Issuer says AVATR 12 dual-powertrain versions launched on 2 November 2024.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "avatrNow",
+      "sourceId": "avatrCurrent",
+      "market": "China",
+      "kind": "current_configuration",
+      "eventDate": null,
+      "powertrains": [
+        "hybrid",
+        "battery_electric"
+      ],
+      "observation": "Selected AVATR 12 configuration distinguishes range-extended and pure-electric trims.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "s9Launch",
+      "sourceId": "baicS9",
+      "market": "China",
+      "kind": "launch_event",
+      "eventDate": "2025-04-16",
+      "powertrains": [
+        "hybrid"
+      ],
+      "observation": "Dated BAIC headline announces S9 range-extended version on sale.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "s9Now",
+      "sourceId": "himaS9",
+      "market": "China",
+      "kind": "current_configuration",
+      "eventDate": null,
+      "powertrains": [
+        "hybrid",
+        "battery_electric"
+      ],
+      "observation": "S9 table separates EVR hybrid and EV pure-electric columns.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "esRu",
+      "sourceId": "exeedRu",
+      "market": "Russia",
+      "kind": "preorder_announcement",
+      "eventDate": "2025-07-17",
+      "powertrains": [
+        "hybrid"
+      ],
+      "observation": "EXLANTIX ES hybrid is offered for pre-order; marketing body wording requires separate certified-body evidence.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "esShanghai",
+      "sourceId": "exeedKz",
+      "market": "China presentation / Kazakhstan announcement",
+      "kind": "presentation",
+      "eventDate": "2025-04-30",
+      "powertrains": [
+        "hybrid",
+        "battery_electric"
+      ],
+      "observation": "ES REEV has a petrol generator; ES BEV is separately described.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "passionRu",
+      "sourceId": "passionRuHybrid",
+      "market": "Russia",
+      "kind": "specification_announcement",
+      "eventDate": "2025-06-27",
+      "powertrains": [
+        "hybrid"
+      ],
+      "observation": "Russian EVR is described with a petrol generator and intended local production.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "passionIdentity",
+      "sourceId": "passionName",
+      "market": "China presentation / Russia naming",
+      "kind": "identity_and_bev_announcement",
+      "eventDate": "2023-04-18",
+      "powertrains": [
+        "battery_electric"
+      ],
+      "observation": "Manufacturer identifies the electric Zhuiguang sedan as the model to be marketed as Passion in Russia.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "passionPhev",
+      "sourceId": "passionChina",
+      "market": "China",
+      "kind": "launch_event",
+      "eventDate": "2023-12-05",
+      "powertrains": [
+        "hybrid"
+      ],
+      "observation": "Primary indexed report records Zhuiguang PHEV launch on 5 December 2023; original page timed out.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "dreamDual",
+      "sourceId": "dreamChina",
+      "market": "China",
+      "kind": "launch_event",
+      "eventDate": "2022-05-07",
+      "powertrains": [
+        "hybrid",
+        "battery_electric"
+      ],
+      "observation": "Dream low-carbon version has an engine; zero-carbon version is electric-only.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "hanHybrid",
+      "sourceId": "byd2022",
+      "market": "China product portfolio",
+      "kind": "reporting_period",
+      "eventDate": "2022",
+      "powertrains": [
+        "hybrid"
+      ],
+      "observation": "2022 issuer report identifies Han DM-i and Han DM-p hybrid applications.",
+      "manufactureYearRangeConfirmed": null,
+      "eventDatePrecision": "year"
+    },
+    {
+      "id": "hanEv",
+      "sourceId": "byd2022",
+      "market": "Chile",
+      "kind": "launch_event",
+      "eventDate": "2022-12-07",
+      "powertrains": [
+        "battery_electric"
+      ],
+      "observation": "Issuer report records introduction of HAN EV in Chile.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "d9Launch",
+      "sourceId": "byd2022",
+      "market": "China",
+      "kind": "model_launch_powertrain_unspecified",
+      "eventDate": "2022-08-23",
+      "powertrains": [],
+      "observation": "Issuer report dates D9 launch, without establishing the powertrain of each launch version.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "d9Europe",
+      "sourceId": "denzaEurope",
+      "market": "Europe; UK specifications provisional",
+      "kind": "dated_offer_announcement",
+      "eventDate": null,
+      "powertrains": [
+        "hybrid"
+      ],
+      "observation": "European D9 DM-i is described with petrol engine; conflicting 2026 header/body dates retained.",
+      "manufactureYearRangeConfirmed": null,
+      "reportedDates": {
+        "pageHeader": "2026-06-02",
+        "articleBody": "2026-04-09"
+      }
+    },
+    {
+      "id": "spaceEurope",
+      "sourceId": "citroen2022",
+      "market": "Europe; private new orders only",
+      "kind": "order_policy",
+      "eventDate": "2022-01",
+      "powertrains": [
+        "battery_electric"
+      ],
+      "observation": "New private orders become electric-only in the stated European scope; fuel variants outside Europe/utility scope remain mentioned.",
+      "manufactureYearRangeConfirmed": null,
+      "eventDatePrecision": "month",
+      "doesNotCoverEveryManufacturedVehicle": true
+    },
+    {
+      "id": "spaceUk",
+      "sourceId": "citroen2025",
+      "market": "United Kingdom",
+      "kind": "future_offer_announcement",
+      "eventDate": "2025-08-29",
+      "powertrains": [
+        "diesel",
+        "battery_electric"
+      ],
+      "observation": "SpaceTourer diesel is announced for autumn 2025 alongside electric offer; petrol wording is for Berlingo.",
+      "manufactureYearRangeConfirmed": null,
+      "announcedAvailability": "autumn 2025"
+    },
+    {
+      "id": "zafiraOrder",
+      "sourceId": "opel2022",
+      "market": "Europe / Germany announcement context",
+      "kind": "order_policy",
+      "eventDate": "2022-01-06",
+      "powertrains": [
+        "battery_electric"
+      ],
+      "observation": "Zafira Life new-order offer is described as electric-only, with no global production conclusion.",
+      "manufactureYearRangeConfirmed": null
+    },
+    {
+      "id": "zafiraItaly",
+      "sourceId": "opelItaly",
+      "market": "Italy",
+      "kind": "dated_price_list",
+      "eventDate": "2025-06-20",
+      "powertrains": [
+        "diesel",
+        "battery_electric"
+      ],
+      "observation": "Exact Zafira Life table lists diesel and full-electric variants; cover is labelled MY24-K0.",
+      "manufactureYearRangeConfirmed": null,
+      "manufacturerModelYearLabel": "MY24-K0"
+    },
+    {
+      "id": "lexusPrior",
+      "sourceId": "lexus2020",
+      "market": "France",
+      "kind": "dated_price_list",
+      "eventDate": "2020-09-01",
+      "powertrains": [
+        "hybrid"
+      ],
+      "observation": "ES 300h appears in distinct MY20 and MY21 blocks.",
+      "manufactureYearRangeConfirmed": null,
+      "manufacturerModelYearLabels": [
+        "MY20",
+        "MY21"
+      ]
+    },
+    {
+      "id": "lexusCurrent",
+      "sourceId": "lexus2026",
+      "market": "Europe",
+      "kind": "new_generation_specification",
+      "eventDate": "2026-05-27",
+      "powertrains": [
+        "hybrid",
+        "battery_electric"
+      ],
+      "observation": "Eighth-generation ES has separate 300h/350h hybrid and 350e/500e battery-electric variants.",
+      "manufactureYearRangeConfirmed": null,
+      "generation": "eighth"
+    }
+  ],
+  "rows": [
+    {
+      "rowNumber": 78,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Lexus",
+        "model": "ES",
+        "min_year": "2020",
+        "status": "approved",
+        "notes": ""
+      },
+      "claimIds": [
+        "lexusPrior",
+        "lexusCurrent"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "Do not use an eighth-generation BEV/hybrid description to characterize the entire 2020+ rule.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    },
+    {
+      "rowNumber": 86,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "BYD",
+        "model": "Han",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": "Проверить удобство задних сидений"
+      },
+      "claimIds": [
+        "hanHybrid",
+        "hanEv"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "China Han DM-i/DM-p and Chile Han EV are different variants/markets; no inference for every 2022+ car.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    },
+    {
+      "rowNumber": 87,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Voyah",
+        "model": "Passion",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "claimIds": [
+        "passionIdentity",
+        "passionPhev",
+        "passionRu"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "Do not raise the minimum year to 2025 merely from Russian EVR news: a Chinese PHEV launch is recorded in December 2023; actual production/year/identity remain to verify.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    },
+    {
+      "rowNumber": 103,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Citroën",
+        "model": "SpaceTourer",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "claimIds": [
+        "spaceEurope",
+        "spaceUk"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "An order restriction is not a worldwide manufacture ban. Utility/cargo exceptions do not approve passenger conversions.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    },
+    {
+      "rowNumber": 104,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Opel",
+        "model": "Zafira Life",
+        "min_year": "2019",
+        "status": "approved",
+        "notes": ""
+      },
+      "claimIds": [
+        "zafiraOrder",
+        "zafiraItaly"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "Exact Life name is confirmed for Italy in 2025; MY24 and 2022 order policy do not fill all 2019+ years/markets.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    },
+    {
+      "rowNumber": 107,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Voyah",
+        "model": "Dream",
+        "min_year": "2022",
+        "status": "approved",
+        "notes": ""
+      },
+      "claimIds": [
+        "dreamDual"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "The Chinese 2022 engine-assisted version is not evidence for every regional Dream trim.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    },
+    {
+      "rowNumber": 108,
+      "rule": {
+        "tariff": "Минивэн",
+        "brand": "Denza",
+        "model": "D9",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": ""
+      },
+      "claimIds": [
+        "d9Launch",
+        "d9Europe"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "A 2022 model launch plus 2026 European hybrid evidence does not prove a 2023 Chinese DM-i car.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    },
+    {
+      "rowNumber": 119,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Exlantix",
+        "model": "ES",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Проверить конкретную версию и оснащение второго ряда; требуется проверка конкретного автомобиля"
+      },
+      "claimIds": [
+        "esShanghai",
+        "esRu"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "Russian four-door coupe marketing and Kazakhstan sedan wording do not choose the certified body; Business sedan-only policy remains.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    },
+    {
+      "rowNumber": 120,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Stelato",
+        "model": "S9",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Проверить комплектацию, фактическое число мест и готовность автомобиля к маршруту; требуется проверка конкретного автомобиля"
+      },
+      "claimIds": [
+        "s9Launch",
+        "s9Now"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "The 2025 hybrid launch and current table do not establish any 2023/2024 manufactured hybrid.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    },
+    {
+      "rowNumber": 121,
+      "rule": {
+        "tariff": "Бизнес",
+        "brand": "Avatr",
+        "model": "12",
+        "min_year": "2023",
+        "status": "approved",
+        "notes": "Утверждённые условия: Отдельно утвердить кузов; проверить посадку, второй ряд и фактическое число мест; требуется проверка конкретного автомобиля"
+      },
+      "claimIds": [
+        "avatrLaunch",
+        "avatrNow"
+      ],
+      "reviewStatus": "bounded_observations_ranges_incomplete",
+      "manufactureYearsExhaustivelyCovered": [],
+      "generationCoverageComplete": false,
+      "marketCoverageComplete": false,
+      "unresolved": [
+        "The November 2024 dual-power launch does not establish a 2023 manufactured hybrid.",
+        "Complete actual manufacturing-year/generation/market/trim coverage is still missing.",
+        "Individual vehicle identity, powertrain, body and document checks remain required; no admission is granted by this evidence."
+      ]
+    }
+  ],
+  "remainingRangeRows": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    105,
+    106,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118
+  ],
+  "summary": {
+    "catalogueRows": 121,
+    "datedMarketFollowupRows": 10,
+    "remainingRangeRows": 111,
+    "fullyExhaustiveRows": 0,
+    "primarySources": 18,
+    "observations": 20
+  },
+  "ownerBodyDecision": {
+    "status": "approved_and_implemented",
+    "liftback": "comfort_only",
+    "business": "sedan_only_except_existing_Li_Auto_L7_L9_crossover_exceptions",
+    "runtimeVerification": "docs/COMFORT_LIFTBACK_VERIFICATION_2026-11-19.json",
+    "historicalPendingInRevision2IsSuperseded": true
+  },
+  "retrievalLimits": [
+    {
+      "url": "https://www.dfmc.com.cn/news/company/news_20231207_1516.html",
+      "result": "direct timeout twice; only primary indexed launch excerpt used"
+    },
+    {
+      "url": "https://www.citroen.at/content/dam/citroen/austria/downloads/preislisten/SpaceTourer_Produktblatt_2024_04_MYJ0.pdf",
+      "result": "404; no 2024 diesel claim derived from this unavailable file"
+    },
+    {
+      "url": "https://www.avatr.com/news?newsChId=b4f6ac0866e486cad96dd9fe530b1fd5",
+      "result": "current rendering returned navigation shell; not used to establish historical production dates"
+    }
+  ],
+  "limits": [
+    "Publication date, launch/pre-order date, model year and actual manufacture year are different concepts.",
+    "Current pages and menus do not prove complete historical trim ranges or absence of other powertrains.",
+    "Unknown individual vehicle parameters follow the already-approved manual-review path; no new rejection or approval rule is introduced.",
+    "An EV driving mode in a hybrid does not by itself identify a battery-electric vehicle.",
+    "No runtime aliases, catalogue fields/years/order, archived rows, grants, pins or vehicle status are changed."
+  ]
+}
