@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "scope": "staging_private_aggregate_read",
+  "sourceCommit": "6df1c9f051fc415f1152aa1e1bce7e7130f9e952",
+  "sourceTree": "8bd6908373445780ae7fc99dae68864baee9a6ef",
+  "worker": "uber-v3-staging",
+  "databaseName": "transfer-servis52-staging",
+  "databaseId": "66474481-a123-47f9-81b4-12af7565ec8d",
+  "profile": "legacy",
+  "querySha256": "c9b81787b758ee7be64282331ffec5be4bd05f7d0e87113b7b6c781028377cc3",
+  "startedAtUtc": "2026-11-24T17:03:26.208Z",
+  "completedAtUtc": "2026-11-24T17:03:30.230Z",
+  "activationAuthorized": false,
+  "admissionEvaluated": false,
+  "remoteWritesPerformed": false,
+  "result": "success",
+  "sourceFilesVerified": true,
+  "schemaStable": true,
+  "aggregateFormatVerified": true,
+  "privateReportWritten": true
+}

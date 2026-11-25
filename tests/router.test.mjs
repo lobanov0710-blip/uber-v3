@@ -629,6 +629,28 @@ function createListDatabase(
         async first() {
 
           if (
+            /FROM staff_owner_binding/i.test(
+              sql
+            )
+          ) {
+
+            return (
+              role === "admin"
+              &&
+              String(
+                args[0] ?? ""
+              ) ===
+                staffId
+            )
+              ? {
+                  account_id:
+                    staffId
+                }
+              : null;
+          }
+
+
+          if (
             /FROM staff_accounts/i.test(
               sql
             )
@@ -1289,20 +1311,22 @@ await test(
           )
       )
     );
-    assert.equal(scheduledPush.length, 1,
-      "A newly persisted order schedules one driver push");
-    await Promise.all(scheduledPush);
+    assert.equal(
+      scheduledPush.length,
+      0,
+      "An unassigned order must not notify any Driver"
+    );
 
   }
 );
 
 
 // ========================================
-// IDEMPOTENT ORDER RETRIES MUST NOT PUSH
+// ORDER CREATION MUST NOT PUSH TO DRIVERS
 // ========================================
 
 await test(
-  "idempotent POST /orders returns the existing receipt without another driver push",
+  "idempotent POST /orders remains silent for Driver push",
   async () => {
     const quoteId = "123e4567-e89b-42d3-a456-426614174000";
     const orderId = "abcdef12-3456-4234-9abc-123456789abc";
@@ -1367,7 +1391,7 @@ await test(
     assert.equal(reads, 1);
     assert.equal(writes, 0);
     assert.equal(scheduledPush.length, 0,
-      "An idempotent retry must not wake drivers twice");
+      "An idempotent retry must not notify any Driver");
   }
 );
 
@@ -1869,7 +1893,7 @@ await test(
 // ========================================
 
 await test(
-  "driver sees new orders and own assigned orders only",
+  "driver sees only server-assigned own orders",
   async () => {
 
     const token =
@@ -1972,13 +1996,13 @@ await test(
 
     assert.equal(
       body.total,
-      2
+      1
     );
 
 
     assert.equal(
       body.orders.length,
-      2
+      1
     );
 
 
@@ -1998,31 +2022,15 @@ await test(
       );
 
 
-    assert.ok(
-      newOrder
+    assert.equal(
+      newOrder,
+      undefined,
+      "unassigned new orders must not be visible to Driver"
     );
 
 
     assert.ok(
       ownOrder
-    );
-
-
-    assert.equal(
-      Object.hasOwn(
-        newOrder,
-        "name"
-      ),
-      false
-    );
-
-
-    assert.equal(
-      Object.hasOwn(
-        newOrder,
-        "phone"
-      ),
-      false
     );
 
 

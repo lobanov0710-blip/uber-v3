@@ -289,6 +289,24 @@ function createFakeDatabase(
     [];
 
 
+  const ownerAccountId =
+    Object.hasOwn(
+      options,
+      "ownerAccountId"
+    )
+      ? options.ownerAccountId
+      : ADMIN_ID;
+
+
+  const permissionsByAccount =
+    options.permissionsByAccount
+    &&
+    typeof options.permissionsByAccount ===
+      "object"
+      ? options.permissionsByAccount
+      : {};
+
+
   const firstResults =
     Array.isArray(
       options.firstResults
@@ -347,6 +365,26 @@ function createFakeDatabase(
         async first() {
 
           if (
+            /FROM\s+staff_owner_binding/i.test(
+              call.sql
+            )
+          ) {
+
+            return (
+              ownerAccountId
+              &&
+              call.args[0] ===
+                ownerAccountId
+            )
+              ? {
+                  account_id:
+                    ownerAccountId
+                }
+              : null;
+          }
+
+
+          if (
             firstResults.length ===
               0
           ) {
@@ -375,6 +413,32 @@ function createFakeDatabase(
 
 
         async all() {
+
+          if (
+            /FROM\s+staff_permissions/i.test(
+              call.sql
+            )
+          ) {
+
+            return {
+              success:
+                true,
+
+              results:
+                (
+                  permissionsByAccount[
+                    call.args[0]
+                  ] ||
+                  []
+                )
+                  .map(
+                    permission => ({
+                      permission
+                    })
+                  )
+            };
+          }
+
 
           if (
             allResults.length ===

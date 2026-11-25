@@ -1,0 +1,78 @@
+{
+  "date": "2026-11-25",
+  "status": "proposal_not_execution_approval",
+  "sourceCommit": "6df1c9f051fc415f1152aa1e1bce7e7130f9e952",
+  "sourceTree": "8bd6908373445780ae7fc99dae68864baee9a6ef",
+  "candidateMigrationFiles": [
+    {
+      "name": "0019_vehicle_classification_versions.sql",
+      "sha256": "38a1917325f81eb33daa7b3eb5e00943aeb5cd92aa3477e686434d3332c50c1a"
+    },
+    {
+      "name": "0020_vehicle_registration_classification_fields.sql",
+      "sha256": "7708e4614e603c2342a449a09f609ab6b458160963118c32bd8f1ee8a97e3a69"
+    },
+    {
+      "name": "0021_vehicle_rule_bindings.sql",
+      "sha256": "2615041bd18690aeb8397859ad2a2a1c3fee6f8ad773e1ec3380ed59d8664b1c"
+    },
+    {
+      "name": "0022_vehicle_rule_definitions.sql",
+      "sha256": "89dcdb0e696116a11bf5b5bb8a41aeccef52e3998d62cb2ba6ef077f122d39e8"
+    },
+    {
+      "name": "0023_trusted_vehicle_assessments.sql",
+      "sha256": "a8076bac58db26b02b36cd7f92d2e68a0e66664372c67360bb4d7d49b2a718a5"
+    },
+    {
+      "name": "0024_vehicle_reverification_holds.sql",
+      "sha256": "523a87165a1f5eddabbccfad3e736e9ecacf8b1ad2cb1ef2cbc67a00d8070e66"
+    },
+    {
+      "name": "0025_comfort_liftback.sql",
+      "sha256": "19e3f136bbacbe0ba89d20c24dcc61cbbe42abe912f3f6646dab5d481279aecd"
+    }
+  ],
+  "syntheticSqliteChecks": [
+    {
+      "syntheticStartCutoff": 18,
+      "result": "PASS",
+      "finalSchemaSourceHash": "1780a779590bda4513f5583fb879fc746c65057bd72545110f7b4e9e2551d6ae",
+      "foreignKeys": "PASS",
+      "quickCheck": "ok",
+      "automaticRuleSeed": false,
+      "remainingMigrations": [
+        "0019_vehicle_classification_versions.sql",
+        "0020_vehicle_registration_classification_fields.sql",
+        "0021_vehicle_rule_bindings.sql",
+        "0022_vehicle_rule_definitions.sql",
+        "0023_trusted_vehicle_assessments.sql",
+        "0024_vehicle_reverification_holds.sql",
+        "0025_comfort_liftback.sql"
+      ]
+    },
+    {
+      "syntheticStartCutoff": 19,
+      "result": "PASS",
+      "finalSchemaSourceHash": "1780a779590bda4513f5583fb879fc746c65057bd72545110f7b4e9e2551d6ae",
+      "foreignKeys": "PASS",
+      "quickCheck": "ok",
+      "automaticRuleSeed": false,
+      "remainingMigrations": [
+        "0020_vehicle_registration_classification_fields.sql",
+        "0021_vehicle_rule_bindings.sql",
+        "0022_vehicle_rule_definitions.sql",
+        "0023_trusted_vehicle_assessments.sql",
+        "0024_vehicle_reverification_holds.sql",
+        "0025_comfort_liftback.sql"
+      ]
+    }
+  ],
+  "realDatabaseReadDuringPreparation": false,
+  "remoteWritesPerformed": false,
+  "workerDeploymentPerformed": false,
+  "privateReportFiguresIncluded": false,
+  "liveStartCutoff": "unknown",
+  "liveWorkerVersion": "unknown",
+  "catalogActivationAuthorized": false
+}

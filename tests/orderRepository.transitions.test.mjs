@@ -1,143 +1,102 @@
 import assert from "node:assert/strict";
 
 import {
-  takeOrderForDriver,
   advanceDriverOrder,
   cancelOrder
 } from "../src/core/orderRepository.js";
 
 
-// ========================================
-// SIMPLE ASYNC TEST RUNNER
-// ========================================
-
 async function test(
   name,
   fn
 ) {
-
   try {
-
     await fn();
-
     console.log(
       `✓ ${name}`
     );
-
   } catch (error) {
-
     console.error(
       `✘ ${name}`
     );
-
     console.error(
       error
     );
-
     process.exitCode = 1;
   }
 }
 
 
-// ========================================
-// TEST DATA
-// ========================================
-
 function orderRow(
   overrides = {}
 ) {
-
   return {
     id:
       "order-1",
-
     quote_id:
       null,
-
     name:
       "Иван",
-
     phone:
       "+79990000001",
-
     route:
       "Нижний Новгород → Москва",
-
     from_place:
       "Нижний Новгород",
-
     to_place:
       "Москва",
-
     trip_date:
       "2026-10-20",
-
     comment:
       "",
-
     tariff:
       null,
-
     distance_km:
       null,
-
     duration_minutes:
       null,
-
     price_rub:
       null,
-
     status:
-      "new",
-
+      "in_progress",
     driver_id:
-      null,
-
+      "driver-1",
     created_at:
       1000,
-
     updated_at:
-      1000,
-
+      3000,
+    revision:
+      3,
     ...overrides
   };
 }
 
 
-// ========================================
-// FAKE D1
-// ========================================
-
-function createFakeDatabase(
-  options = {}
+function result(
+  changes,
+  success = true
 ) {
+  return {
+    success,
+    meta: {
+      changes
+    }
+  };
+}
+
+
+function createFakeDatabase({
+  batchResults = [
+    result(1),
+    result(1)
+  ],
+  firstResults = []
+} = {}) {
 
   const calls = [];
-
-
-  const firstResults =
-    Array.isArray(
-      options.firstResults
-    )
-      ? [
-          ...options.firstResults
-        ]
-      : [];
-
-
-  const runResult =
-    options.runResult ?? {
-      success: true,
-
-      meta: {
-        changes: 1
-      }
-    };
-
-
-  const runError =
-    options.runError ??
-    null;
+  const reads = [
+    ...firstResults
+  ];
 
 
   const db = {
@@ -146,9 +105,9 @@ function createFakeDatabase(
 
       const call = {
         sql,
-        args: null
+        args:
+          null
       };
-
 
       calls.push(
         call
@@ -166,34 +125,33 @@ function createFakeDatabase(
         },
 
 
-        async run() {
+        async first() {
 
-          if (runError) {
-
-            throw runError;
-          }
-
-
-          return runResult;
+          return reads.length > 0
+            ? reads.shift()
+            : null;
         },
 
 
-        async first() {
+        async run() {
 
-          if (
-            firstResults.length === 0
-          ) {
-
-            return null;
-          }
-
-
-          return firstResults.shift();
+          return result(1);
         }
       };
 
 
       return statement;
+    },
+
+
+    async batch(statements) {
+
+      assert.equal(
+        statements.length,
+        2
+      );
+
+      return batchResults;
     }
   };
 
@@ -205,463 +163,8 @@ function createFakeDatabase(
 }
 
 
-// ========================================
-// TAKE ORDER
-// ========================================
-
 await test(
-  "driver atomically takes a new unassigned order",
-  async () => {
-
-    const {
-      db,
-      calls
-    } =
-      createFakeDatabase(
-        {
-          firstResults: [
-            orderRow(
-              {
-                status:
-                  "taken",
-
-                driver_id:
-                  "driver-1",
-
-                updated_at:
-                  2000
-              }
-            )
-          ]
-        }
-      );
-
-
-    const result =
-      await takeOrderForDriver(
-        {
-          DB: db
-        },
-        "order-1",
-        "driver-1",
-        2000
-      );
-
-
-    assert.equal(
-      calls.length,
-      2
-    );
-
-
-    assert.match(
-      calls[0].sql,
-      /UPDATE orders/i
-    );
-
-
-    assert.match(
-      calls[0].sql,
-      /status = 'taken'/i
-    );
-
-
-    assert.match(
-      calls[0].sql,
-      /driver_id = \?2/i
-    );
-
-
-    assert.match(
-      calls[0].sql,
-      /status = 'new'/i
-    );
-
-
-    assert.match(
-      calls[0].sql,
-      /driver_id IS NULL/i
-    );
-
-
-    assert.deepEqual(
-      calls[0].args,
-      [
-        "order-1",
-        "driver-1",
-        2000
-      ]
-    );
-
-
-    assert.equal(
-      result.ok,
-      true
-    );
-
-
-    assert.equal(
-      result.order.status,
-      "taken"
-    );
-
-
-    assert.equal(
-      result.order.driverId,
-      "driver-1"
-    );
-  }
-);
-
-
-// ========================================
-// TAKE CONFLICT
-// ========================================
-
-await test(
-  "second driver cannot take an already claimed order",
-  async () => {
-
-    const {
-      db
-    } =
-      createFakeDatabase(
-        {
-          runResult: {
-            success: true,
-
-            meta: {
-              changes: 0
-            }
-          },
-
-          firstResults: [
-            orderRow(
-              {
-                status:
-                  "taken",
-
-                driver_id:
-                  "driver-1",
-
-                updated_at:
-                  2000
-              }
-            )
-          ]
-        }
-      );
-
-
-    const result =
-      await takeOrderForDriver(
-        {
-          DB: db
-        },
-        "order-1",
-        "driver-2",
-        3000
-      );
-
-
-    assert.equal(
-      result.ok,
-      false
-    );
-
-
-    assert.equal(
-      result.reason,
-      "conflict"
-    );
-
-
-    assert.equal(
-      result.order.driverId,
-      "driver-1"
-    );
-  }
-);
-
-
-// ========================================
-// TAKE NOT FOUND
-// ========================================
-
-await test(
-  "taking a missing order returns not_found",
-  async () => {
-
-    const {
-      db
-    } =
-      createFakeDatabase(
-        {
-          runResult: {
-            success: true,
-
-            meta: {
-              changes: 0
-            }
-          },
-
-          firstResults: [
-            null
-          ]
-        }
-      );
-
-
-    const result =
-      await takeOrderForDriver(
-        {
-          DB: db
-        },
-        "missing-order",
-        "driver-1",
-        2000
-      );
-
-
-    assert.deepEqual(
-      result,
-      {
-        ok: false,
-        reason:
-          "not_found",
-        order: null
-      }
-    );
-  }
-);
-
-
-// ========================================
-// TAKEN -> IN PROGRESS
-// ========================================
-
-await test(
-  "assigned driver starts the trip",
-  async () => {
-
-    const {
-      db,
-      calls
-    } =
-      createFakeDatabase(
-        {
-          firstResults: [
-            orderRow(
-              {
-                status:
-                  "in_progress",
-
-                driver_id:
-                  "driver-1",
-
-                updated_at:
-                  3000
-              }
-            )
-          ]
-        }
-      );
-
-
-    const result =
-      await advanceDriverOrder(
-        {
-          DB: db
-        },
-        "order-1",
-        "driver-1",
-        "in_progress",
-        3000
-      );
-
-
-    assert.match(
-      calls[0].sql,
-      /driver_id = \?2/i
-    );
-
-
-    assert.match(
-      calls[0].sql,
-      /status = \?3/i
-    );
-
-
-    assert.deepEqual(
-      calls[0].args,
-      [
-        "order-1",
-        "driver-1",
-        "taken",
-        "in_progress",
-        3000
-      ]
-    );
-
-
-    assert.equal(
-      result.ok,
-      true
-    );
-
-
-    assert.equal(
-      result.order.status,
-      "in_progress"
-    );
-  }
-);
-
-
-// ========================================
-// IN PROGRESS -> DONE
-// ========================================
-
-await test(
-  "assigned driver completes the trip",
-  async () => {
-
-    const {
-      db,
-      calls
-    } =
-      createFakeDatabase(
-        {
-          firstResults: [
-            orderRow(
-              {
-                status:
-                  "done",
-
-                driver_id:
-                  "driver-1",
-
-                updated_at:
-                  4000
-              }
-            )
-          ]
-        }
-      );
-
-
-    const result =
-      await advanceDriverOrder(
-        {
-          DB: db
-        },
-        "order-1",
-        "driver-1",
-        "done",
-        4000
-      );
-
-
-    assert.deepEqual(
-      calls[0].args,
-      [
-        "order-1",
-        "driver-1",
-        "in_progress",
-        "done",
-        4000
-      ]
-    );
-
-
-    assert.equal(
-      result.ok,
-      true
-    );
-
-
-    assert.equal(
-      result.order.status,
-      "done"
-    );
-  }
-);
-
-
-// ========================================
-// WRONG DRIVER
-// ========================================
-
-await test(
-  "another driver cannot advance the assigned order",
-  async () => {
-
-    const {
-      db
-    } =
-      createFakeDatabase(
-        {
-          runResult: {
-            success: true,
-
-            meta: {
-              changes: 0
-            }
-          },
-
-          firstResults: [
-            orderRow(
-              {
-                status:
-                  "taken",
-
-                driver_id:
-                  "driver-1"
-              }
-            )
-          ]
-        }
-      );
-
-
-    const result =
-      await advanceDriverOrder(
-        {
-          DB: db
-        },
-        "order-1",
-        "driver-2",
-        "in_progress",
-        3000
-      );
-
-
-    assert.equal(
-      result.ok,
-      false
-    );
-
-
-    assert.equal(
-      result.reason,
-      "conflict"
-    );
-
-
-    assert.equal(
-      result.order.driverId,
-      "driver-1"
-    );
-  }
-);
-
-
-// ========================================
-// ILLEGAL DRIVER TRANSITIONS
-// ========================================
-
-await test(
-  "driver cannot perform arbitrary status transitions",
+  "repository rejects legacy taken -> in_progress",
   async () => {
 
     const {
@@ -675,30 +178,14 @@ await test(
       () =>
         advanceDriverOrder(
           {
-            DB: db
+            DB:
+              db
           },
           "order-1",
           "driver-1",
-          "canceled",
-          3000
+          "in_progress",
+          4000
         ),
-
-      /Invalid driver order transition/
-    );
-
-
-    await assert.rejects(
-      () =>
-        advanceDriverOrder(
-          {
-            DB: db
-          },
-          "order-1",
-          "driver-1",
-          "taken",
-          3000
-        ),
-
       /Invalid driver order transition/
     );
 
@@ -711,132 +198,267 @@ await test(
 );
 
 
-// ========================================
-// ADMIN CANCEL
-// ========================================
-
 await test(
-  "cancel transition accepts non-terminal order",
+  "done atomically completes active in-trip assignment",
   async () => {
 
     const {
       db,
       calls
     } =
-      createFakeDatabase(
+      createFakeDatabase({
+        batchResults: [
+          result(1),
+          result(1)
+        ],
+        firstResults: [
+          orderRow({
+            status:
+              "done",
+            updated_at:
+              4000,
+            revision:
+              4
+          })
+        ]
+      });
+
+
+    const transition =
+      await advanceDriverOrder(
         {
-          firstResults: [
-            orderRow(
-              {
-                status:
-                  "canceled",
-
-                driver_id:
-                  "driver-1",
-
-                updated_at:
-                  5000
-              }
-            )
-          ]
-        }
+          DB:
+            db
+        },
+        "order-1",
+        "driver-1",
+        "done",
+        4000
       );
 
 
-    const result =
+    assert.equal(
+      transition.ok,
+      true
+    );
+
+    assert.equal(
+      transition.order.status,
+      "done"
+    );
+
+
+    assert.match(
+      calls[0].sql,
+      /status\s*=\s*\?4/i
+    );
+
+    assert.match(
+      calls[0].sql,
+      /a\.phase\s*=\s*'in_trip'/i
+    );
+
+    assert.match(
+      calls[1].sql,
+      /UPDATE\s+order_assignments/i
+    );
+
+    assert.match(
+      calls[1].sql,
+      /state\s*=\s*'completed'/i
+    );
+
+    assert.match(
+      calls[1].sql,
+      /phase\s*=\s*'in_trip'/i
+    );
+  }
+);
+
+
+await test(
+  "legacy in-progress order without assignment can still complete",
+  async () => {
+
+    const {
+      db
+    } =
+      createFakeDatabase({
+        batchResults: [
+          result(1),
+          result(0)
+        ],
+        firstResults: [
+          orderRow({
+            status:
+              "done",
+            revision:
+              4
+          })
+        ]
+      });
+
+
+    const transition =
+      await advanceDriverOrder(
+        {
+          DB:
+            db
+        },
+        "order-1",
+        "driver-1",
+        "done",
+        4000
+      );
+
+
+    assert.equal(
+      transition.ok,
+      true
+    );
+  }
+);
+
+
+await test(
+  "wrong driver cannot complete assigned order",
+  async () => {
+
+    const {
+      db
+    } =
+      createFakeDatabase({
+        batchResults: [
+          result(0),
+          result(0)
+        ],
+        firstResults: [
+          orderRow({
+            driver_id:
+              "driver-1"
+          })
+        ]
+      });
+
+
+    const transition =
+      await advanceDriverOrder(
+        {
+          DB:
+            db
+        },
+        "order-1",
+        "driver-2",
+        "done",
+        4000
+      );
+
+
+    assert.equal(
+      transition.ok,
+      false
+    );
+
+    assert.equal(
+      transition.reason,
+      "conflict"
+    );
+  }
+);
+
+
+await test(
+  "cancel atomically revokes active assignment",
+  async () => {
+
+    const {
+      db,
+      calls
+    } =
+      createFakeDatabase({
+        batchResults: [
+          result(1),
+          result(1)
+        ],
+        firstResults: [
+          orderRow({
+            status:
+              "canceled",
+            revision:
+              4
+          })
+        ]
+      });
+
+
+    const transition =
       await cancelOrder(
         {
-          DB: db
+          DB:
+            db
         },
         "order-1",
         5000
       );
 
 
-    assert.match(
-      calls[0].sql,
-      /status = 'canceled'/i
-    );
-
-
-    assert.match(
-      calls[0].sql,
-      /'new'/i
-    );
-
-
-    assert.match(
-      calls[0].sql,
-      /'taken'/i
-    );
-
-
-    assert.match(
-      calls[0].sql,
-      /'in_progress'/i
-    );
-
-
     assert.equal(
-      result.ok,
+      transition.ok,
       true
     );
 
-
     assert.equal(
-      result.order.status,
+      transition.order.status,
       "canceled"
     );
 
 
-    assert.equal(
-      result.order.driverId,
-      "driver-1"
+    assert.match(
+      calls[1].sql,
+      /UPDATE\s+order_assignments/i
+    );
+
+    assert.match(
+      calls[1].sql,
+      /state\s*=\s*'revoked'/i
+    );
+
+    assert.match(
+      calls[1].sql,
+      /revoked_at/i
     );
   }
 );
 
 
-// ========================================
-// TERMINAL STATE
-// ========================================
-
 await test(
-  "done order cannot be canceled",
+  "unassigned legacy order can still be canceled",
   async () => {
 
     const {
       db
     } =
-      createFakeDatabase(
-        {
-          runResult: {
-            success: true,
-
-            meta: {
-              changes: 0
-            }
-          },
-
-          firstResults: [
-            orderRow(
-              {
-                status:
-                  "done",
-
-                driver_id:
-                  "driver-1"
-              }
-            )
-          ]
-        }
-      );
+      createFakeDatabase({
+        batchResults: [
+          result(1),
+          result(0)
+        ],
+        firstResults: [
+          orderRow({
+            status:
+              "canceled",
+            driver_id:
+              null
+          })
+        ]
+      });
 
 
-    const result =
+    const transition =
       await cancelOrder(
         {
-          DB: db
+          DB:
+            db
         },
         "order-1",
         5000
@@ -844,157 +466,165 @@ await test(
 
 
     assert.equal(
-      result.ok,
-      false
-    );
-
-
-    assert.equal(
-      result.reason,
-      "conflict"
-    );
-
-
-    assert.equal(
-      result.order.status,
-      "done"
+      transition.ok,
+      true
     );
   }
 );
 
 
-// ========================================
-// D1 FAILURE
-// ========================================
-
 await test(
-  "unsuccessful D1 transition is rejected",
+  "terminal done order cannot be canceled",
   async () => {
 
     const {
       db
     } =
-      createFakeDatabase(
-        {
-          runResult: {
-            success: false,
+      createFakeDatabase({
+        batchResults: [
+          result(0),
+          result(0)
+        ],
+        firstResults: [
+          orderRow({
+            status:
+              "done"
+          })
+        ]
+      });
 
-            meta: {
-              changes: 0
-            }
-          }
-        }
+
+    const transition =
+      await cancelOrder(
+        {
+          DB:
+            db
+        },
+        "order-1",
+        5000
       );
+
+
+    assert.equal(
+      transition.ok,
+      false
+    );
+
+    assert.equal(
+      transition.reason,
+      "conflict"
+    );
+  }
+);
+
+
+await test(
+  "D1 failure is rejected",
+  async () => {
+
+    const {
+      db
+    } =
+      createFakeDatabase({
+        batchResults: [
+          result(0, false),
+          result(0)
+        ]
+      });
 
 
     await assert.rejects(
       () =>
-        takeOrderForDriver(
+        cancelOrder(
           {
-            DB: db
+            DB:
+              db
           },
           "order-1",
-          "driver-1",
-          2000
+          5000
         ),
-
       /Order transition failed/
     );
   }
 );
 
 
-// ========================================
-// INVALID D1 RESULT
-// ========================================
-
 await test(
-  "transition requires valid D1 change count",
+  "assignment terminal update requires valid D1 change count",
   async () => {
 
     const {
       db
     } =
-      createFakeDatabase(
-        {
-          runResult: {
-            success: true
-          }
-        }
-      );
+      createFakeDatabase({
+        batchResults: [
+          result(1),
+          result(2)
+        ]
+      });
 
 
     await assert.rejects(
       () =>
-        takeOrderForDriver(
+        cancelOrder(
           {
-            DB: db
+            DB:
+              db
           },
           "order-1",
-          "driver-1",
-          2000
+          5000
         ),
-
-      /Invalid order transition result/
+      /Invalid order assignment revocation result/
     );
   }
 );
 
 
-// ========================================
-// READBACK FAILURE
-// ========================================
-
 await test(
-  "successful transition requires order readback",
+  "successful terminal transition requires order readback",
   async () => {
 
     const {
       db
     } =
-      createFakeDatabase(
-        {
-          firstResults: [
-            null
-          ]
-        }
-      );
+      createFakeDatabase({
+        batchResults: [
+          result(1),
+          result(0)
+        ],
+        firstResults: [
+          null
+        ]
+      });
 
 
     await assert.rejects(
       () =>
-        takeOrderForDriver(
+        cancelOrder(
           {
-            DB: db
+            DB:
+              db
           },
           "order-1",
-          "driver-1",
-          2000
+          5000
         ),
-
       /Order transition readback failed/
     );
   }
 );
 
 
-// ========================================
-// DATABASE REQUIRED
-// ========================================
-
 await test(
-  "order transition requires D1 binding",
+  "terminal transition requires D1 binding",
   async () => {
 
     await assert.rejects(
       () =>
-        takeOrderForDriver(
+        cancelOrder(
           {},
           "order-1",
-          "driver-1",
-          2000
+          5000
         ),
-
       /D1 DB binding is not configured/
     );
   }
@@ -1005,7 +635,6 @@ console.log("");
 
 
 if (!process.exitCode) {
-
   console.log(
     "✓ ALL ORDER TRANSITION TESTS PASSED"
   );

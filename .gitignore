@@ -9,3 +9,12 @@ node_modules/
 # These files may contain password hashes
 # and must never be committed.
 .staff-bootstrap/
+
+# Python preflight test artifacts.
+__pycache__/
+*.py[cod]
+
+# Firebase client configuration and local credential artifacts.
+.firebase/
+**/google-services.json
+**/service-account*.json

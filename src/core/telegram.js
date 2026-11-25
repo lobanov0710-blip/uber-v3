@@ -98,12 +98,9 @@ export async function tgSend(
         }
       );
 
-  } catch (error) {
+  } catch {
 
-    console.error(
-      "TELEGRAM NETWORK ERROR:",
-      error
-    );
+    console.error("TELEGRAM NETWORK ERROR");
 
     throw new Error(
       "Telegram network error"
@@ -127,39 +124,14 @@ export async function tgSend(
     data.ok !== true
   ) {
 
-    console.error(
-      "TELEGRAM API ERROR:",
-      {
-        status:
-          response.status,
-
-        statusText:
-          response.statusText,
-
-        errorCode:
-          data?.error_code,
-
-        description:
-          data?.description
-      }
-    );
+    console.error("TELEGRAM API ERROR", { status: response.status });
 
     throw new Error(
-      data?.description ||
       `Telegram HTTP ${response.status}`
     );
   }
 
-  console.log(
-    "TELEGRAM SENT:",
-    {
-      messageId:
-        data.result?.message_id,
-
-      chatId:
-        data.result?.chat?.id
-    }
-  );
+  console.log("TELEGRAM SENT");
 
   return {
     ok: true,

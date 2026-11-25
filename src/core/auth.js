@@ -372,12 +372,7 @@ export async function verifyJWT(
 
     return payload;
 
-  } catch (error) {
-
-    console.warn(
-      "JWT VERIFY ERROR:",
-      error
-    );
+  } catch {
 
     return null;
   }
