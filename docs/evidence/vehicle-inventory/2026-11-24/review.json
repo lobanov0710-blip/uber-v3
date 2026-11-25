@@ -1,0 +1,17 @@
+{
+  "reviewedOn": "2026-11-25",
+  "receiptFieldsVerified": 19,
+  "sourceMatchesTestedBundle": true,
+  "stagingTargetMatches": true,
+  "fixedProfileAndQueryMatch": true,
+  "flagsAndTimeWindowValid": true,
+  "publicFieldAllowlistVerified": true,
+  "profile": "legacy",
+  "readStartedMoscow": "2026-11-24T20:03:26.208000+03:00",
+  "readCompletedMoscow": "2026-11-24T20:03:30.230000+03:00",
+  "limitations": [
+    "Owner-supplied unsigned execution receipt; no independent Cloudflare query was made during review.",
+    "Private counters and private report contents were not received or reviewed.",
+    "No migration, activation, admission or write approval follows from receipt success."
+  ]
+}
