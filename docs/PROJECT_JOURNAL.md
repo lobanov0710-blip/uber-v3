@@ -3407,3 +3407,36 @@ manifest, SHA SQL legacy, известные cutoffs18/19. Runtime-тесты/н
 обзор 111 range followups остаётся открытым. G1 на паузе, D4–D7 pending;
 нет запросов к D1, remote writes, новых прав/аккаунтов/ключей, seed, backfill,
 migration apply, изменения каталога/версий/pins, APK, merge/deploy.
+
+
+## G2: предложение prerequisites схемы и metadata preflight — 2026-11-25
+
+Владелец подтвердил совпадение времени открытого отчёта и перешёл к его
+рассмотрению. Полученный частный фрагмент не воспроизведён в Git/документах,
+не хешировался и не превращён в новый публичный отчёт. Полный private report
+не получен/не валидирован; его недостающая часть не запрашивалась. Рассмотрение
+условного сценария не означает пустоту всей D1 или отсутствие OWNER/MFA/истории.
+
+Подготовлено [предложение этапа схемы](VEHICLE_SCHEMA_STAGE_PROPOSAL_2026-11-25.md)
+и manifest7 SHA256 для миграций19–25 из source6df1c9f/tree8bd69083. Две
+конкретные последовательности зависят от подтверждённого cutoff18/19;
+фактическая версия пока не выбрана. Отмечены DROP COLUMN в20 и перестройка
+trust-связок в25; обновление не описывается как DDL без изменений объектов.
+Описаны запреты пересоздания базы/сброса OWNER, сохранность данных/истории,
+совместимость Worker/Android, freshness и отдельное согласование восстановления.
+Seed/активация/полномочия/каталог не меняются;111ranges остаются открытыми.
+
+Предложен новый отдельный metadata preflight: существующий fixed D1 metadata
+SQL без агрегатов, deployments и version metadata только uber-v3-staging,
+выделение DB binding и двух scope-параметров, без raw responses/credentials/
+private numbers/прочих var values. Worker control-plane metadata не входила
+в вариант A; исполнение и подготовка нового ограниченного пакета ожидают
+утверждения конкретного предложения по AGENTS п3. Не запрашивается разрешение
+на миграции/deploy. Чужие accounts/Workers не перечисляются, права не расширяются.
+
+Локально PASS: SQLite пути18→25 и19→25, одинаковая конечная schema signature,
+FK/quick_check и отсутствие rule seed; smoke25 PASS, соответствие7source hashes
+и согласованность документов/manifest PASS. Это синтетическая SQLite, не новый
+native D1/Windows/Android CI. Реальные чтения/записи Cloudflare, migrations apply,
+backup/export/restore, seed/backfill/activation/merge/deploy не выполнялись.
+G1 paused,D4–D7 pending. Runtime source и ранее проверенный пакет не изменены.
