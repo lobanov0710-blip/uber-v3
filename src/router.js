@@ -1,3 +1,4 @@
+import { passengerOrderStatusV2 } from './core/passengerOrderStatusV2.js';
 import { getAdminOrders, getAdminAssignmentOptions } from './core/adminAssignmentReadService.js';
 import { getAdminVehicles, getAdminVehiclePhotoChecks } from './core/adminVehicleReadService.js';
 import { listAdminVehicleRules,readAdminVehicleRule,createAdminVehicleRule,readAdminVehicleClassification } from './core/adminVehicleRuleService.js';
@@ -172,6 +173,8 @@ export default async function router(
       ""
     );
 
+
+  if (path === '/v2/order-status') return passengerOrderStatusV2(req, env);
 
   // =========================
   // CORS PREFLIGHT

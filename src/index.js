@@ -1,5 +1,6 @@
 import { purgeOwnerMfaEphemera } from './core/ownerMfaRepository.js';
 import { ownerPhoneTestEnabled, ownerPhoneRequestPolicy } from './core/adminPhoneTestScope.js';
+import { ownerPhoneTz02Status } from './core/ownerPhoneTz02Status.js';
 import router from "./router.js";
 import { json } from "./core/utils.js";
 
@@ -21,8 +22,15 @@ export default {
       const headers=new Headers(response.headers);headers.set('X-Transfer-Test-Scope','owner_phone');
       return new Response(response.body,{status:response.status,headers});
     };
-    if(phoneTest){const denied=ownerPhoneRequestPolicy(req);if(denied)return finish(json({ok:false,...denied,error:'request unavailable'},denied.status));}
     try {
+      if (phoneTest) {
+        const denied = ownerPhoneRequestPolicy(req);
+        if (denied) {
+          const tz02 = ownerPhoneTz02Status(req, env);
+          if (tz02) return finish(await tz02);
+          return finish(json({ok:false,...denied,error:'request unavailable'},denied.status));
+        }
+      }
       return finish(await router(req, env, ctx));
     } catch {
       // Error objects may contain SQL parameters, request bodies or credentials.
