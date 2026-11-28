@@ -62,7 +62,7 @@ function passengerOrder(row) {
   };
 }
 
-export async function passengerOrderStatusV2(req, env) {
+export async function passengerOrderStatusV2(req, env, allowedOrderId = null) {
   if (env?.PASSENGER_ASSIGNMENT_V2_ENABLED !== 'true') {
     return fail('not found', 404);
   }
@@ -80,7 +80,9 @@ export async function passengerOrderStatusV2(req, env) {
   }
   try {
     const access = await verifyPassengerOrderAccess(env, body.accessToken.trim());
-    if (!access.ok) return fail('forbidden', 403);
+    if (!access.ok || (allowedOrderId !== null && access.orderId !== allowedOrderId)) {
+      return fail('forbidden', 403);
+    }
 
     const row = await env.DB.prepare(PASSENGER_ORDER_SQL).bind(access.orderId, Date.now()).first();
     if (!row) return fail('order not found', 404);

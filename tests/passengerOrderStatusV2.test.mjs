@@ -6,6 +6,7 @@ import { signJWT } from '../src/core/auth.js';
 import { sqliteD1 } from './helpers/sqliteD1.mjs';
 import { seedRuleActors, ruleSecrets, driverId } from './helpers/adminVehicleRuleScenario.mjs';
 import { admissionScenario } from './helpers/vehicleAdmissionScenario.mjs';
+import { TZ02_ORDER_ID } from '../src/core/ownerPhoneTz02Status.js';
 
 const path = '/v2/order-status';
 const secrets = {
@@ -22,7 +23,7 @@ function signedRequest(body, options = {}) {
   const timestamp = String(Math.floor(Date.now() / 1000));
   const data = JSON.stringify(body);
   const url = new URL(options.url ?? `https://fixture.invalid${path}`);
-  const signature = createHmac('sha256', secrets.PROXY_HMAC_SECRET)
+  const signature = createHmac('sha256', options.hmac ?? secrets.PROXY_HMAC_SECRET)
     .update([timestamp, options.signedPath ?? url.pathname, data].join('\n')).digest('hex');
   return new Request(url, {
     method: 'POST', body: data,
@@ -63,6 +64,45 @@ test('invalid request, wrong HMAC path and invalid capability reach no D1 query'
   await read(signedRequest({ accessToken: await capability(orderId, 0.1) }), env, 403);
   await read(signedRequest({ accessToken: await capability(orderId, 300, 'other:scope') }), env, 403);
   assert.equal(reads, 0);
+});
+
+test('OWNER-only TZ-02 exception requires its own keys, exact host, expiry and synthetic order', async () => {
+  const url = 'https://uber-v3-staging.lobanov0710.workers.dev' + path;
+  const hmac = 'a'.repeat(64);
+  const passenger = 'b'.repeat(64);
+  let reads = 0;
+  const DB = { prepare() {
+    return { bind(id) {
+      reads++;
+      assert.equal(id, TZ02_ORDER_ID);
+      return { first: async () => ({ id, status: 'new', revision: 1 }) };
+    } };
+  } };
+  const now = Date.now();
+  const env = { ...secrets, APP_ENV: 'staging', ADMIN_PHONE_TEST_ONLY: 'true', DB,
+    TZ02_QA_HMAC: hmac, TZ02_QA_PASSENGER: passenger, TZ02_QA_UNTIL: String(now + 60000) };
+  const request = async (id = TZ02_ORDER_ID, options = {}, tokenKey = passenger) => signedRequest({
+    accessToken: await signJWT(tokenKey, { sub: id, scope: 'passenger_order:read' }, 300)
+  }, { url, hmac, ...options });
+
+  await read(await request('different_order'), env, 403);
+  await read(await request(TZ02_ORDER_ID, {}, secrets.PASSENGER_ORDER_SECRET), env, 403);
+  await read(await request(TZ02_ORDER_ID, { hmac: secrets.PROXY_HMAC_SECRET }), env, 403);
+  await read(await request(TZ02_ORDER_ID, { url: url + '?other=1' }), env, 404);
+  await read(await request(TZ02_ORDER_ID, { url: url.replace('uber-v3-staging.', 'other.') }), env, 503);
+  await read(await request(TZ02_ORDER_ID, { url: url.replace(path, '/orders') }), env, 404);
+  await read(new Request(url), env, 404);
+  await read(await request(), { ...env, TZ02_QA_UNTIL: String(now - 1) }, 404);
+  await read(await request(), { ...env, TZ02_QA_UNTIL: String(now + 48 * 3600000) }, 404);
+  await read(await request(), { ...env, TZ02_QA_HMAC: undefined }, 404);
+  await read(await request(), { ...env, TZ02_QA_PASSENGER: hmac }, 404);
+  await read(await request(), { ...env, JWT_SECRET: hmac }, 404);
+  assert.equal(reads, 0);
+
+  const { order } = await read(await request(), env, 200);
+  assert.equal(order.id, TZ02_ORDER_ID);
+  assert.equal(order.assignment, null);
+  assert.equal(reads, 1);
 });
 
 test('Worker and migrated SQLite return one scoped snapshot and retire a changed or blocked assignment', async t => {
