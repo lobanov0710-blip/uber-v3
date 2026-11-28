@@ -66,6 +66,8 @@ jobs:
         run: node tools/check_owner_mfa_d1.mjs
       - name: Verify Admin moderation workflow with local workerd and D1
         run: node tools/check_admin_moderation_d1.mjs
+      - name: Verify passenger order status v2 with local workerd and D1
+        run: node tools/check_passenger_status_v2_d1.mjs
       - name: Verify approved assignment read APIs with local workerd and D1
         run: node tools/check_admin_assignment_read_d1.mjs
       - name: Verify approved vehicle/photo-check read with local workerd and D1
